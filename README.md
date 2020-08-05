@@ -31,7 +31,7 @@ FlowerShop
 
 #### Some pictures:
 1. Guess Site shop page
-![Guess Site shop page]('./project-pictures/2019-12-25_3.png')
+![Guess Site shop page](./project-pictures/2019-12-25_3.png)
 2. Guess Site shopping cart
 ![Guess Site shopping cart](./project-pictures/2019-12-25_5.png)
 3. Member Site account details
