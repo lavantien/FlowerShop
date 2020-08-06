@@ -1,6 +1,6 @@
 import {Component, OnDestroy, OnInit, TemplateRef} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {BsModalRef, BsModalService} from 'ngx-bootstrap';
+import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
 import {
 	faFileDownload,
 	faFileUpload,

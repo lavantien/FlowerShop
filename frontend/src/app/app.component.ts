@@ -18,7 +18,7 @@ import {
 	faUser,
 	faWarehouse
 } from '@fortawesome/free-solid-svg-icons';
-import {BsModalRef, BsModalService} from 'ngx-bootstrap';
+import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {InputValidatorService} from './_services/input-validator.service';
 import {SharedService} from './_services/shared.service';

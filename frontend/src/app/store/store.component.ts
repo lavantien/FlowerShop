@@ -1,6 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {BsModalRef, BsModalService} from 'ngx-bootstrap';
+import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
 import {DataTranslateService} from '../_services/data-translate.service';
 import {SharedService} from '../_services/shared.service';
 import {Lightbox} from 'ngx-lightbox';

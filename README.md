@@ -51,3 +51,22 @@ FlowerShop
 10. Admin Page batch delete
 ![Admin Page batch delete](./project-pictures/2019-12-25_12.png)
 
+#### The latest build succeed (Aug 7th 2020):
+```
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- maven-jar-plugin:3.2.0:jar (default-jar) @ flowershop ---
+[INFO] Building jar: /home/lavantien/Documents/dev/flowershop/target/flowershop-1.1.jar
+[INFO] 
+[INFO] --- spring-boot-maven-plugin:2.3.2.RELEASE:repackage (repackage) @ flowershop ---
+[INFO] Replacing main artifact with repackaged archive
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  44.918 s
+[INFO] Finished at: 2020-08-07T00:57:12+07:00
+[INFO] ------------------------------------------------------------------------
+```

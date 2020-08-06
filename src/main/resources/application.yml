@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${LOCAL_MYSQL_DB_HOST}:${LOCAL_MYSQL_DB_PORT}/flowershop
+    username: ${LOCAL_MYSQL_DB_USERNAME}
+    password: ${LOCAL_MYSQL_DB_PASSWORD}
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.${LOCAL_MYSQL_DB_DIALECT}
+    hibernate:
+      ddl-auto: update
+  mail:
+    host: smtp.gmail.com
+    username: ${MAIL_SENDER_EMAIL}
+    password: ${MAIL_SENDER_PASSWORD}
+    port: 587
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true

@@ -8,7 +8,10 @@ import {HTTP_INTERCEPTORS, HttpClient, HttpClientModule} from '@angular/common/h
 import {TranslateLoader, TranslateModule} from '@ngx-translate/core';
 import {TranslateHttpLoader} from '@ngx-translate/http-loader';
 import {SharedModule} from './shared.module';
-import {CarouselModule, ModalModule, PaginationModule, TooltipModule} from 'ngx-bootstrap';
+import {CarouselModule} from 'ngx-bootstrap/carousel';
+import {ModalModule} from 'ngx-bootstrap/modal';
+import {PaginationModule} from 'ngx-bootstrap/pagination';
+import {TooltipModule} from 'ngx-bootstrap/tooltip';
 import {GlobalHttpInterceptor} from './global-http-interceptor';
 
 // AoT requires an exported function for factories
