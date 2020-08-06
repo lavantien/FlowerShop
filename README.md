@@ -13,7 +13,7 @@ FlowerShop
 
 #### Development environment setup instruction:
 1. Open root folder in `IntelliJ IDEA`.
-2. Edit file `application.properties` (MySQL server's account and version) according to your database.
+2. Edit file `application.yml` (MySQL server's account and version) according to your database or setup environment variables.
 3. Running the first 2 lines in file `db/run.sql` to create a database (schema) name `flowershop` in the MySQL Server. 
 4. Launch Spring Boot `FlowershopApplication`. The tables will be create if run the first time.
 5. Run the rest in file `db/run.sql` to fill default data for our application.
@@ -50,6 +50,8 @@ FlowerShop
 ![Admin Page edit product](./project-pictures/2019-12-25_9.png)
 10. Admin Page batch delete
 ![Admin Page batch delete](./project-pictures/2019-12-25_12.png)
+11. Product details displays when clicked
+![Admin Page batch delete](./project-pictures/ScreenshotFrom20200807.png)
 
 #### The latest build succeed (Aug 7th 2020):
 ```
