@@ -3,12 +3,12 @@ FlowerShop
 - Full-features full-fledged production-grade eCommerce modern web application powered by Spring Boot and Angular
 
 #### Requirements:
-1. `JDK 11`
-2. `Node 13.5.0`
-3. `NPM 6.13.4`
+1. `JDK 11 (LTS)`
+2. `Node 12.18.3 (LTS)`
+3. `NPM 6.14.6`
 4. `MySQL Server 8`
 5. `IntelliJ IDEA`
-6. `Postman`
+6. `Postman or Insomnia`
 7. `Maven` (for `Production Environment` only).
 
 #### Development environment setup instruction:
