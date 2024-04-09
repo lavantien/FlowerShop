@@ -1,6 +1,5 @@
 package com.lavantien.flowershop.api.product;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,7 +11,6 @@ import java.util.Optional;
 public class ProductController {
 	private ProductRepository productRepository;
 
-	@Autowired
 	public ProductController(ProductRepository productRepository) {
 		this.productRepository = productRepository;
 	}
@@ -28,7 +26,7 @@ public class ProductController {
 	}
 
 	@DeleteMapping
-	public ResponseEntity deleteMany(@RequestBody(required = false) List<Long> ids) {
+	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
 		if (ids == null) {
 			productRepository.deleteAll();
 			return ResponseEntity.ok().build();
@@ -60,7 +58,7 @@ public class ProductController {
 	}
 
 	@DeleteMapping("/{id}")
-	public ResponseEntity delete(@PathVariable Long id) {
+	public ResponseEntity<?> delete(@PathVariable Long id) {
 		if (productRepository.findById(id).isEmpty()) {
 			return ResponseEntity.badRequest().build();
 		}

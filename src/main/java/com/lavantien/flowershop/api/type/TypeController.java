@@ -1,6 +1,5 @@
 package com.lavantien.flowershop.api.type;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,7 +11,6 @@ import java.util.Optional;
 public class TypeController {
 	private TypeRepository typeRepository;
 
-	@Autowired
 	public TypeController(TypeRepository typeRepository) {
 		this.typeRepository = typeRepository;
 	}
@@ -28,7 +26,7 @@ public class TypeController {
 	}
 
 	@DeleteMapping
-	public ResponseEntity deleteMany(@RequestBody(required = false) List<Long> ids) {
+	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
 		if (ids == null) {
 			typeRepository.deleteAll();
 			return ResponseEntity.ok().build();
@@ -60,7 +58,7 @@ public class TypeController {
 	}
 
 	@DeleteMapping("/{id}")
-	public ResponseEntity delete(@PathVariable Long id) {
+	public ResponseEntity<?> delete(@PathVariable Long id) {
 		if (typeRepository.findById(id).isEmpty()) {
 			return ResponseEntity.badRequest().build();
 		}

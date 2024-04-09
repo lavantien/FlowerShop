@@ -14,10 +14,10 @@ import java.util.Optional;
 @RequestMapping("/api/user")
 public class UserController {
 	private UserRepository userRepository;
+	@SuppressWarnings("unused")
 	private MailService mailService;
 	private UserService userService;
 
-	@Autowired
 	public UserController(UserRepository userRepository, MailService mailService, UserService userService) {
 		this.userRepository = userRepository;
 		this.mailService = mailService;
@@ -38,7 +38,7 @@ public class UserController {
 	}
 
 	@DeleteMapping
-	public ResponseEntity deleteMany(@RequestBody(required = false) List<Long> ids) {
+	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
 		if (ids == null) {
 			userRepository.deleteAll();
 			return ResponseEntity.ok().build();
@@ -71,7 +71,7 @@ public class UserController {
 	}
 
 	@DeleteMapping("/{id}")
-	public ResponseEntity delete(@PathVariable Long id) {
+	public ResponseEntity<?> delete(@PathVariable Long id) {
 		if (userRepository.findById(id).isEmpty()) {
 			return ResponseEntity.badRequest().build();
 		}
@@ -79,6 +79,7 @@ public class UserController {
 		return ResponseEntity.ok().build();
 	}
 
+	@SuppressWarnings("null")
 	@PostMapping(value = "/login", consumes = "text/plain")
 	public ResponseEntity<TokenDto> doLogin(@RequestBody String info) {
 		String decodedInfo = new String(Base64.getDecoder().decode(info));
@@ -88,7 +89,7 @@ public class UserController {
 		User foundUser = userRepository.findByEmail(email);
 		String foundEncodedPassword = foundUser != null ? userRepository.findByEmail(email).getPassword() : "ajB6";
 		String foundPassword = new String(Base64.getDecoder().decode(foundEncodedPassword));
-		TokenDto tokenDto = new TokenDto(Base64.getEncoder().encodeToString("0+GUESS".getBytes()), "0", "A, Bình Thạnh, Hồ Chí Minh");
+		TokenDto tokenDto = new TokenDto(Base64.getEncoder().encodeToString("0+GUESS".getBytes()), "0", "A, Nam Tu Liem, Hanoi");
 		if (foundPassword.compareTo(password) == 0) {
 			if (userService.loggedInIds.isEmpty() || userService.loggedInIds.indexOf(foundUser.getId()) == -1) {
 				userService.loggedInIds.add(foundUser.getId());
@@ -109,14 +110,14 @@ public class UserController {
 		if (!userService.loggedInIds.isEmpty()) {
 			userService.loggedInIds.remove(id);
 		}
-		return ResponseEntity.ok(new TokenDto(Base64.getEncoder().encodeToString("0+GUESS".getBytes()), "0", "A, Bình Thạnh, Hồ Chí MinhA, Bình Thạnh, Hồ Chí Minh"));
+		return ResponseEntity.ok(new TokenDto(Base64.getEncoder().encodeToString("0+GUESS".getBytes()), "0", "A, Nam Tu Liem, Hanoi"));
 	}
 
 	@PostMapping("/resetPassword")
 	public ResponseEntity<TokenDto> doResetPassword(@RequestBody ForgotDto forgotDto) {
 		User foundUser = userRepository.findByEmail(forgotDto.getEmail());
 		if (foundUser == null || foundUser.getAnswer().compareTo(forgotDto.getAnswer()) != 0) {
-			return ResponseEntity.ok(new TokenDto(Base64.getEncoder().encodeToString("0+GUESS".getBytes()), "0", "A, Bình Thạnh, Hồ Chí Minh"));
+			return ResponseEntity.ok(new TokenDto(Base64.getEncoder().encodeToString("0+GUESS".getBytes()), "0", "A, Nam Tu Liem, Hanoi"));
 		}
 		foundUser.setPassword(forgotDto.getPassword());
 		userRepository.save(foundUser);

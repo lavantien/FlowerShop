@@ -1,6 +1,5 @@
 package com.lavantien.flowershop.api.category;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,7 +11,6 @@ import java.util.Optional;
 public class CategoryController {
 	private CategoryRepository categoryRepository;
 
-	@Autowired
 	public CategoryController(CategoryRepository categoryRepository) {
 		this.categoryRepository = categoryRepository;
 	}
@@ -28,7 +26,7 @@ public class CategoryController {
 	}
 
 	@DeleteMapping
-	public ResponseEntity deleteMany(@RequestBody(required = false) List<Long> ids) {
+	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
 		if (ids == null) {
 			categoryRepository.deleteAll();
 			return ResponseEntity.ok().build();
@@ -60,7 +58,7 @@ public class CategoryController {
 	}
 
 	@DeleteMapping("/{id}")
-	public ResponseEntity delete(@PathVariable Long id) {
+	public ResponseEntity<?> delete(@PathVariable Long id) {
 		if (categoryRepository.findById(id).isEmpty()) {
 			return ResponseEntity.badRequest().build();
 		}

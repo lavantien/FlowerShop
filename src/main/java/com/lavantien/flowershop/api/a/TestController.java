@@ -1,7 +1,6 @@
 package com.lavantien.flowershop.api.a;
 
 import com.lavantien.flowershop.service.MailService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,9 +11,9 @@ import java.util.Optional;
 @RequestMapping("/api/test")
 public class TestController {
 	private TestRepository testRepository;
+	@SuppressWarnings("unused")
 	private MailService mailService;
 
-	@Autowired
 	public TestController(TestRepository testRepository,
 	                      MailService mailService) {
 		this.testRepository = testRepository;
@@ -33,7 +32,7 @@ public class TestController {
 	}
 
 	@DeleteMapping
-	public ResponseEntity deleteMany(@RequestBody(required = false) List<Long> ids) {
+	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
 		if (ids == null) {
 			testRepository.deleteAll();
 			return ResponseEntity.ok().build();
@@ -65,7 +64,7 @@ public class TestController {
 	}
 
 	@DeleteMapping("/{id}")
-	public ResponseEntity delete(@PathVariable Long id) {
+	public ResponseEntity<?> delete(@PathVariable Long id) {
 		if (testRepository.findById(id).isEmpty()) {
 			return ResponseEntity.badRequest().build();
 		}

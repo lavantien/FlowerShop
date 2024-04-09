@@ -1,6 +1,5 @@
 package com.lavantien.flowershop.api.bill;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,7 +11,6 @@ import java.util.Optional;
 public class BillController {
 	private BillRepository billRepository;
 
-	@Autowired
 	public BillController(BillRepository billRepository) {
 		this.billRepository = billRepository;
 	}
@@ -28,7 +26,7 @@ public class BillController {
 	}
 
 	@DeleteMapping
-	public ResponseEntity deleteMany(@RequestBody(required = false) List<Long> ids) {
+	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
 		if (ids == null) {
 			billRepository.deleteAll();
 			return ResponseEntity.ok().build();
@@ -60,7 +58,7 @@ public class BillController {
 	}
 
 	@DeleteMapping("/{id}")
-	public ResponseEntity delete(@PathVariable Long id) {
+	public ResponseEntity<?> delete(@PathVariable Long id) {
 		if (billRepository.findById(id).isEmpty()) {
 			return ResponseEntity.badRequest().build();
 		}
