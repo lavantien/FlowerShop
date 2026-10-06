@@ -72,3 +72,24 @@ The Maven wrapper (`mvnw`) is included and `make` targets wrap every build and r
 [INFO] Finished at: 2020-08-07T00:57:12+07:00
 [INFO] ------------------------------------------------------------------------
 ```
+
+#### The latest build succeed (Oct 6th 2026):
+```
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.5.1:jar (default-jar) @ flowershop ---
+[INFO] Building jar: C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-1.1.jar
+[INFO] 
+[INFO] --- spring-boot:4.1.1:repackage (repackage) @ flowershop ---
+[INFO] Replacing main artifact C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-1.1.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-1.1.jar.original
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  13.834 s
+[INFO] Finished at: 2026-10-06T21:13:26+07:00
+[INFO] ------------------------------------------------------------------------
+```
