@@ -40,8 +40,8 @@ db-down: ## stop MySQL container (keeps volume)
 db-nuke: ## stop MySQL container and drop the volume
 	@docker compose down -v
 
-db-seed: ## seed the database from db/run.sql
-	@docker compose exec -T mysql mysql -u$(DB_USER) -p$(DB_PASS) flowershop < db/run.sql
+db-seed: ## seed the database from db/run.sql (skips its create-database preamble)
+	@tail -n +3 db/run.sql | docker compose exec -T mysql mysql -u$(DB_USER) -p$(DB_PASS) flowershop
 
 frontend-install: ## npm install in frontend
 	@$(NPM) install --prefix $(FRONTEND)
