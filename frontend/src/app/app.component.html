@@ -13,68 +13,88 @@
 			<div class="collapse navbar-collapse row" id="navbarSupportedContent">
 				<div class="col-sm-6">
 					<ul class="navbar-nav mr-auto">
-						<li *ngIf="!isAdmin" class="nav-item" placement="bottom" tooltip="{{'MAIN.SHOP' | translate}}">
-							<a class="nav-link" routerLink="/shop" routerLinkActive="active">
-								<fa-icon [icon]="faStore"></fa-icon>
-							</a>
-						</li>
-						<li *ngIf="!isAdmin" class="nav-item" placement="bottom" tooltip="{{'MAIN.INFO' | translate}}">
-							<a [tabindex]="isLoggedIn ? null : -1" class="nav-link {{isLoggedIn ? '' : 'disabled'}}"
-							   routerLink="/info"
-							   routerLinkActive="active">
-								<fa-icon [icon]="faUser"></fa-icon>
-							</a>
-						</li>
-						<li *ngIf="isAdmin" class="nav-item" placement="bottom" tooltip="{{'MAIN.ADMIN' | translate}}">
-							<a [tabindex]="isAdmin ? null : -1" class="nav-link {{isAdmin ? '' : 'disabled'}}" routerLink="/admin"
-							   routerLinkActive="active">
-								<fa-icon [icon]="faWarehouse"></fa-icon>
-							</a>
-						</li>
-						<li *ngIf="isAdmin" class="nav-item" placement="bottom" tooltip="{{'MAIN.SUMMARY' | translate}}">
-							<a [tabindex]="isAdmin ? null : -1" class="nav-link {{isAdmin ? '' : 'disabled'}}" routerLink="/summary"
-							   routerLinkActive="active">
+						@if (!isAdmin()) {
+							<li class="nav-item" placement="bottom" tooltip="{{'MAIN.SHOP' | translate}}">
+								<a class="nav-link" routerLink="/shop" routerLinkActive="active">
+									<fa-icon [icon]="faStore"></fa-icon>
+								</a>
+							</li>
+						}
+						@if (!isAdmin()) {
+							<li class="nav-item" placement="bottom" tooltip="{{'MAIN.INFO' | translate}}">
+								<a [tabindex]="isLoggedIn() ? null : -1" class="nav-link {{isLoggedIn() ? '' : 'disabled'}}"
+								   routerLink="/info"
+								   routerLinkActive="active">
+									<fa-icon [icon]="faUser"></fa-icon>
+								</a>
+							</li>
+						}
+						@if (isAdmin()) {
+							<li class="nav-item" placement="bottom" tooltip="{{'MAIN.ADMIN' | translate}}">
+								<a [tabindex]="isAdmin() ? null : -1" class="nav-link {{isAdmin() ? '' : 'disabled'}}"
+								   routerLink="/admin"
+								   routerLinkActive="active">
+									<fa-icon [icon]="faWarehouse"></fa-icon>
+								</a>
+							</li>
+						}
+						@if (isAdmin()) {
+							<li class="nav-item" placement="bottom" tooltip="{{'MAIN.SUMMARY' | translate}}">
+								<a [tabindex]="isAdmin() ? null : -1" class="nav-link {{isAdmin() ? '' : 'disabled'}}"
+								   routerLink="/summary"
+								   routerLinkActive="active">
 								<fa-icon [icon]="faChartLine"></fa-icon>
 							</a>
 						</li>
-						<li class="nav-item" placement="bottom" tooltip="{{'MAIN.CONTACT' | translate}}">
-							<a class="nav-link" routerLink="/contact" routerLinkActive="active">
-								<fa-icon [icon]="faHandshake"></fa-icon>
-							</a>
-						</li>
-						<li *ngIf="isTest" class="nav-item" placement="bottom" tooltip="{{'MAIN.TEST' | translate}}">
+					}
+					<li class="nav-item" placement="bottom" tooltip="{{'MAIN.CONTACT' | translate}}">
+						<a class="nav-link" routerLink="/contact" routerLinkActive="active">
+							<fa-icon [icon]="faHandshake"></fa-icon>
+						</a>
+					</li>
+					@if (isTest) {
+						<li class="nav-item" placement="bottom" tooltip="{{'MAIN.TEST' | translate}}">
 							<a class="nav-link" routerLink="/test" routerLinkActive="active">
 								<fa-icon [icon]="faCubes"></fa-icon>
 							</a>
 						</li>
+					}
 					</ul>
 				</div>
 				<div class="col-sm-6">
 					<div class="responsive-float">
 						<select #langSelect (change)="translate.use(langSelect.value)" class="btn btn-outline-dark btn-lang"
 						        placement="bottom" tooltip="{{'MAIN.LANGUAGE' | translate}}">
-							<option *ngFor="let lang of translate.getLangs()" [selected]="lang === translate.currentLang"
-							        [value]="lang">{{lang}}</option>
+							@for (lang of translate.getLangs(); track lang) {
+								<option [selected]="lang === translate.currentLang()"
+								        [value]="lang">{{lang}}</option>
+							}
 						</select>
-						<button (click)="openCartModal(cartTemplate)" *ngIf="!isAdmin" class="btn btn-dark btn-lang"
-						        placement="bottom" tooltip="{{'MAIN.CART' | translate}}">
-							<fa-icon [icon]="faShoppingCart"></fa-icon>
-							<span> ({{countAddedProduct}})</span>
-						</button>
-						<button (click)="openLoginModal(loginTemplate)" *ngIf="!isLoggedIn" class="btn btn-dark"
-						        placement="bottom" tooltip="{{'MAIN.LOGIN' | translate}}">
-							<fa-icon [icon]="faSignInAlt"></fa-icon>
-						</button>
-						<button (click)="onLogout()" *ngIf="isLoggedIn" class="btn btn-dark" placement="bottom"
-						        tooltip="{{'MAIN.LOGOUT' | translate}}">
-							<fa-icon [icon]="faSignOutAlt"></fa-icon>
-						</button>
+						@if (!isAdmin()) {
+							<button (click)="openCartModal(cartTemplate)" class="btn btn-dark btn-lang"
+							        placement="bottom" tooltip="{{'MAIN.CART' | translate}}">
+								<fa-icon [icon]="faShoppingCart"></fa-icon>
+								<span> ({{countAddedProduct()}})</span>
+							</button>
+						}
+						@if (!isLoggedIn()) {
+							<button (click)="openLoginModal(loginTemplate)" class="btn btn-dark"
+							        placement="bottom" tooltip="{{'MAIN.LOGIN' | translate}}">
+								<fa-icon [icon]="faRightToBracket"></fa-icon>
+							</button>
+						}
+						@if (isLoggedIn()) {
+							<button (click)="onLogout()" class="btn btn-dark" placement="bottom"
+							        tooltip="{{'MAIN.LOGOUT' | translate}}">
+								<fa-icon [icon]="faRightFromBracket"></fa-icon>
+							</button>
+						}
 					</div>
 				</div>
 				<!--				<form class="form-inline my-2">-->
 				<!--					<input class="form-control" placeholder="{{'MAIN.SEARCH_EVERYTHING' | translate}}"-->
 				<!--					       type="search">-->
-				<!--					<button class="btn btn-outline-success" type="submit"><fa-icon [icon]="faSearch" tooltip="{{'MAIN.SEARCH' | translate}}"></fa-icon></button>-->
+				<!--					<button class="btn btn-outline-success" type="submit"><fa-icon [icon]="faMagnifyingGlass" tooltip="{{'MAIN.SEARCH' | translate}}"></fa-icon></button>-->
 				<!--				</form>-->
 				<!--				<select (change)="onChangeThemeColor()" [(ngModel)]="displayBg" class="btn btn-outline-dark btn-lang"-->
 				<!--				        tooltip="{{'MAIN.THEME_COLOR' | translate}}">-->
@@ -99,11 +119,11 @@
 	</div>
 	<button (click)="scrollTop()" class="btn btn-dark fixed-bottom" placement="top"
 	        tooltip="{{'MAIN.SCROLL_TOP' | translate}}">
-		<fa-icon [icon]="faAngleDoubleUp"></fa-icon>
+		<fa-icon [icon]="faAnglesUp"></fa-icon>
 	</button>
 	<button (click)="scrollBottom()" class="btn btn-dark fixed-bottom-2" placement="top"
 	        tooltip="{{'MAIN.SCROLL_BOT' | translate}}">
-		<fa-icon [icon]="faAngleDoubleDown"></fa-icon>
+		<fa-icon [icon]="faAnglesDown"></fa-icon>
 	</button>
 	<!--	<button (click)="scrollLeft()" class="btn btn-outline-dark fixed-bottom-3" tooltip="{{'MAIN.SCROLL_LEFT' | translate}}" placement="bottom">-->
 	<!--		<fa-icon [icon]="faArrowLeft"></fa-icon>-->
@@ -114,10 +134,10 @@
 </div>
 
 <ng-template #loginTemplate>
-	<div class="modal-header {{bgPrimary}} {{tcPrimary}}">
+	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
 		<h4 class="modal-title pull-left">{{'MAIN.LOGIN' | translate}}</h4>
 		<button (click)="modalRef.hide()" class="close pull-right">
-			<span aria-hidden="true" class="{{tcPrimary}}">&times;</span>
+			<span aria-hidden="true" class="{{tcPrimary()}}">&times;</span>
 		</button>
 	</div>
 	<div class="modal-body">
@@ -135,7 +155,9 @@
 			</div>
 		</div>
 		<div class="form-group row">
-			<span *ngIf="wrongLogin" class="col-sm-12 text-danger">{{'MAIN.WRONG_INPUT' | translate}}</span>
+			@if (wrongLogin) {
+				<span class="col-sm-12 text-danger">{{'MAIN.WRONG_INPUT' | translate}}</span>
+			}
 		</div>
 	</div>
 	<div class="modal-footer bg-light">
@@ -149,10 +171,10 @@
 </ng-template>
 
 <ng-template #signUpTemplate>
-	<div class="modal-header {{bgPrimary}} {{tcPrimary}}">
+	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
 		<h4 class="modal-title pull-left">{{'MAIN.SIGN_UP' | translate}}</h4>
 		<button (click)="modalRef2.hide()" class="close pull-right">
-			<span aria-hidden="true" class="{{tcPrimary}}">&times;</span>
+			<span aria-hidden="true" class="{{tcPrimary()}}">&times;</span>
 		</button>
 	</div>
 	<div class="modal-body">
@@ -214,7 +236,9 @@
 			<label class="col-sm-4 col-form-label" for="inputCityS"><b>{{'MAIN.CITY' | translate}}</b></label>
 			<div class="col-sm-8">
 				<select [(ngModel)]="signUpForm.city" class="form-control" id="inputCityS">
-					<option *ngFor="let city of cities" [value]="city.name">{{city.name}}</option>
+					@for (city of cities(); track city.name) {
+						<option [value]="city.name">{{city.name}}</option>
+					}
 				</select>
 			</div>
 		</div>
@@ -222,15 +246,18 @@
 			<label class="col-sm-4 col-form-label" for="inputDistrictS"><b>{{'MAIN.DISTRICT' | translate}}</b></label>
 			<div class="col-sm-8">
 				<select [(ngModel)]="signUpForm.district" class="form-control" id="inputDistrictS">
-					<ng-container *ngFor="let district of districts">
-						<option *ngIf="district.cityName === signUpForm.city"
-						        [value]="district.name">{{district.name}}</option>
-					</ng-container>
+					@for (district of districts(); track district.name) {
+						@if (district.cityName === signUpForm.city) {
+							<option [value]="district.name">{{district.name}}</option>
+						}
+					}
 				</select>
 			</div>
 		</div>
 		<div class="form-group row">
-			<span *ngIf="wrongCreate" class="col-sm-12 text-danger">{{'MAIN.WRONG_INPUT_OR_DUPLICATE' | translate}}</span>
+			@if (wrongCreate) {
+				<span class="col-sm-12 text-danger">{{'MAIN.WRONG_INPUT_OR_DUPLICATE' | translate}}</span>
+			}
 		</div>
 	</div>
 	<div class="modal-footer bg-light">
@@ -240,10 +267,10 @@
 </ng-template>
 
 <ng-template #forgotPasswordTemplate>
-	<div class="modal-header {{bgPrimary}} {{tcPrimary}}">
+	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
 		<h4 class="modal-title pull-left">{{'MAIN.FORGOT_PASSWORD' | translate}}</h4>
 		<button (click)="modalRef2.hide()" class="close pull-right">
-			<span aria-hidden="true" class="{{tcPrimary}}">&times;</span>
+			<span aria-hidden="true" class="{{tcPrimary()}}">&times;</span>
 		</button>
 	</div>
 	<div class="modal-body">
@@ -274,7 +301,9 @@
 			</div>
 		</div>
 		<div class="form-group row">
-			<span *ngIf="wrongForgot" class="col-sm-12 text-danger">{{'MAIN.WRONG_INPUT_OR_DUPLICATE' | translate}}</span>
+			@if (wrongForgot) {
+				<span class="col-sm-12 text-danger">{{'MAIN.WRONG_INPUT_OR_DUPLICATE' | translate}}</span>
+			}
 		</div>
 	</div>
 	<div class="modal-footer bg-light">
@@ -285,15 +314,15 @@
 </ng-template>
 
 <ng-template #cartTemplate>
-	<div class="modal-header {{bgPrimary}} {{tcPrimary}}">
+	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
 		<h4 class="modal-title pull-left">{{'MAIN.CART' | translate}}</h4>
 		<button (click)="modalRef.hide()" class="close pull-right">
-			<span aria-hidden="true" class="{{tcPrimary}}">&times;</span>
+			<span aria-hidden="true" class="{{tcPrimary()}}">&times;</span>
 		</button>
 	</div>
 	<div class="modal-body table-responsive wrapper-cart-table">
 		<table class="table table-bordered table-striped table-sm table-hover text-center">
-			<thead class="{{bgPrimary}} {{tcPrimary}}">
+			<thead class="{{bgPrimary()}} {{tcPrimary()}}">
 			<tr>
 				<th scope="col">#</th>
 				<th scope="col">{{'ADMIN.NAME' | translate}}</th>
@@ -308,27 +337,33 @@
 			</tr>
 			</thead>
 			<tbody>
-			<tr *ngFor="let product of addedProducts; let i = index">
-				<th scope="row">{{i + 1}}</th>
-				<td>{{product.name}}</td>
-				<td>{{'DATA.' + product.categoryName | translate}}</td>
-				<td>{{'DATA.' + product.typeName | translate}}</td>
-				<td>{{product.price.toLocaleString(translate.currentLang)}}</td>
-				<td>{{countOfIndividualProduct[i]}}</td>
-				<td>{{totalPriceOfIndividualProduct[i].toLocaleString(translate.currentLang)}}</td>
-				<td>
-					<fa-icon (click)="increaseItem(i)" [icon]="faPlus"></fa-icon>&nbsp;
-					<fa-icon (click)="cancelAndDecreaseItem(i)" [icon]="faMinus"></fa-icon>
-				</td>
-			</tr>
-			<tr *ngIf="addedProducts.length !== 0">
-				<td colspan="6"><b>{{'ADMIN.TOTAL_PRICE' | translate}}</b></td>
-				<td><b>{{totalPriceOfAddedProduct.toLocaleString(translate.currentLang)}}</b></td>
-				<td></td>
-			</tr>
-			<tr *ngIf="addedProducts.length === 0">
-				<td colspan="8"><i>{{'ADMIN.NO_PRODUCT_FOUND' | translate}}</i></td>
-			</tr>
+			@for (product of addedProducts(); track $index; let i = $index) {
+				<tr>
+					<th scope="row">{{i + 1}}</th>
+					<td>{{product.name}}</td>
+					<td>{{'DATA.' + product.categoryName | translate}}</td>
+					<td>{{'DATA.' + product.typeName | translate}}</td>
+					<td>{{product.price.toLocaleString(translate.currentLang() ?? 'en')}}</td>
+					<td>{{countOfIndividualProduct()[i]}}</td>
+					<td>{{totalPriceOfIndividualProduct()[i].toLocaleString(translate.currentLang() ?? 'en')}}</td>
+					<td>
+						<fa-icon (click)="increaseItem(i)" [icon]="faPlus"></fa-icon>&nbsp;
+						<fa-icon (click)="cancelAndDecreaseItem(i)" [icon]="faMinus"></fa-icon>
+					</td>
+				</tr>
+			}
+			@if (addedProducts().length !== 0) {
+				<tr>
+					<td colspan="6"><b>{{'ADMIN.TOTAL_PRICE' | translate}}</b></td>
+					<td><b>{{totalPriceOfAddedProduct().toLocaleString(translate.currentLang() ?? 'en')}}</b></td>
+					<td></td>
+				</tr>
+			}
+			@if (addedProducts().length === 0) {
+				<tr>
+					<td colspan="8"><i>{{'ADMIN.NO_PRODUCT_FOUND' | translate}}</i></td>
+				</tr>
+			}
 			</tbody>
 		</table>
 		<div class="personal-info">
@@ -348,7 +383,9 @@
 				<label class="col-sm-4 col-form-label" for="inputCityC"><b>{{'MAIN.CITY' | translate}}</b></label>
 				<div class="col-sm-8">
 					<select [(ngModel)]="cartForm.city" class="form-control" id="inputCityC">
-						<option *ngFor="let city of cities" [value]="city.name">{{city.name}}</option>
+						@for (city of cities(); track city.name) {
+							<option [value]="city.name">{{city.name}}</option>
+						}
 					</select>
 				</div>
 			</div>
@@ -356,10 +393,11 @@
 				<label class="col-sm-4 col-form-label" for="inputDistrictC"><b>{{'MAIN.DISTRICT' | translate}}</b></label>
 				<div class="col-sm-8">
 					<select [(ngModel)]="cartForm.district" class="form-control" id="inputDistrictC">
-						<ng-container *ngFor="let district of districts">
-							<option *ngIf="district.cityName === cartForm.city"
-							        [value]="district.name">{{district.name}}</option>
-						</ng-container>
+						@for (district of districts(); track district.name) {
+							@if (district.cityName === cartForm.city) {
+								<option [value]="district.name">{{district.name}}</option>
+							}
+						}
 					</select>
 				</div>
 			</div>
