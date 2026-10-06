@@ -9,82 +9,105 @@
 			<div class="form-group col-2">
 				<select (change)="onChangeCategory('search'); onSearch()" [(ngModel)]="searchForm.categoryName"
 				        class="form-control">
-					<option *ngFor="let category of categories"
-					        [value]="category.name">{{'DATA.' + category.name | translate}}</option>
+					@for (category of categories(); track category.name) {
+						<option [value]="category.name">{{'DATA.' + category.name | translate}}</option>
+					}
 				</select>
 			</div>
 			<div class="form-group col-2">
 				<select (change)="onChangeTypeSearch(); onSearch()" [(ngModel)]="searchForm.typeName" class="form-control">
-					<ng-container *ngFor="let type of types">
-						<option *ngIf="type.categoryName === searchForm.categoryName"
-						        [value]="type.name">{{'DATA.' + type.name | translate}}</option>
-					</ng-container>
+					@for (type of types(); track type.name) {
+						@if (type.categoryName === searchForm.categoryName) {
+							<option [value]="type.name">{{'DATA.' + type.name | translate}}</option>
+						}
+					}
 				</select>
 			</div>
 			<div class="form-group col-2">
 				<button (click)="onSearch()" class="btn btn-dark" placement="bottom"
 				        tooltip="{{'ADMIN.SEARCH_ADVANCED' | translate}}">
-					<fa-icon [icon]="faSearch"></fa-icon>
+					<fa-icon [icon]="faMagnifyingGlass"></fa-icon>
 				</button>
 				<button (click)="openCreateModal(createTemplate)" class="btn btn-dark btn-create"
 				        placement="bottom" tooltip="{{'ADMIN.CREATE_PRODUCT' | translate}}">
-					<fa-icon [icon]="faPlusSquare"></fa-icon>
+					<fa-icon [icon]="faSquarePlus"></fa-icon>
 				</button>
 				<button (click)="openImportExcelModal(importExcelTemplate)" class="btn btn-dark btn-create"
 				        placement="bottom" tooltip="{{'ADMIN.IMPORT_EXCEL' | translate}}">
-					<fa-icon [icon]="faFileUpload"></fa-icon>
+					<fa-icon [icon]="faFileArrowUp"></fa-icon>
 				</button>
 				<button (click)="onExportExcel()" class="btn btn-dark btn-create" placement="bottom"
 				        tooltip="{{'ADMIN.EXPORT_EXCEL' | translate}}">
-					<fa-icon [icon]="faFileDownload"></fa-icon>
+					<fa-icon [icon]="faFileArrowDown"></fa-icon>
 				</button>
 			</div>
 			<div class="form-group col-3">
 				<pagination (pageChanged)="onPageChanged($event)"
-				            [(ngModel)]="pagination.currentPage"
+				            [(ngModel)]="currentPage"
 				            [boundaryLinks]="true"
-				            [itemsPerPage]="pagination.itemPerPage"
-				            [maxSize]="pagination.maxSize"
+				            [itemsPerPage]="itemPerPage()"
+				            [maxSize]="maxSize"
 				            [pageBtnClass]="'pagination-style'"
-				            [totalItems]="pagination.totalItem"
+				            [totalItems]="totalItem()"
 				            class="float-right" firstText="&laquo;" lastText="&raquo;" nextText="&rsaquo;"
 				            previousText="&lsaquo;">
 				</pagination>
 			</div>
 			<div class="form-group col-1">
-				<select (change)="paging(searchResults)" [(ngModel)]="pagination.itemPerPage"
+				<select (change)="paging(searchResults())" [(ngModel)]="itemPerPage"
 				        class="btn btn-outline-dark float-right" placement="bottom"
 				        tooltip="{{'ADMIN.ITEMS_PER_PAGE' | translate}}">
-					<option *ngFor="let val of [5, 10, 20, 50, 100, 200, 500, 1000]; let i = index" [selected]="i === 0"
-					        [value]="val">{{val}}</option>
+					@for (val of [5, 10, 20, 50, 100, 200, 500, 1000]; track $index; let i = $index) {
+						<option [selected]="i === 0" [value]="val">{{val}}</option>
+					}
 				</select>
 			</div>
 		</div>
 	</div>
 	<table class="table table-bordered table-striped table-hover table-sm table-product">
-		<thead class="{{bgPrimary}} {{tcPrimary}}">
+		<thead class="{{bgPrimary()}} {{tcPrimary()}}">
 		<tr>
 			<th (click)="onSort(4)" class="col-index" scope="col">#
-				<fa-icon *ngIf="sortFlip[4]" [icon]="faSortAmountUp"></fa-icon>
-				<fa-icon *ngIf="!sortFlip[4]" [icon]="faSortAmountDownAlt"></fa-icon>
+				@if (sortFlip[4]) {
+					<fa-icon [icon]="faArrowUpShortWide"></fa-icon>
+				}
+				@if (!sortFlip[4]) {
+					<fa-icon [icon]="faArrowDownShortWide"></fa-icon>
+				}
 			</th>
 			<th (click)="onSort(0)" class="col-name col-sortable" scope="col">{{'ADMIN.NAME' | translate}}
-				<fa-icon *ngIf="sortFlip[0]" [icon]="faSortAmountUp"></fa-icon>
-				<fa-icon *ngIf="!sortFlip[0]" [icon]="faSortAmountDownAlt"></fa-icon>
+				@if (sortFlip[0]) {
+					<fa-icon [icon]="faArrowUpShortWide"></fa-icon>
+				}
+				@if (!sortFlip[0]) {
+					<fa-icon [icon]="faArrowDownShortWide"></fa-icon>
+				}
 			</th>
 			<th class="col-description" scope="col">{{'ADMIN.DESCRIPTION' | translate}}</th>
 			<th (click)="onSort(1)" class="col-price col-sortable" scope="col">{{'ADMIN.PRICE' | translate}}
-				<fa-icon *ngIf="sortFlip[1]" [icon]="faSortAmountUp"></fa-icon>
-				<fa-icon *ngIf="!sortFlip[1]" [icon]="faSortAmountDownAlt"></fa-icon>
+				@if (sortFlip[1]) {
+					<fa-icon [icon]="faArrowUpShortWide"></fa-icon>
+				}
+				@if (!sortFlip[1]) {
+					<fa-icon [icon]="faArrowDownShortWide"></fa-icon>
+				}
 			</th>
 			<th class="col-image" scope="col">{{'ADMIN.IMAGE' | translate}}</th>
 			<th (click)="onSort(2)" class="col-quantity col-sortable" scope="col">{{'ADMIN.QUANTITY' | translate}}
-				<fa-icon *ngIf="sortFlip[2]" [icon]="faSortAmountUp"></fa-icon>
-				<fa-icon *ngIf="!sortFlip[2]" [icon]="faSortAmountDownAlt"></fa-icon>
+				@if (sortFlip[2]) {
+					<fa-icon [icon]="faArrowUpShortWide"></fa-icon>
+				}
+				@if (!sortFlip[2]) {
+					<fa-icon [icon]="faArrowDownShortWide"></fa-icon>
+				}
 			</th>
 			<th (click)="onSort(3)" class="col-sale-amount col-sortable" scope="col">{{'ADMIN.SALE_AMOUNT' | translate}}
-				<fa-icon *ngIf="sortFlip[3]" [icon]="faSortAmountUp"></fa-icon>
-				<fa-icon *ngIf="!sortFlip[3]" [icon]="faSortAmountDownAlt"></fa-icon>
+				@if (sortFlip[3]) {
+					<fa-icon [icon]="faArrowUpShortWide"></fa-icon>
+				}
+				@if (!sortFlip[3]) {
+					<fa-icon [icon]="faArrowDownShortWide"></fa-icon>
+				}
 			</th>
 			<th class="col-category" scope="col">{{'ADMIN.CATEGORY' | translate}}</th>
 			<th class="col-type" scope="col">{{'ADMIN.TYPE' | translate}}</th>
@@ -92,15 +115,16 @@
 		</tr>
 		</thead>
 		<tbody>
-		<ng-container *ngIf="displayProducts.length !== 0">
-			<ng-container *ngFor="let product of displayProducts; trackBy: trackByFn; let i = index">
-				<tr (click)="selectRow(i)" [ngClass]="{'row-selected': isSelected[i]}">
+		@if (displayProducts().length !== 0) {
+			@for (product of displayProducts(); track $index; let i = $index) {
+				<tr (click)="selectRow(i)" [class.row-selected]="isSelected()[i]">
 					<th scope="row">{{product.id}}</th>
 					<td>{{product.name}}</td>
 					<td>{{product.description}}</td>
-					<td>{{product.price.toLocaleString(translate.currentLang)}}</td>
+					<td>{{product.price.toLocaleString(translate.currentLang() ?? 'en')}}</td>
 					<td>
-						<img (click)="onOpenImage(i)" [alt]="product.name" [src]="product.imgUrl" class="product-img">
+						<img (click)="onOpenImage(i, imageTemplate)" [alt]="product.name" [src]="product.imgUrl"
+						     class="product-img">
 					</td>
 					<td>{{product.quantity}}</td>
 					<td>{{product.saleAmount}}</td>
@@ -117,22 +141,29 @@
 						</button>
 					</td>
 				</tr>
-			</ng-container>
-		</ng-container>
-		<ng-container *ngIf="displayProducts.length === 0">
+			}
+		}
+		@if (displayProducts().length === 0) {
 			<tr>
 				<td colspan="10"><i>{{'ADMIN.NO_PRODUCT_FOUND' | translate}}</i></td>
 			</tr>
-		</ng-container>
+		}
 		</tbody>
 	</table>
 </div>
 
+<ng-template #imageTemplate>
+	<div class="modal-body text-center">
+		<img [alt]="lightboxCaption()" [src]="lightboxSrc()" class="img-fluid">
+		<div [innerHTML]="lightboxCaption()" class="text-center"></div>
+	</div>
+</ng-template>
+
 <ng-template #createTemplate>
-	<div class="modal-header {{bgPrimary}} {{tcPrimary}}">
+	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
 		<h4 class="modal-title pull-left">{{'ADMIN.CREATE_PRODUCT' | translate}}</h4>
 		<button (click)="modalRef.hide()" class="close pull-right">
-			<span aria-hidden="true" class="{{tcPrimary}}">&times;</span>
+			<span aria-hidden="true" class="{{tcPrimary()}}">&times;</span>
 		</button>
 	</div>
 	<div class="modal-body">
@@ -176,10 +207,11 @@
 		<div class="form-group row">
 			<label class="col-sm-3 col-form-label" for="inputCategory"><b>{{'ADMIN.CATEGORY' | translate}}</b></label>
 			<div class="col-sm-9">
-				<select (change)="onChangeCategory('craete')" [(ngModel)]="createForm.categoryName" class="form-control"
+				<select (change)="onChangeCategory('craeto')" [(ngModel)]="createForm.categoryName" class="form-control"
 				        id="inputCategory">
-					<option *ngFor="let category of categories"
-					        [value]="category.name">{{'DATA.' + category.name | translate}}</option>
+					@for (category of categories(); track category.name) {
+						<option [value]="category.name">{{'DATA.' + category.name | translate}}</option>
+					}
 				</select>
 			</div>
 		</div>
@@ -187,10 +219,11 @@
 			<label class="col-sm-3 col-form-label" for="inputType"><b>{{'ADMIN.TYPE' | translate}}</b></label>
 			<div class="col-sm-9">
 				<select [(ngModel)]="createForm.typeName" class="form-control" id="inputType">
-					<ng-container *ngFor="let type of types">
-						<option *ngIf="type.categoryName === createForm.categoryName"
-						        [value]="type.name">{{'DATA.' + type.name | translate}}</option>
-					</ng-container>
+					@for (type of types(); track type.name) {
+						@if (type.categoryName === createForm.categoryName) {
+							<option [value]="type.name">{{'DATA.' + type.name | translate}}</option>
+						}
+					}
 				</select>
 			</div>
 		</div>
@@ -202,10 +235,10 @@
 </ng-template>
 
 <ng-template #editTemplate>
-	<div class="modal-header {{bgPrimary}} {{tcPrimary}}">
+	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
 		<h4 class="modal-title pull-left">{{'ADMIN.EDIT_PRODUCT' | translate}}</h4>
 		<button (click)="modalRef.hide(); onCloseEdit()" class="close pull-right">
-			<span aria-hidden="true" class="{{tcPrimary}}">&times;</span>
+			<span aria-hidden="true" class="{{tcPrimary()}}">&times;</span>
 		</button>
 	</div>
 	<div class="modal-body">
@@ -251,8 +284,9 @@
 			<div class="col-sm-9">
 				<select (change)="onChangeCategory('edit')" [(ngModel)]="editForm.categoryName" class="form-control"
 				        id="inputCategoryE">
-					<option *ngFor="let category of categories"
-					        [value]="category.name">{{'DATA.' + category.name | translate}}</option>
+					@for (category of categories(); track category.name) {
+						<option [value]="category.name">{{'DATA.' + category.name | translate}}</option>
+					}
 				</select>
 			</div>
 		</div>
@@ -260,10 +294,11 @@
 			<label class="col-sm-3 col-form-label" for="inputTypeE"><b>{{'ADMIN.TYPE' | translate}}</b></label>
 			<div class="col-sm-9">
 				<select [(ngModel)]="editForm.typeName" class="form-control" id="inputTypeE">
-					<ng-container *ngFor="let type of types">
-						<option *ngIf="type.categoryName === editForm.categoryName"
-						        [value]="type.name">{{'DATA.' + type.name | translate}}</option>
-					</ng-container>
+					@for (type of types(); track type.name) {
+						@if (type.categoryName === editForm.categoryName) {
+							<option [value]="type.name">{{'DATA.' + type.name | translate}}</option>
+						}
+					}
 				</select>
 			</div>
 		</div>
@@ -275,15 +310,15 @@
 </ng-template>
 
 <ng-template #deleteTemplate>
-	<div class="modal-header {{bgPrimary}} {{tcPrimary}}">
+	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
 		<h4 class="modal-title pull-left">{{'ADMIN.DELETE_PRODUCT' | translate}}?</h4>
 		<button (click)="modalRef.hide()" class="close pull-right">
-			<span aria-hidden="true" class="{{tcPrimary}}">&times;</span>
+			<span aria-hidden="true" class="{{tcPrimary()}}">&times;</span>
 		</button>
 	</div>
 	<div class="modal-body table-responsive wrapper-delete-table">
 		<table class="table table-bordered table-striped table-sm">
-			<thead class="{{bgPrimary}} {{tcPrimary}}">
+			<thead class="{{bgPrimary()}} {{tcPrimary()}}">
 			<tr>
 				<th scope="col">#</th>
 				<th scope="col">{{'ADMIN.NAME' | translate}}</th>
@@ -295,17 +330,19 @@
 			</tr>
 			</thead>
 			<tbody>
-			<tr *ngFor="let indexFlag of isSelected; let i = index">
-				<ng-container *ngIf="indexFlag">
-					<th scope="row">{{displayProducts[i].id}}</th>
-					<td>{{displayProducts[i].name}}</td>
-					<td>{{displayProducts[i].price.toLocaleString(translate.currentLang)}}</td>
-					<td>{{displayProducts[i].quantity}}</td>
-					<td>{{displayProducts[i].saleAmount}}</td>
-					<td>{{'DATA.' + displayProducts[i].categoryName | translate}}</td>
-					<td>{{'DATA.' + displayProducts[i].typeName | translate}}</td>
-				</ng-container>
-			</tr>
+			@for (indexFlag of isSelected(); track $index; let i = $index) {
+				<tr>
+					@if (indexFlag) {
+						<th scope="row">{{displayProducts()[i].id}}</th>
+						<td>{{displayProducts()[i].name}}</td>
+						<td>{{displayProducts()[i].price.toLocaleString(translate.currentLang() ?? 'en')}}</td>
+						<td>{{displayProducts()[i].quantity}}</td>
+						<td>{{displayProducts()[i].saleAmount}}</td>
+						<td>{{'DATA.' + displayProducts()[i].categoryName | translate}}</td>
+						<td>{{'DATA.' + displayProducts()[i].typeName | translate}}</td>
+					}
+				</tr>
+			}
 			</tbody>
 		</table>
 	</div>
@@ -318,10 +355,10 @@
 </ng-template>
 
 <ng-template #importExcelTemplate>
-	<div class="modal-header {{bgPrimary}} {{tcPrimary}}">
+	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
 		<h4 class="modal-title pull-left">{{'ADMIN.IMPORT_EXCEL' | translate}}</h4>
 		<button (click)="modalRef.hide()" class="close pull-right">
-			<span aria-hidden="true" class="{{tcPrimary}}">&times;</span>
+			<span aria-hidden="true" class="{{tcPrimary()}}">&times;</span>
 		</button>
 	</div>
 	<div class="modal-body">
@@ -339,7 +376,7 @@
 		<span><i>{{'ADMIN.IMPORT_EXCEL_NOTE' | translate}}</i></span>
 	</div>
 	<div class="modal-footer bg-light">
-		<button (click)="onImportExcel(excelData)"
+		<button (click)="onImportExcel(excelData())"
 		        class="btn btn-success pull-right">{{'ADMIN.IMPORT_BUTTON' | translate}}</button>
 	</div>
 </ng-template>

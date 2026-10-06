@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, inject, signal} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {NgxSpinnerService} from 'ngx-spinner';
 
@@ -8,12 +8,11 @@ import {NgxSpinnerService} from 'ngx-spinner';
 	styleUrls: ['./test.component.scss']
 })
 export class TestComponent implements OnInit {
-	tests: Test[] = [];
+	tests = signal<Test[]>([]);
 	timeOutHttpRequest = 2000;
 
-	constructor(private http: HttpClient,
-	            private spinner: NgxSpinnerService) {
-	}
+	private readonly http = inject(HttpClient);
+	private readonly spinner = inject(NgxSpinnerService);
 
 	ngOnInit() {
 		this.getTests();
@@ -22,8 +21,8 @@ export class TestComponent implements OnInit {
 	getTests() {
 		this.spinner.show();
 		this.http.get<Test[]>('/api/test').subscribe(rs => {
-			if (!!rs) {
-				this.tests = rs;
+			if (rs) {
+				this.tests.set(rs);
 			}
 		});
 	}

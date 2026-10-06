@@ -1,45 +1,53 @@
-import {Component, OnDestroy, OnInit, TemplateRef} from '@angular/core';
+import {Component, OnDestroy, OnInit, TemplateRef, inject, signal} from '@angular/core';
+import {FormsModule} from '@angular/forms';
 import {HttpClient} from '@angular/common/http';
-import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
+import {Router} from '@angular/router';
+import {TranslatePipe, TranslateService} from '@ngx-translate/core';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
-	faFileDownload,
-	faFileUpload,
+	faArrowDownShortWide,
+	faArrowUpShortWide,
+	faFileArrowDown,
+	faFileArrowUp,
+	faMagnifyingGlass,
 	faPen,
-	faPlusSquare,
-	faSearch,
-	faSortAmountDownAlt,
-	faSortAmountUp,
+	faSquarePlus,
 	faTrash
 } from '@fortawesome/free-solid-svg-icons';
-import {DataTranslateService} from '../_services/data-translate.service';
-import {TranslateService} from '@ngx-translate/core';
-import {SharedService} from '../_services/shared.service';
-import * as XLSX from 'xlsx';
-import {Lightbox} from 'ngx-lightbox';
+import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
+import {TooltipDirective} from 'ngx-bootstrap/tooltip';
+import {PageChangedEvent, PaginationComponent} from 'ngx-bootstrap/pagination';
 import {Subscription} from 'rxjs';
+import * as XLSX from 'xlsx';
+import {DataTranslateService} from '../_services/data-translate.service';
+import {SharedService} from '../_services/shared.service';
 import {Product} from '../_models/product';
 import {Category} from '../_models/category';
 import {Type} from '../_models/type';
-import {Router} from "@angular/router";
 
 @Component({
 	selector: 'app-admin',
+	imports: [
+		FormsModule,
+		TranslatePipe,
+		FaIconComponent,
+		TooltipDirective,
+		PaginationComponent
+	],
 	templateUrl: './admin.component.html',
 	styleUrls: ['./admin.component.scss']
 })
 export class AdminComponent implements OnInit, OnDestroy {
-	modalRef: BsModalRef;
-	data: Product[] = [];
-	displayProducts: Product[] = [];
+	modalRef!: BsModalRef;
+	data = signal<Product[]>([]);
+	displayProducts = signal<Product[]>([]);
 	productsOriginalDescription: string[] = [];
-	categories: Category[] = [];
-	types: Type[] = [];
-	pagination = {
-		totalItem: 0,
-		itemPerPage: 20,
-		currentPage: 1,
-		maxSize: 5
-	};
+	categories = signal<Category[]>([]);
+	types = signal<Type[]>([]);
+	totalItem = signal(0);
+	itemPerPage = signal(20);
+	currentPage = signal(1);
+	readonly maxSize = 5;
 	createForm = {
 		name: '',
 		description: '',
@@ -65,52 +73,55 @@ export class AdminComponent implements OnInit, OnDestroy {
 		categoryName: '',
 		typeName: ''
 	};
-	searchResults: Product[] = [];
+	searchResults = signal<Product[]>([]);
 	currentId = 0;
 	editIndex = 0;
-	faSearch = faSearch;
-	faPlusSquare = faPlusSquare;
+	faMagnifyingGlass = faMagnifyingGlass;
+	faSquarePlus = faSquarePlus;
 	faPen = faPen;
 	faTrash = faTrash;
-	faFileUpload = faFileUpload;
-	faFileDownload = faFileDownload;
-	faSortAmountUp = faSortAmountUp;
-	faSortAmountDownAlt = faSortAmountDownAlt;
-	bgPrimary = '';
-	tcPrimary = '';
-	excelData: any[] = [];
+	faFileArrowUp = faFileArrowUp;
+	faFileArrowDown = faFileArrowDown;
+	faArrowUpShortWide = faArrowUpShortWide;
+	faArrowDownShortWide = faArrowDownShortWide;
+	bgPrimary = signal('');
+	tcPrimary = signal('');
+	excelData = signal<Product[]>([]);
 	numOfSortableCol = 5; // name, price, quantity, saleAmount, id
 	sortFlip: boolean[] = [];
 	firstTimeSort = true;
-	isSelected: boolean[] = [];
+	isSelected = signal<boolean[]>([]);
 	isAdmin = false;
-	private subscriptions = new Subscription();
-	translateWrongExcel = '';
-	translateWrongFormat = '';
-	translateImportSuccessful = '';
+	lightboxSrc = signal('');
+	lightboxCaption = signal('');
+	translateWrongExcel = signal('');
+	translateWrongFormat = signal('');
+	translateImportSuccessful = signal('');
 
-	constructor(private http: HttpClient,
-	            private router: Router,
-	            private modalService: BsModalService,
-	            private dataTranslateService: DataTranslateService,
-	            private sharedService: SharedService,
-	            private lightbox: Lightbox,
-	            public translate: TranslateService) {
+	private readonly http = inject(HttpClient);
+	private readonly router = inject(Router);
+	private readonly modalService = inject(BsModalService);
+	private readonly dataTranslateService = inject(DataTranslateService);
+	private readonly sharedService = inject(SharedService);
+	readonly translate = inject(TranslateService);
+	private readonly subscriptions = new Subscription();
+
+	constructor() {
 		for (let i = 0; i < this.numOfSortableCol; ++i) {
 			this.sortFlip[i] = false;
 		}
 		this.subscriptions.add(this.sharedService.getGlobalBackgroundPrimary().subscribe(bg => {
-			this.bgPrimary = bg[0];
-			this.tcPrimary = bg[1];
+			this.bgPrimary.set(bg[0]);
+			this.tcPrimary.set(bg[1]);
 		}));
 		this.subscriptions.add(this.translate.stream('ALERT.NOT_EXCEL').subscribe(rs => {
-			this.translateWrongExcel = rs;
+			this.translateWrongExcel.set(rs);
 		}));
 		this.subscriptions.add(this.translate.stream('ALERT.WRONG_FORMAT').subscribe(rs => {
-			this.translateWrongFormat = rs;
+			this.translateWrongFormat.set(rs);
 		}));
 		this.subscriptions.add(this.translate.stream('ALERT.IMPORT_SUCCESSFUL').subscribe(rs => {
-			this.translateImportSuccessful = rs;
+			this.translateImportSuccessful.set(rs);
 		}));
 	}
 
@@ -118,7 +129,8 @@ export class AdminComponent implements OnInit, OnDestroy {
 		this.getProducts();
 		this.getCategories();
 		this.getTypes();
-		this.isAdmin = localStorage.getItem('token') !== null && atob(localStorage.getItem('token')).substring(atob(localStorage.getItem('token')).indexOf('+') + 1) === 'ADMIN';
+		const token = localStorage.getItem('token');
+		this.isAdmin = token !== null && atob(token).substring(atob(token).indexOf('+') + 1) === 'ADMIN';
 		if (!this.isAdmin) {
 			this.router.navigate(['/shop']);
 		}
@@ -130,46 +142,40 @@ export class AdminComponent implements OnInit, OnDestroy {
 
 	getProducts() {
 		this.http.get<Product[]>('/api/product').subscribe(data => {
-			if (!!data) {
-				this.data = data;
+			if (data) {
+				this.data.set(data);
 				this.productsOriginalDescription.length = 0;
-				this.data.forEach(product => {
+				this.data().forEach(product => {
 					product.imgUrl = product.imgUrl ? atob(product.imgUrl) : '';
 					this.productsOriginalDescription.push(product.description);
 					product.description = product.description.substr(0, 50) + (product.description.length > 60 ? '...' : '');
 					product.price = this.dataTranslateService.getPrice(product.price, 'vi');
 				});
-				this.searchResults = data;
-				this.paging(this.searchResults);
+				this.searchResults.set(data);
+				this.paging(this.searchResults());
 			}
 		}, error => {
 			console.log(`Error: ${error}`);
-			this.data = [];
+			this.data.set([]);
 		}, () => {
 		});
 	}
 
 	paging(data: Product[]) {
-		this.pagination.totalItem = data.length;
-		this.displayProducts = data.slice((this.pagination.currentPage - 1) * this.pagination.itemPerPage,
-			this.pagination.currentPage * this.pagination.itemPerPage);
-		this.isSelected.length = 0;
-		for (let i = 0; i < this.displayProducts.length; ++i) {
-			this.isSelected.push(false);
-		}
+		this.totalItem.set(data.length);
+		this.displayProducts.set(data.slice((this.currentPage() - 1) * this.itemPerPage(),
+			this.currentPage() * this.itemPerPage()));
+		this.isSelected.set(this.displayProducts().map(() => false));
 	}
 
-	onPageChanged(event: any) { // 1: 0 1 2 3   2: 4 5 6 7   3: 8 9 10 11
-		this.displayProducts = this.searchResults.slice((event.page - 1) * event.itemsPerPage, event.page * event.itemsPerPage);
-		this.isSelected.length = 0;
-		for (let i = 0; i < this.displayProducts.length; ++i) {
-			this.isSelected.push(false);
-		}
+	onPageChanged(event: PageChangedEvent) { // 1: 0 1 2 3   2: 4 5 6 7   3: 8 9 10 11
+		this.displayProducts.set(this.searchResults().slice((event.page - 1) * event.itemsPerPage, event.page * event.itemsPerPage));
+		this.isSelected.set(this.displayProducts().map(() => false));
 	}
 
 	onSearch() {
 		const searchResults: Product[] = [];
-		this.data.forEach(product => {
+		this.data().forEach(product => {
 			if (this.searchForm.name === '' && this.searchForm.typeName === product.typeName && this.searchForm.categoryName === product.categoryName) {
 				searchResults.push(product);
 			} else if (this.searchForm.name !== '' && product.name.toLowerCase().includes(this.searchForm.name.toLowerCase())) {
@@ -177,17 +183,17 @@ export class AdminComponent implements OnInit, OnDestroy {
 			}
 		});
 		this.paging(searchResults);
-		this.searchResults = searchResults;
+		this.searchResults.set(searchResults);
 	}
 
 	onChangeCategory(mode: string) {
 		if (mode === 'search') {
 			this.searchForm.name = '';
-			this.searchForm.typeName = this.types[this.types.findIndex(x => x.categoryName === this.searchForm.categoryName)].name;
+			this.searchForm.typeName = this.types()[this.types().findIndex(x => x.categoryName === this.searchForm.categoryName)].name;
 		} else if (mode === 'create') {
-			this.createForm.typeName = this.types[this.types.findIndex(x => x.categoryName === this.createForm.categoryName)].name;
+			this.createForm.typeName = this.types()[this.types().findIndex(x => x.categoryName === this.createForm.categoryName)].name;
 		} else if (mode === 'edit') {
-			this.editForm.typeName = this.types[this.types.findIndex(x => x.categoryName === this.editForm.categoryName)].name;
+			this.editForm.typeName = this.types()[this.types().findIndex(x => x.categoryName === this.editForm.categoryName)].name;
 		}
 		this.firstTimeSort = false;
 	}
@@ -199,14 +205,14 @@ export class AdminComponent implements OnInit, OnDestroy {
 
 	getCategories() {
 		this.http.get<Category[]>('/api/category').subscribe(data => {
-			if (!!data) {
-				this.categories = data;
-				this.createForm.categoryName = this.categories[0].name;
-				this.searchForm.categoryName = this.categories[0].name;
+			if (data) {
+				this.categories.set(data);
+				this.createForm.categoryName = this.categories()[0].name;
+				this.searchForm.categoryName = this.categories()[0].name;
 			}
 		}, error => {
 			console.log(`Error: ${error}`);
-			this.categories = [];
+			this.categories.set([]);
 			this.createForm.categoryName = '';
 			this.searchForm.categoryName = '';
 		}, () => {
@@ -215,14 +221,14 @@ export class AdminComponent implements OnInit, OnDestroy {
 
 	getTypes() {
 		this.http.get<Type[]>('/api/type').subscribe(data => {
-			if (!!data) {
-				this.types = data;
-				this.createForm.typeName = this.types[0].name;
-				this.searchForm.typeName = this.types[0].name;
+			if (data) {
+				this.types.set(data);
+				this.createForm.typeName = this.types()[0].name;
+				this.searchForm.typeName = this.types()[0].name;
 			}
 		}, error => {
 			console.log(`Error: ${error}`);
-			this.types = [];
+			this.types.set([]);
 			this.createForm.typeName = '';
 			this.searchForm.typeName = '';
 		}, () => {
@@ -255,7 +261,7 @@ export class AdminComponent implements OnInit, OnDestroy {
 		};
 	}
 
-	openCreateModal(template: TemplateRef<any>) {
+	openCreateModal(template: TemplateRef<void>) {
 		this.modalRef = this.modalService.show(template);
 	}
 
@@ -272,11 +278,11 @@ export class AdminComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	openEditModal(template: TemplateRef<any>, currentId: number) {
+	openEditModal(template: TemplateRef<void>, currentId: number) {
 		this.modalRef = this.modalService.show(template);
 		this.currentId = currentId;
-		this.editForm = JSON.parse(JSON.stringify(this.data.find(x => x.id === this.currentId)));
-		this.editIndex = this.data.findIndex(x => x.id === this.currentId);
+		this.editForm = JSON.parse(JSON.stringify(this.data().find(x => x.id === this.currentId)));
+		this.editIndex = this.data().findIndex(x => x.id === this.currentId);
 		this.editForm.description = this.productsOriginalDescription[this.editIndex];
 	}
 
@@ -294,17 +300,17 @@ export class AdminComponent implements OnInit, OnDestroy {
 	}
 
 	onCloseEdit() {
-		this.editForm.description = this.data[this.editIndex].description;
+		this.editForm.description = this.data()[this.editIndex].description;
 	}
 
-	openDeleteModal(template: TemplateRef<any>, currentId: number) {
+	openDeleteModal(template: TemplateRef<void>, currentId: number) {
 		this.modalRef = this.modalService.show(template, {class: 'modal-lg'});
 		this.currentId = currentId;
 	}
 
 	onDelete() {
-		if (this.isSelected.length === 1) {
-			this.http.delete<any>(`/api/product/${this.currentId}`).subscribe(data => {
+		if (this.isSelected().length === 1) {
+			this.http.delete<void>(`/api/product/${this.currentId}`).subscribe(() => {
 				this.getProducts();
 			}, error => {
 				console.log(`Error: ${error}`);
@@ -312,12 +318,12 @@ export class AdminComponent implements OnInit, OnDestroy {
 			});
 		} else {
 			const delProdIds: number[] = [];
-			for (let i = 0; i < this.isSelected.length; ++i) {
-				if (this.isSelected[i]) {
-					delProdIds.push(this.displayProducts[i].id);
+			for (let i = 0; i < this.isSelected().length; ++i) {
+				if (this.isSelected()[i]) {
+					delProdIds.push(this.displayProducts()[i].id);
 				}
 			}
-			this.http.request<any>('delete', `/api/product`, {body: delProdIds}).subscribe(data => {
+			this.http.request<void>('delete', `/api/product`, {body: delProdIds}).subscribe(() => {
 				this.getProducts();
 			}, error => {
 				console.log(`Error: ${error}`);
@@ -326,24 +332,25 @@ export class AdminComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	openImportExcelModal(template: TemplateRef<any>) {
+	openImportExcelModal(template: TemplateRef<void>) {
 		this.modalRef = this.modalService.show(template);
 	}
 
-	onFileChange(evt: any) {
+	onFileChange(evt: Event) {
 		/* wire up file reader */
-		const target: DataTransfer = (evt.target) as DataTransfer;
-		if (target.files.length !== 1) {
+		const target = evt.target as HTMLInputElement;
+		if (target.files === null || target.files.length !== 1) {
 			throw new Error('Cannot use multiple files');
 		}
-		if (target.files.item(0).type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-			alert(this.translateWrongExcel);
+		const file = target.files.item(0);
+		if (file === null || file.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+			alert(this.translateWrongExcel());
 			return;
 		}
 		const reader: FileReader = new FileReader();
-		reader.onload = (e: any) => {
+		reader.onload = () => {
 			/* read workbook */
-			const bstr: string = e.target.result;
+			const bstr: string = reader.result as string;
 			const wb: XLSX.WorkBook = XLSX.read(bstr, {type: 'binary'});
 
 			/* grab first sheet */
@@ -351,11 +358,11 @@ export class AdminComponent implements OnInit, OnDestroy {
 			const ws: XLSX.WorkSheet = wb.Sheets[wsname];
 
 			/* save data */
-			this.excelData = XLSX.utils.sheet_to_json(ws, {header: ['id', 'name', 'description', 'imgUrl', 'price', 'quantity', 'saleAmount', 'typeName', 'categoryName']}).slice(1);
-			if (!!this.excelData && typeof this.excelData === typeof this.data) {
-				this.onImportExcel(this.excelData as Product[]);
+			this.excelData.set(XLSX.utils.sheet_to_json<Product>(ws, {header: ['id', 'name', 'description', 'imgUrl', 'price', 'quantity', 'saleAmount', 'typeName', 'categoryName']}).slice(1));
+			if (!!this.excelData() && typeof this.excelData() === typeof this.data()) {
+				this.onImportExcel(this.excelData());
 			} else {
-				alert(this.translateWrongFormat);
+				alert(this.translateWrongFormat());
 			}
 		};
 		reader.readAsBinaryString(target.files[0]);
@@ -363,13 +370,13 @@ export class AdminComponent implements OnInit, OnDestroy {
 
 	onImportExcel(excelData: Product[]) {
 		this.http.post<Product[]>('/api/product', () => {
-			this.data.forEach(data => {
+			this.data().forEach(data => {
 				data.price = this.dataTranslateService.getPrice(data.price, 'en');
 			});
-			return this.data;
+			return this.data();
 		}).subscribe(data => {
 			if (data === excelData) {
-				alert(this.translateImportSuccessful);
+				alert(this.translateImportSuccessful());
 				this.getProducts();
 			}
 		}, error => {
@@ -381,59 +388,49 @@ export class AdminComponent implements OnInit, OnDestroy {
 	onExportExcel() {
 		/* prepare data */
 		const tempDescriptions: string[] = [];
-		this.data.forEach((data, index) => {
+		this.data().forEach((data, index) => {
 			tempDescriptions[index] = data.description;
 			data.description = this.productsOriginalDescription[index];
-			if (this.translate.currentLang !== 'en-US') {
+			if (this.translate.currentLang() !== 'en-US') {
 				data.price = this.dataTranslateService.getPrice(data.price, 'en');
 			}
 		});
 
 		/* generate worksheet */
-		const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(this.data);
+		const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(this.data());
 
 		/* generate workbook and add the worksheet */
 		const wb: XLSX.WorkBook = XLSX.utils.book_new();
-		XLSX.utils.book_append_sheet(wb, ws, `${this.translate.currentLang === 'en-US' ? 'Products' : 'Sản phẩm'}`);
+		XLSX.utils.book_append_sheet(wb, ws, `${this.translate.currentLang() === 'en-US' ? 'Products' : 'Sản phẩm'}`);
 
 		/* save to file */
-		XLSX.writeFile(wb, `${this.translate.currentLang === 'en-US' ? 'data' : 'sản_phẩm'}__${new Date().toLocaleDateString(this.translate.currentLang)}__${new Date().toLocaleTimeString(this.translate.currentLang)}.xlsx`);
+		XLSX.writeFile(wb, `${this.translate.currentLang() === 'en-US' ? 'data' : 'sản_phẩm'}__${new Date().toLocaleDateString(this.translate.currentLang() ?? 'en')}__${new Date().toLocaleTimeString(this.translate.currentLang() ?? 'en')}.xlsx`);
 
 		/* restore data state */
-		this.data.forEach((data, index) => {
+		this.data().forEach((data, index) => {
 			data.description = tempDescriptions[index];
-			if (this.translate.currentLang !== 'en-US') {
+			if (this.translate.currentLang() !== 'en-US') {
 				data.price = this.dataTranslateService.getPrice(data.price, 'vi');
 			}
 		});
 	}
 
-	onOpenImage(index: number) {
-		const album: {
-			src: string;
-			caption: string;
-			thumb: string;
-		}[] = [];
-		const src = this.displayProducts[index].imgUrl;
-		const thumb = this.displayProducts[index].imgUrl;
-		let caption = '<b>' + this.displayProducts[index].name;
+	onOpenImage(index: number, template: TemplateRef<void>) {
+		const src = this.displayProducts()[index].imgUrl;
+		let caption = '<b>' + this.displayProducts()[index].name;
 		let category = '';
 		let type = '';
-		let description: string;
-		this.translate.get('DATA.' + this.displayProducts[index].categoryName).subscribe(rs => {
-			category = rs;
+		this.translate.get('DATA.' + this.displayProducts()[index].categoryName).subscribe(rs => {
+			category = String(rs);
 		});
-		this.translate.get('DATA.' + this.displayProducts[index].typeName).subscribe(rs => {
-			type = rs;
+		this.translate.get('DATA.' + this.displayProducts()[index].typeName).subscribe(rs => {
+			type = String(rs);
 		});
-		description = this.productsOriginalDescription[this.productsOriginalDescription.findIndex(x => x.includes(this.displayProducts[index].description.substring(0, this.displayProducts[index].description.length - 3)))];
+		const description: string = this.productsOriginalDescription[this.productsOriginalDescription.findIndex(x => x.includes(this.displayProducts()[index].description.substring(0, this.displayProducts()[index].description.length - 3)))];
 		caption += '</b> - (' + category + ' - ' + type + ').<br><i>' + description + '</i>';
-		album.push({
-			src,
-			caption,
-			thumb
-		});
-		this.lightbox.open(album, 0);
+		this.lightboxSrc.set(src);
+		this.lightboxCaption.set(caption);
+		this.modalRef = this.modalService.show(template);
 	}
 
 	onSort(sortWhat: number) {
@@ -441,19 +438,19 @@ export class AdminComponent implements OnInit, OnDestroy {
 		if (this.sortFlip[sortWhat]) {
 			switch (sortWhat) {
 				case 0:
-					this.data.sort((a, b) => a.name.localeCompare(b.name, this.translate.currentLang));
+					this.data.update(products => [...products].sort((a, b) => a.name.localeCompare(b.name, this.translate.currentLang() ?? 'en')));
 					break;
 				case 1:
-					this.data.sort((a, b) => a.price - b.price);
+					this.data.update(products => [...products].sort((a, b) => a.price - b.price));
 					break;
 				case 2:
-					this.data.sort((a, b) => a.quantity - b.quantity);
+					this.data.update(products => [...products].sort((a, b) => a.quantity - b.quantity));
 					break;
 				case 3:
-					this.data.sort((a, b) => a.saleAmount - b.saleAmount);
+					this.data.update(products => [...products].sort((a, b) => a.saleAmount - b.saleAmount));
 					break;
 				case 4:
-					this.data.sort((a, b) => a.id - b.id);
+					this.data.update(products => [...products].sort((a, b) => a.id - b.id));
 					break;
 				default:
 					break;
@@ -461,19 +458,19 @@ export class AdminComponent implements OnInit, OnDestroy {
 		} else {
 			switch (sortWhat) {
 				case 0:
-					this.data.sort((a, b) => b.name.localeCompare(a.name, this.translate.currentLang));
+					this.data.update(products => [...products].sort((a, b) => b.name.localeCompare(a.name, this.translate.currentLang() ?? 'en')));
 					break;
 				case 1:
-					this.data.sort((a, b) => b.price - a.price);
+					this.data.update(products => [...products].sort((a, b) => b.price - a.price));
 					break;
 				case 2:
-					this.data.sort((a, b) => b.quantity - a.quantity);
+					this.data.update(products => [...products].sort((a, b) => b.quantity - a.quantity));
 					break;
 				case 3:
-					this.data.sort((a, b) => b.saleAmount - a.saleAmount);
+					this.data.update(products => [...products].sort((a, b) => b.saleAmount - a.saleAmount));
 					break;
 				case 4:
-					this.data.sort((a, b) => b.id - a.id);
+					this.data.update(products => [...products].sort((a, b) => b.id - a.id));
 					break;
 				default:
 					break;
@@ -487,10 +484,6 @@ export class AdminComponent implements OnInit, OnDestroy {
 	}
 
 	selectRow(index: number) {
-		this.isSelected[index] = !this.isSelected[index];
-	}
-
-	trackByFn(index, item) {
-		return index;
+		this.isSelected.update(selected => selected.map((flag, i) => i === index ? !flag : flag));
 	}
 }

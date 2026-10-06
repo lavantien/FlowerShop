@@ -1,67 +1,82 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, TemplateRef, inject, signal} from '@angular/core';
+import {FormsModule} from '@angular/forms';
 import {HttpClient} from '@angular/common/http';
+import {Router} from '@angular/router';
+import {TranslatePipe, TranslateService} from '@ngx-translate/core';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {
+	faArrowDownShortWide,
+	faArrowUpShortWide,
+	faCartPlus,
+	faDna,
+	faMagnifyingGlass
+} from '@fortawesome/free-solid-svg-icons';
 import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
+import {TooltipDirective} from 'ngx-bootstrap/tooltip';
+import {PageChangedEvent, PaginationComponent} from 'ngx-bootstrap/pagination';
+import {Subscription} from 'rxjs';
 import {DataTranslateService} from '../_services/data-translate.service';
 import {SharedService} from '../_services/shared.service';
-import {Lightbox} from 'ngx-lightbox';
-import {TranslateService} from '@ngx-translate/core';
-import {Subscription} from 'rxjs';
-import {faCartPlus, faDna, faSearch, faSortAmountDownAlt, faSortAmountUp} from '@fortawesome/free-solid-svg-icons';
 import {SessionService} from '../_services/session.service';
 import {Product} from '../_models/product';
 import {Category} from '../_models/category';
 import {Type} from '../_models/type';
-import {Router} from "@angular/router";
 
 @Component({
 	selector: 'app-store',
+	imports: [
+		FormsModule,
+		TranslatePipe,
+		FaIconComponent,
+		TooltipDirective,
+		PaginationComponent
+	],
 	templateUrl: './store.component.html',
 	styleUrls: ['./store.component.scss']
 })
 export class StoreComponent implements OnInit, OnDestroy {
-	faSearch = faSearch;
+	faMagnifyingGlass = faMagnifyingGlass;
 	faCartPlus = faCartPlus;
 	faDna = faDna;
-	faSortAmountUp = faSortAmountUp;
-	faSortAmountDownAlt = faSortAmountDownAlt;
-	modalRef: BsModalRef;
-	products: Product[] = [];
-	categories: Category[] = [];
-	types: Type[] = [];
-	bgPrimary = '';
-	tcPrimary = '';
-	pagination = {
-		totalItem: 0,
-		itemPerPage: 24,
-		currentPage: 1,
-		maxSize: 3
-	};
-	displayProducts: Product[] = [];
+	faArrowUpShortWide = faArrowUpShortWide;
+	faArrowDownShortWide = faArrowDownShortWide;
+	modalRef!: BsModalRef;
+	products = signal<Product[]>([]);
+	categories = signal<Category[]>([]);
+	types = signal<Type[]>([]);
+	bgPrimary = signal('');
+	tcPrimary = signal('');
+	totalItem = signal(0);
+	itemPerPage = signal(24);
+	currentPage = signal(1);
+	readonly maxSize = 3;
+	displayProducts = signal<Product[]>([]);
 	searchForm = {
 		name: '',
 		categoryName: '',
 		typeName: ''
 	};
-	searchResults: Product[] = [];
+	searchResults = signal<Product[]>([]);
+	lightboxSrc = signal('');
+	lightboxCaption = signal('');
 	sortFlip = false;
 	firstTimeSort = true;
-	private subscriptions = new Subscription();
 	isAdmin = false;
 	isLoggedIn = false;
 
-	constructor(private http: HttpClient,
-	            private modalService: BsModalService,
-	            private router: Router,
-	            private dataTranslateService: DataTranslateService,
-	            private sharedService: SharedService,
-	            private sessionService: SessionService,
-	            private lightbox: Lightbox,
-	            public translate: TranslateService) {
-	}
+	private readonly http = inject(HttpClient);
+	private readonly router = inject(Router);
+	private readonly modalService = inject(BsModalService);
+	private readonly dataTranslateService = inject(DataTranslateService);
+	private readonly sharedService = inject(SharedService);
+	private readonly sessionService = inject(SessionService);
+	readonly translate = inject(TranslateService);
+	private readonly subscriptions = new Subscription();
 
 	ngOnInit() {
-		this.isLoggedIn = localStorage.getItem('token') !== null && atob(localStorage.getItem('token')) !== '0+GUESS';
-		this.isAdmin = localStorage.getItem('token') !== null && atob(localStorage.getItem('token')).substring(atob(localStorage.getItem('token')).indexOf('+') + 1) === 'ADMIN';
+		const token = localStorage.getItem('token');
+		this.isLoggedIn = token !== null && atob(token) !== '0+GUESS';
+		this.isAdmin = token !== null && atob(token).substring(atob(token).indexOf('+') + 1) === 'ADMIN';
 		if (this.isAdmin) {
 			this.router.navigate(['/admin']);
 		}
@@ -72,8 +87,8 @@ export class StoreComponent implements OnInit, OnDestroy {
 		this.getCategories();
 		this.getTypes();
 		this.subscriptions.add(this.sharedService.getGlobalBackgroundPrimary().subscribe(bg => {
-			this.bgPrimary = bg[0];
-			this.tcPrimary = bg[1];
+			this.bgPrimary.set(bg[0]);
+			this.tcPrimary.set(bg[1]);
 		}));
 	}
 
@@ -83,33 +98,33 @@ export class StoreComponent implements OnInit, OnDestroy {
 
 	getProducts() {
 		this.http.get<Product[]>('/api/product').subscribe(data => {
-			if (!!data) {
-				this.products = data;
-				this.products.forEach(product => {
+			if (data) {
+				this.products.set(data);
+				this.products().forEach(product => {
 					product.imgUrl = product.imgUrl ? atob(product.imgUrl) : '';
 					product.price = this.dataTranslateService.getPrice(product.price, 'vi');
 					// TODO: Translate product name
 					// TODO: Translate product production
 				});
-				this.searchResults = data;
-				this.paging(this.searchResults);
+				this.searchResults.set(data);
+				this.paging(this.searchResults());
 			}
 		}, error => {
 			console.log(`Error: ${error}`);
-			this.products = [];
+			this.products.set([]);
 		}, () => {
 		});
 	}
 
 	getCategories() {
 		this.http.get<Category[]>('/api/category').subscribe(data => {
-			if (!!data) {
-				this.categories = data;
-				this.searchForm.categoryName = this.categories[0].name;
+			if (data) {
+				this.categories.set(data);
+				this.searchForm.categoryName = this.categories()[0].name;
 			}
 		}, error => {
 			console.log(`Error: ${error}`);
-			this.categories = [];
+			this.categories.set([]);
 			this.searchForm.categoryName = '';
 		}, () => {
 		});
@@ -117,31 +132,31 @@ export class StoreComponent implements OnInit, OnDestroy {
 
 	getTypes() {
 		this.http.get<Type[]>('/api/type').subscribe(data => {
-			if (!!data) {
-				this.types = data;
-				this.searchForm.typeName = this.types[0].name;
+			if (data) {
+				this.types.set(data);
+				this.searchForm.typeName = this.types()[0].name;
 			}
 		}, error => {
 			console.log(`Error: ${error}`);
-			this.types = [];
+			this.types.set([]);
 			this.searchForm.typeName = '';
 		}, () => {
 		});
 	}
 
 	paging(data: Product[]) {
-		this.pagination.totalItem = data.length;
-		this.displayProducts = data.slice((this.pagination.currentPage - 1) * this.pagination.itemPerPage,
-			this.pagination.currentPage * this.pagination.itemPerPage);
+		this.totalItem.set(data.length);
+		this.displayProducts.set(data.slice((this.currentPage() - 1) * this.itemPerPage(),
+			this.currentPage() * this.itemPerPage()));
 	}
 
-	onPageChanged(event: any) { // 1: 0 1 2 3   2: 4 5 6 7   3: 8 9 10 11
-		this.displayProducts = this.searchResults.slice((event.page - 1) * event.itemsPerPage, event.page * event.itemsPerPage);
+	onPageChanged(event: PageChangedEvent) { // 1: 0 1 2 3   2: 4 5 6 7   3: 8 9 10 11
+		this.displayProducts.set(this.searchResults().slice((event.page - 1) * event.itemsPerPage, event.page * event.itemsPerPage));
 	}
 
 	onSearch() {
 		const searchResults: Product[] = [];
-		this.products.forEach(product => {
+		this.products().forEach(product => {
 			if (this.searchForm.name === '' && this.searchForm.typeName === product.typeName && this.searchForm.categoryName === product.categoryName) {
 				searchResults.push(product);
 			} else if (this.searchForm.name !== '' && product.name.toLowerCase().includes(this.searchForm.name.toLowerCase())) {
@@ -149,13 +164,13 @@ export class StoreComponent implements OnInit, OnDestroy {
 			}
 		});
 		this.paging(searchResults);
-		this.searchResults = searchResults;
+		this.searchResults.set(searchResults);
 	}
 
 	onChangeCategory(mode: string) {
 		if (mode === 'search') {
 			this.searchForm.name = '';
-			this.searchForm.typeName = this.types[this.types.findIndex(x => x.categoryName === this.searchForm.categoryName)].name;
+			this.searchForm.typeName = this.types()[this.types().findIndex(x => x.categoryName === this.searchForm.categoryName)].name;
 			this.firstTimeSort = false;
 		}
 	}
@@ -165,39 +180,29 @@ export class StoreComponent implements OnInit, OnDestroy {
 		this.firstTimeSort = false;
 	}
 
-	onOpenImage(index: number) {
-		const album: {
-			src: string;
-			caption: string;
-			thumb: string;
-		}[] = [];
-		const src = this.displayProducts[index].imgUrl;
-		const thumb = this.displayProducts[index].imgUrl;
-		let caption = '<b>' + this.displayProducts[index].name;
+	onOpenImage(index: number, template: TemplateRef<void>) {
+		const src = this.displayProducts()[index].imgUrl;
+		let caption = '<b>' + this.displayProducts()[index].name;
 		let category = '';
 		let type = '';
-		let description: string;
-		this.translate.get('DATA.' + this.displayProducts[index].categoryName).subscribe(rs => {
-			category = rs;
+		this.translate.get('DATA.' + this.displayProducts()[index].categoryName).subscribe(rs => {
+			category = String(rs);
 		});
-		this.translate.get('DATA.' + this.displayProducts[index].typeName).subscribe(rs => {
-			type = rs;
+		this.translate.get('DATA.' + this.displayProducts()[index].typeName).subscribe(rs => {
+			type = String(rs);
 		});
-		description = this.displayProducts[index].description;
+		const description: string = this.displayProducts()[index].description;
 		caption += '</b> - (' + category + ' - ' + type + ').<br><i>' + description + '</i>';
-		album.push({
-			src,
-			caption,
-			thumb
-		});
-		this.lightbox.open(album, 0);
+		this.lightboxSrc.set(src);
+		this.lightboxCaption.set(caption);
+		this.modalRef = this.modalService.show(template);
 	}
 
 	onSortPrice() {
 		if (this.sortFlip) {
-			this.products.sort((a, b) => a.price - b.price);
+			this.products.update(products => [...products].sort((a, b) => a.price - b.price));
 		} else {
-			this.products.sort((a, b) => b.price - a.price);
+			this.products.update(products => [...products].sort((a, b) => b.price - a.price));
 		}
 		const prevName = this.searchForm.name;
 		this.searchForm.name = this.firstTimeSort && this.searchForm.name === '' ? ' ' : this.searchForm.name;
@@ -207,10 +212,6 @@ export class StoreComponent implements OnInit, OnDestroy {
 	}
 
 	onAddToCart(index: number) {
-		this.sessionService.updateNewlyAddedProduct(this.displayProducts[index]);
-	}
-
-	trackByFn(index, item) {
-		return index;
+		this.sessionService.updateNewlyAddedProduct(this.displayProducts()[index]);
 	}
 }

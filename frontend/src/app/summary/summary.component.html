@@ -16,25 +16,31 @@
 				</tr>
 				</thead>
 				<tbody>
-				<tr *ngFor="let product of billsRender; let i = index">
-					<th scope="row">{{i + 1}}</th>
-					<td>{{product.name}}</td>
-					<td>{{'DATA.' + product.categoryName | translate}}</td>
-					<td>{{'DATA.' + product.typeName | translate}}</td>
-					<td>{{product.price.toLocaleString(translate.currentLang)}}</td>
-					<td>{{countOfIndividualProduct[i]}}</td>
-					<td>{{totalPriceOfIndividualProduct[i].toLocaleString(translate.currentLang)}}</td>
-					<td>{{settlementDate[i]}}</td>
-					<td>{{userIds[i]}}</td>
-				</tr>
-				<tr *ngIf="billsRender.length !== 0">
-					<td colspan="6"><b>{{'ADMIN.TOTAL_PRICE' | translate}}</b></td>
-					<td><b>{{totalPriceOfAddedProduct.toLocaleString(translate.currentLang)}}</b></td>
-					<td></td>
-				</tr>
-				<tr *ngIf="billsRender.length === 0">
-					<td colspan="8"><i>{{'ADMIN.NO_PRODUCT_FOUND' | translate}}</i></td>
-				</tr>
+				@for (product of billsRender(); track $index; let i = $index) {
+					<tr>
+						<th scope="row">{{i + 1}}</th>
+						<td>{{product.name}}</td>
+						<td>{{'DATA.' + product.categoryName | translate}}</td>
+						<td>{{'DATA.' + product.typeName | translate}}</td>
+						<td>{{product.price.toLocaleString(translate.currentLang() ?? 'en')}}</td>
+						<td>{{countOfIndividualProduct()[i]}}</td>
+						<td>{{totalPriceOfIndividualProduct()[i].toLocaleString(translate.currentLang() ?? 'en')}}</td>
+						<td>{{settlementDate()[i]}}</td>
+						<td>{{userIds()[i]}}</td>
+					</tr>
+				}
+				@if (billsRender().length !== 0) {
+					<tr>
+						<td colspan="6"><b>{{'ADMIN.TOTAL_PRICE' | translate}}</b></td>
+						<td><b>{{totalPriceOfAddedProduct().toLocaleString(translate.currentLang() ?? 'en')}}</b></td>
+						<td></td>
+					</tr>
+				}
+				@if (billsRender().length === 0) {
+					<tr>
+						<td colspan="8"><i>{{'ADMIN.NO_PRODUCT_FOUND' | translate}}</i></td>
+					</tr>
+				}
 				</tbody>
 			</table>
 		</div>

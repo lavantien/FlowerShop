@@ -6,10 +6,7 @@ import {Product} from '../_models/product';
 	providedIn: 'root'
 })
 export class SessionService {
-	private newlyAddedProduct = new BehaviorSubject<Product>(null);
-
-	constructor() {
-	}
+	private newlyAddedProduct = new BehaviorSubject<Product | null>(null);
 
 	public getNewlyAddedProduct() {
 		return this.newlyAddedProduct.asObservable();

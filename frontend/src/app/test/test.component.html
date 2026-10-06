@@ -1,16 +1,18 @@
 <div class="wrapper-test">
 	<div class="container-fluid">
 		<div class="row">
-			<div *ngFor="let test of tests" class="col-sm-4">
-				<div class="card">
-					<div class="card-body">
-						<h5 class="card-title">{{test.name}}</h5>
-						<h6 class="card-subtitle mb-2 text-muted">{{test.updateDate}}</h6>
-						<p class="card-text">{{test.detail}}</p>
-						<a class="card-link" href="#">Detail</a>
+			@for (test of tests(); track $index) {
+				<div class="col-sm-4">
+					<div class="card">
+						<div class="card-body">
+							<h5 class="card-title">{{test.name}}</h5>
+							<h6 class="card-subtitle mb-2 text-muted">{{test.updateDate}}</h6>
+							<p class="card-text">{{test.detail}}</p>
+							<a class="card-link" href="#">Detail</a>
+						</div>
 					</div>
 				</div>
-			</div>
+			}
 		</div>
 	</div>
 </div>

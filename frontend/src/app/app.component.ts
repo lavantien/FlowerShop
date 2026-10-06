@@ -1,46 +1,59 @@
-import {Component, OnDestroy, OnInit, TemplateRef} from '@angular/core';
-import {TranslateService} from '@ngx-translate/core';
+import {Component, OnDestroy, OnInit, TemplateRef, inject, signal} from '@angular/core';
+import {FormsModule} from '@angular/forms';
+import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {Router, RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
+import {TranslatePipe, TranslateService} from '@ngx-translate/core';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
-	faAngleDoubleDown,
-	faAngleDoubleUp,
+	faAnglesDown,
+	faAnglesUp,
 	faArrowLeft,
 	faArrowRight,
 	faChartLine,
 	faCubes,
 	faHandshake,
+	faMagnifyingGlass,
 	faMinus,
 	faPlus,
-	faSearch,
+	faRightFromBracket,
+	faRightToBracket,
 	faShoppingCart,
-	faSignInAlt,
-	faSignOutAlt,
 	faStore,
 	faUser,
 	faWarehouse
 } from '@fortawesome/free-solid-svg-icons';
 import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
-import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {TooltipDirective} from 'ngx-bootstrap/tooltip';
+import {NgxSpinnerComponent} from 'ngx-spinner';
+import {Subscription} from 'rxjs';
 import {InputValidatorService} from './_services/input-validator.service';
 import {SharedService} from './_services/shared.service';
-import {Subscription} from 'rxjs';
 import {SessionService} from './_services/session.service';
 import {Product} from './_models/product';
-import {Router} from "@angular/router";
-import {absCeil} from "ngx-bootstrap/chronos/utils/abs-ceil";
-import {User} from "./_models/user";
-import {Bill} from "./_models/bill";
+import {User} from './_models/user';
+import {Bill} from './_models/bill';
 
 @Component({
 	selector: 'app-root',
+	imports: [
+		FormsModule,
+		RouterOutlet,
+		RouterLink,
+		RouterLinkActive,
+		TranslatePipe,
+		FaIconComponent,
+		TooltipDirective,
+		NgxSpinnerComponent
+	],
 	templateUrl: './app.component.html',
 	styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit, OnDestroy {
-	isAdmin = false;
 	isTest = false;
-	isLoggedIn = false;
-	faAngleDoubleUp = faAngleDoubleUp;
-	faAngleDoubleDown = faAngleDoubleDown;
+	isAdmin = signal(false);
+	isLoggedIn = signal(false);
+	faAnglesUp = faAnglesUp;
+	faAnglesDown = faAnglesDown;
 	faArrowLeft = faArrowLeft;
 	faArrowRight = faArrowRight;
 	faStore = faStore;
@@ -48,15 +61,15 @@ export class AppComponent implements OnInit, OnDestroy {
 	faWarehouse = faWarehouse;
 	faHandshake = faHandshake;
 	faCubes = faCubes;
-	faSearch = faSearch;
-	faSignInAlt = faSignInAlt;
-	faSignOutAlt = faSignOutAlt;
+	faMagnifyingGlass = faMagnifyingGlass;
+	faRightToBracket = faRightToBracket;
+	faRightFromBracket = faRightFromBracket;
 	faChartLine = faChartLine;
 	faShoppingCart = faShoppingCart;
 	faMinus = faMinus;
 	faPlus = faPlus;
-	modalRef: BsModalRef;
-	modalRef2: BsModalRef;
+	modalRef!: BsModalRef;
+	modalRef2!: BsModalRef;
 	loginForm = {
 		email: '',
 		password: ''
@@ -86,71 +99,72 @@ export class AppComponent implements OnInit, OnDestroy {
 		district: 'Bình Thạnh',
 		city: 'Hồ Chí Minh'
 	};
-	cities: City[] = [];
-	districts: District[] = [];
-	bgPrimary = '';
-	tcPrimary = '';
+	cities = signal<City[]>([]);
+	districts = signal<District[]>([]);
+	bgPrimary = signal('');
+	tcPrimary = signal('');
 	displayBg = 'LIGHT';
 	displayBgs = ['LIGHT', 'BLUE', 'GRAY', 'GREEN', 'RED', 'YELLOW', 'TEAL', 'BLACK', 'WHITE', 'TRANS'];
 	bgs = ['bg-light', 'bg-primary', 'bg-secondary', 'bg-success', 'bg-danger', 'bg-warning', 'bg-info', 'bg-dark', 'bg-white', 'bg-transparent'];
 	tcs = ['text-dark', 'text-white', 'text-white', 'text-white', 'text-white', 'text-dark', 'text-white', 'text-white', 'text-dark', 'text-dark'];
-	countOfIndividualProduct: number[] = [];
-	totalPriceOfIndividualProduct: number[] = [];
-	addedProducts: Product[] = [];
-	countAddedProduct = 0;
-	totalPriceOfAddedProduct = 0;
+	addedProducts = signal<Product[]>([]);
+	countOfIndividualProduct = signal<number[]>([]);
+	totalPriceOfIndividualProduct = signal<number[]>([]);
+	countAddedProduct = signal(0);
+	totalPriceOfAddedProduct = signal(0);
 	wrongLogin = false;
 	wrongCreate = false;
 	wrongForgot = false;
-	private subscriptions = new Subscription();
-	translate_CREATE_USER_SUCCESSFUL = '';
-	translate_RESET_PASSWORD_FAILED = '';
-	translate_RESET_PASSWORD_SUCCESSFUL = '';
-	translate_ORDER_SUCCESSFUL = '';
+	translate_CREATE_USER_SUCCESSFUL = signal('');
+	translate_RESET_PASSWORD_FAILED = signal('');
+	translate_RESET_PASSWORD_SUCCESSFUL = signal('');
+	translate_ORDER_SUCCESSFUL = signal('');
 
-	constructor(private http: HttpClient,
-	            private router: Router,
-	            private modalService: BsModalService,
-	            private inputValidator: InputValidatorService,
-	            private sharedService: SharedService,
-	            private sessionService: SessionService,
-	            public translate: TranslateService) {
-		translate.addLangs(['en', 'vi']);
-		translate.setDefaultLang('en');
-		const browserLang = translate.getBrowserLang();
-		translate.use(browserLang.match(/en|vi/) ? browserLang : 'en');
+	private readonly http = inject(HttpClient);
+	private readonly router = inject(Router);
+	private readonly modalService = inject(BsModalService);
+	private readonly inputValidator = inject(InputValidatorService);
+	private readonly sharedService = inject(SharedService);
+	private readonly sessionService = inject(SessionService);
+	readonly translate = inject(TranslateService);
+	private readonly subscriptions = new Subscription();
+
+	constructor() {
+		this.translate.addLangs(['en', 'vi']);
+		const browserLang = this.translate.getBrowserLang() ?? 'en';
+		this.translate.use(browserLang.match(/en|vi/) ? browserLang : 'en');
 		this.subscriptions.add(this.sharedService.getGlobalBackgroundPrimary().subscribe(bg => {
-			this.bgPrimary = bg[0];
-			this.tcPrimary = bg[1];
+			this.bgPrimary.set(bg[0]);
+			this.tcPrimary.set(bg[1]);
 		}));
 		this.subscriptions.add(this.sessionService.getNewlyAddedProduct().subscribe(product => {
-			if (!!product) {
-				const prodIndex = this.addedProducts.findIndex(x => x.id === product.id);
+			if (product) {
+				const prodIndex = this.addedProducts().findIndex(x => x.id === product.id);
 				if (prodIndex === -1) {
-					this.addedProducts.push(product);
-					this.countOfIndividualProduct.push(1);
-					this.totalPriceOfIndividualProduct.push(product.price);
-					++this.countAddedProduct;
+					this.addedProducts.update(products => [...products, product]);
+					this.countOfIndividualProduct.update(counts => [...counts, 1]);
+					this.totalPriceOfIndividualProduct.update(prices => [...prices, product.price]);
+					this.countAddedProduct.update(count => count + 1);
 				} else {
-					++this.countOfIndividualProduct[prodIndex];
-					this.totalPriceOfIndividualProduct[prodIndex] += product.price;
+					this.countOfIndividualProduct.update(counts => counts.map((count, i) => i === prodIndex ? count + 1 : count));
+					this.totalPriceOfIndividualProduct.update(prices => prices.map((price, i) => i === prodIndex ? price + product.price : price));
 				}
-				this.totalPriceOfAddedProduct += product.price;
+				this.totalPriceOfAddedProduct.update(total => total + product.price);
 			} else {
-				this.countAddedProduct = 0;
+				this.countAddedProduct.set(0);
 			}
 		}));
 		this.subscriptions.add(this.translate.stream('ALERT.CREATE_USER_SUCCESSFUL').subscribe(rs => {
-			this.translate_CREATE_USER_SUCCESSFUL = rs;
+			this.translate_CREATE_USER_SUCCESSFUL.set(rs);
 		}));
 		this.subscriptions.add(this.translate.stream('ALERT.RESET_PASSWORD_FAILED').subscribe(rs => {
-			this.translate_RESET_PASSWORD_FAILED = rs;
+			this.translate_RESET_PASSWORD_FAILED.set(rs);
 		}));
 		this.subscriptions.add(this.translate.stream('ALERT.RESET_PASSWORD_SUCCESSFUL').subscribe(rs => {
-			this.translate_RESET_PASSWORD_SUCCESSFUL = rs;
+			this.translate_RESET_PASSWORD_SUCCESSFUL.set(rs);
 		}));
 		this.subscriptions.add(this.translate.stream('ALERT.ORDER_SUCCESSFUL').subscribe(rs => {
-			this.translate_ORDER_SUCCESSFUL = rs;
+			this.translate_ORDER_SUCCESSFUL.set(rs);
 		}));
 		if (!localStorage.getItem('token')) {
 			localStorage.setItem('token', btoa('0+GUESS'));
@@ -162,9 +176,10 @@ export class AppComponent implements OnInit, OnDestroy {
 	ngOnInit() {
 		this.getCities();
 		this.getDistricts();
-		this.isLoggedIn = localStorage.getItem('token') !== null && atob(localStorage.getItem('token')) !== '0+GUESS';
-		this.isAdmin = localStorage.getItem('token') !== null && atob(localStorage.getItem('token')).substring(atob(localStorage.getItem('token')).indexOf('+') + 1) === 'ADMIN';
-		if (this.isAdmin) {
+		const token = localStorage.getItem('token');
+		this.isLoggedIn.set(token !== null && atob(token) !== '0+GUESS');
+		this.isAdmin.set(token !== null && atob(token).substring(atob(token).indexOf('+') + 1) === 'ADMIN');
+		if (this.isAdmin()) {
 			this.router.navigate(['/admin']);
 		}
 	}
@@ -175,13 +190,13 @@ export class AppComponent implements OnInit, OnDestroy {
 
 	getCities() {
 		this.http.get<City[]>('../assets/data/cities.json').subscribe(data => {
-			if (!!data) {
-				this.cities = data;
-				this.signUpForm.city = this.cities[0].name;
+			if (data) {
+				this.cities.set(data);
+				this.signUpForm.city = this.cities()[0].name;
 			}
 		}, error => {
 			console.log(`Error: ${error}`);
-			this.cities = [];
+			this.cities.set([]);
 			this.signUpForm.city = '';
 		}, () => {
 		});
@@ -189,13 +204,13 @@ export class AppComponent implements OnInit, OnDestroy {
 
 	getDistricts() {
 		this.http.get<District[]>('../assets/data/districts.json').subscribe(data => {
-			if (!!data) {
-				this.districts = data;
-				this.signUpForm.district = this.districts[0].name;
+			if (data) {
+				this.districts.set(data);
+				this.signUpForm.district = this.districts()[0].name;
 			}
 		}, error => {
 			console.log(`Error: ${error}`);
-			this.districts = [];
+			this.districts.set([]);
 			this.signUpForm.district = '';
 		}, () => {
 		});
@@ -205,7 +220,7 @@ export class AppComponent implements OnInit, OnDestroy {
 		this.sharedService.updateGlobalBackgroundPrimary([this.bgs[this.displayBgs.findIndex(x => x === this.displayBg)], this.tcs[this.displayBgs.findIndex(x => x === this.displayBg)]]);
 	}
 
-	openLoginModal(template: TemplateRef<any>) {
+	openLoginModal(template: TemplateRef<void>) {
 		this.modalRef = this.modalService.show(template);
 	}
 
@@ -223,8 +238,9 @@ export class AppComponent implements OnInit, OnDestroy {
 			localStorage.setItem('phone', rs.phone);
 			localStorage.removeItem('detailAddress');
 			localStorage.setItem('detailAddress', rs.detailAddress);
-			this.isLoggedIn = true;
-			this.isAdmin = localStorage.getItem('token') !== null && atob(localStorage.getItem('token')).substring(atob(localStorage.getItem('token')).indexOf('+') + 1) === 'ADMIN';
+			this.isLoggedIn.set(true);
+			const token = localStorage.getItem('token');
+			this.isAdmin.set(token !== null && atob(token).substring(atob(token).indexOf('+') + 1) === 'ADMIN');
 		}, error => {
 			console.log(`Error: ${error}`);
 		}, () => {
@@ -233,10 +249,10 @@ export class AppComponent implements OnInit, OnDestroy {
 	}
 
 	onLogout() {
-		let tokenDto: TokenDto = {
-			token: localStorage.getItem('token'),
-			phone: localStorage.getItem('phone'),
-			detailAddress: localStorage.getItem('detailAddress')
+		const tokenDto: TokenDto = {
+			token: localStorage.getItem('token') ?? '',
+			phone: localStorage.getItem('phone') ?? '',
+			detailAddress: localStorage.getItem('detailAddress') ?? ''
 		};
 		this.http.post<TokenDto>('/api/user/logout', tokenDto).subscribe((rs) => {
 			localStorage.removeItem('token');
@@ -245,8 +261,8 @@ export class AppComponent implements OnInit, OnDestroy {
 			localStorage.setItem('phone', rs.phone);
 			localStorage.removeItem('detailAddress');
 			localStorage.setItem('detailAddress', rs.detailAddress);
-			this.isLoggedIn = false;
-			this.isAdmin = false;
+			this.isLoggedIn.set(false);
+			this.isAdmin.set(false);
 			this.router.navigate(['/shop']);
 		}, error => {
 			console.log(`Error: ${error}`);
@@ -254,7 +270,7 @@ export class AppComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	openSignUpModal(template: TemplateRef<any>) {
+	openSignUpModal(template: TemplateRef<void>) {
 		this.modalRef2 = this.modalService.show(template);
 	}
 
@@ -266,7 +282,7 @@ export class AppComponent implements OnInit, OnDestroy {
 		}
 		this.wrongCreate = false;
 		this.http.post<User>('/api/user/create', this.signUpForm).subscribe(() => {
-			alert(this.translate_CREATE_USER_SUCCESSFUL);
+			alert(this.translate_CREATE_USER_SUCCESSFUL());
 			this.loginForm.email = this.signUpForm.email;
 			this.loginForm.password = this.signUpForm.password;
 			this.onLogin();
@@ -277,7 +293,7 @@ export class AppComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	openForgotPasswordModal(template: TemplateRef<any>) {
+	openForgotPasswordModal(template: TemplateRef<void>) {
 		this.modalRef2 = this.modalService.show(template);
 	}
 
@@ -293,9 +309,9 @@ export class AppComponent implements OnInit, OnDestroy {
 		this.forgotPasswordForm.rePassword = btoa(this.forgotPasswordForm.rePassword);
 		this.http.post<TokenDto>('/api/user/resetPassword', this.forgotPasswordForm).subscribe((rs) => {
 			if (atob(rs.token) === '0+GUESS') {
-				alert(this.translate_RESET_PASSWORD_FAILED);
+				alert(this.translate_RESET_PASSWORD_FAILED());
 			} else {
-				alert(this.translate_RESET_PASSWORD_SUCCESSFUL);
+				alert(this.translate_RESET_PASSWORD_SUCCESSFUL());
 				this.loginForm.email = this.forgotPasswordForm.email;
 				this.loginForm.password = atob(this.forgotPasswordForm.password);
 				this.onLogin();
@@ -307,11 +323,11 @@ export class AppComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	openCartModal(template: TemplateRef<any>) {
-		this.cartForm.phone = localStorage.getItem('phone');
-		let detailAddress = localStorage.getItem('detailAddress');
-		let endAddress = detailAddress.indexOf(', ');
-		let endDistrict = detailAddress.lastIndexOf(', ');
+	openCartModal(template: TemplateRef<void>) {
+		this.cartForm.phone = localStorage.getItem('phone') ?? '';
+		const detailAddress = localStorage.getItem('detailAddress') ?? '';
+		const endAddress = detailAddress.indexOf(', ');
+		const endDistrict = detailAddress.lastIndexOf(', ');
 		this.cartForm.address = detailAddress.substring(0, endAddress);
 		this.cartForm.district = detailAddress.substring(endAddress + 2, endDistrict);
 		this.cartForm.city = detailAddress.substring(endDistrict + 2);
@@ -320,42 +336,43 @@ export class AppComponent implements OnInit, OnDestroy {
 
 	cancelAndDecreaseItem(index: number) {
 		if (index === -1) {
-			this.totalPriceOfAddedProduct = 0;
-			this.countAddedProduct = 0;
-			this.addedProducts.length = 0;
-			this.countOfIndividualProduct.length = 0;
-			this.totalPriceOfIndividualProduct.length = 0;
+			this.totalPriceOfAddedProduct.set(0);
+			this.countAddedProduct.set(0);
+			this.addedProducts.set([]);
+			this.countOfIndividualProduct.set([]);
+			this.totalPriceOfIndividualProduct.set([]);
 			return;
 		}
-		this.totalPriceOfAddedProduct -= this.addedProducts[index].price;
-		if (this.countOfIndividualProduct[index] === 1) {
-			this.addedProducts.splice(index, 1);
-			this.countOfIndividualProduct.splice(index, 1);
-			this.totalPriceOfIndividualProduct.splice(index, 1);
-			--this.countAddedProduct;
+		this.totalPriceOfAddedProduct.update(total => total - this.addedProducts()[index].price);
+		if (this.countOfIndividualProduct()[index] === 1) {
+			this.addedProducts.update(products => products.filter((product, i) => i !== index));
+			this.countOfIndividualProduct.update(counts => counts.filter((count, i) => i !== index));
+			this.totalPriceOfIndividualProduct.update(prices => prices.filter((price, i) => i !== index));
+			this.countAddedProduct.update(count => count - 1);
 		} else {
-			--this.countOfIndividualProduct[index];
-			this.totalPriceOfIndividualProduct[index] -= this.addedProducts[index].price;
+			this.countOfIndividualProduct.update(counts => counts.map((count, i) => i === index ? count - 1 : count));
+			this.totalPriceOfIndividualProduct.update(prices => prices.map((price, i) => i === index ? price - this.addedProducts()[index].price : price));
 		}
 	}
 
 	increaseItem(index: number) {
-		++this.countOfIndividualProduct[index];
-		this.totalPriceOfIndividualProduct[index] += this.addedProducts[index].price;
-		this.totalPriceOfAddedProduct += this.addedProducts[index].price;
+		this.countOfIndividualProduct.update(counts => counts.map((count, i) => i === index ? count + 1 : count));
+		this.totalPriceOfIndividualProduct.update(prices => prices.map((price, i) => i === index ? price + this.addedProducts()[index].price : price));
+		this.totalPriceOfAddedProduct.update(total => total + this.addedProducts()[index].price);
 	}
 
 	onSettle() {
-		let bills: Bill[] = [];
-		let today = new Date();
-		let todayStr = today.getUTCFullYear() + '-' + today.getUTCMonth() + '-' + today.getUTCDate() + ', ' + today.getUTCHours() + ':' + today.getUTCMinutes() + ':' + today.getUTCSeconds();
-		let userId = parseInt(atob(localStorage.getItem('token')).substr(0, 1));
-		for (let i = 0; i < this.addedProducts.length; ++i) {
-			let bill: Bill = {
+		const bills: Bill[] = [];
+		const today = new Date();
+		const todayStr = today.getUTCFullYear() + '-' + today.getUTCMonth() + '-' + today.getUTCDate() + ', ' + today.getUTCHours() + ':' + today.getUTCMinutes() + ':' + today.getUTCSeconds();
+		const token = localStorage.getItem('token') ?? '';
+		const userId = token !== '' ? parseInt(atob(token).substr(0, 1)) : 0;
+		for (let i = 0; i < this.addedProducts().length; ++i) {
+			const bill: Bill = {
 				placementDate: todayStr,
-				productId: this.addedProducts[i].id,
-				productQuantity: this.countOfIndividualProduct[i],
-				price: Math.ceil(this.totalPriceOfIndividualProduct[i]),
+				productId: this.addedProducts()[i].id,
+				productQuantity: this.countOfIndividualProduct()[i],
+				price: Math.ceil(this.totalPriceOfIndividualProduct()[i]),
 				userId: userId,
 				settlementDate: todayStr,
 				status: 'SUCCESS',
@@ -365,7 +382,7 @@ export class AppComponent implements OnInit, OnDestroy {
 			bills.push(bill);
 		}
 		this.http.post<Bill[]>('/api/bill', bills).subscribe(() => {
-			alert(this.translate_ORDER_SUCCESSFUL);
+			alert(this.translate_ORDER_SUCCESSFUL());
 		}, error => {
 			console.log(`Error: ${error}`);
 		}, () => {
