@@ -16,6 +16,13 @@
 				margin-bottom: 0;
 				height: 43px;
 
+				// Four toolbar buttons must share one col-2 line; default Bootstrap 5
+				// padding makes them a few px too wide and wraps the export button.
+				.btn {
+					padding-left: 0.45rem;
+					padding-right: 0.45rem;
+				}
+
 				.btn-create {
 					margin-left: 10px;
 				}
