@@ -1,11 +1,10 @@
 package com.lavantien.flowershop.api.product;
 
+import com.lavantien.flowershop.service.ProductService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,9 +12,11 @@ import java.util.Optional;
 @RequestMapping("/api/product")
 public class ProductController {
 	private ProductRepository productRepository;
+	private ProductService productService;
 
-	public ProductController(ProductRepository productRepository) {
+	public ProductController(ProductRepository productRepository, ProductService productService) {
 		this.productRepository = productRepository;
+		this.productService = productService;
 	}
 
 	@GetMapping
@@ -24,28 +25,14 @@ public class ProductController {
 	}
 
 	@PostMapping
-	@Transactional
 	public ResponseEntity<List<Product>> createMany(@RequestBody List<Product> products) {
-		List<Product> saved = new ArrayList<>(products.size());
-		for (Product product : products) {
-			if (product.getId() == null) {
-				saved.add(productRepository.save(product));
-				continue;
-			}
-			if (productRepository.existsById(product.getId())) {
-				saved.add(productRepository.save(product));
-				continue;
-			}
-			try {
-				productRepository.insertWithId(product);
-			} catch (DataIntegrityViolationException raced) {
-				// A concurrent request inserted the same id first: update it, as the old merge path did.
-				saved.add(productRepository.save(product));
-				continue;
-			}
-			saved.add(productRepository.findById(product.getId()).orElse(product));
+		try {
+			return ResponseEntity.ok(productService.upsertAll(products));
+		} catch (DataIntegrityViolationException raced) {
+			// A concurrent request inserted the same id first and poisoned this
+			// transaction: retry the whole payload in a fresh one, as updates.
+			return ResponseEntity.ok(productService.upsertAll(products));
 		}
-		return ResponseEntity.ok(saved);
 	}
 
 	@DeleteMapping
