@@ -1,0 +1,19 @@
+services:
+  mysql:
+    image: mysql:8.4.11
+    container_name: flowershop-mysql
+    environment:
+      MYSQL_DATABASE: flowershop
+      MYSQL_ROOT_PASSWORD: flowershop
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pflowershop"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - flowershop-mysql-data:/var/lib/mysql
+
+volumes:
+  flowershop-mysql-data:
