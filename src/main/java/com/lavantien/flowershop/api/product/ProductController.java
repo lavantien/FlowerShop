@@ -1,8 +1,10 @@
 package com.lavantien.flowershop.api.product;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,8 +23,20 @@ public class ProductController {
 	}
 
 	@PostMapping
-	public ResponseEntity<List<Product>> createMany(@RequestBody List<Product> categories) {
-		return ResponseEntity.ok(productRepository.saveAll(categories));
+	@Transactional
+	public ResponseEntity<List<Product>> createMany(@RequestBody List<Product> products) {
+		List<Product> saved = new ArrayList<>(products.size());
+		for (Product product : products) {
+			if (product.getId() != null && productRepository.existsById(product.getId())) {
+				saved.add(productRepository.save(product));
+			} else if (product.getId() != null) {
+				productRepository.insertWithId(product);
+				saved.add(productRepository.findById(product.getId()).orElse(product));
+			} else {
+				saved.add(productRepository.save(product));
+			}
+		}
+		return ResponseEntity.ok(saved);
 	}
 
 	@DeleteMapping
