@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.product;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -27,14 +28,22 @@ public class ProductController {
 	public ResponseEntity<List<Product>> createMany(@RequestBody List<Product> products) {
 		List<Product> saved = new ArrayList<>(products.size());
 		for (Product product : products) {
-			if (product.getId() != null && productRepository.existsById(product.getId())) {
+			if (product.getId() == null) {
 				saved.add(productRepository.save(product));
-			} else if (product.getId() != null) {
-				productRepository.insertWithId(product);
-				saved.add(productRepository.findById(product.getId()).orElse(product));
-			} else {
-				saved.add(productRepository.save(product));
+				continue;
 			}
+			if (productRepository.existsById(product.getId())) {
+				saved.add(productRepository.save(product));
+				continue;
+			}
+			try {
+				productRepository.insertWithId(product);
+			} catch (DataIntegrityViolationException raced) {
+				// A concurrent request inserted the same id first: update it, as the old merge path did.
+				saved.add(productRepository.save(product));
+				continue;
+			}
+			saved.add(productRepository.findById(product.getId()).orElse(product));
 		}
 		return ResponseEntity.ok(saved);
 	}
