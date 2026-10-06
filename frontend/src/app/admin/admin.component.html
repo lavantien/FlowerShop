@@ -1,12 +1,12 @@
 <div class="admin-wrapper table-responsive">
 	<div class="wrapper-filter">
-		<div class="product-filter form-row">
-			<div class="form-group col-2">
+		<div class="product-filter row">
+			<div class="mb-3 col-2">
 				<input (keyup.enter)="onSearch()" [(ngModel)]="searchForm.name" class="form-control"
 				       placeholder="{{'ADMIN.PRODUCT_NAME' | translate}}"
 				       type="text">
 			</div>
-			<div class="form-group col-2">
+			<div class="mb-3 col-2">
 				<select (change)="onChangeCategory('search'); onSearch()" [(ngModel)]="searchForm.categoryName"
 				        class="form-control">
 					@for (category of categories(); track category.name) {
@@ -14,7 +14,7 @@
 					}
 				</select>
 			</div>
-			<div class="form-group col-2">
+			<div class="mb-3 col-2">
 				<select (change)="onChangeTypeSearch(); onSearch()" [(ngModel)]="searchForm.typeName" class="form-control">
 					@for (type of types(); track type.name) {
 						@if (type.categoryName === searchForm.categoryName) {
@@ -23,7 +23,7 @@
 					}
 				</select>
 			</div>
-			<div class="form-group col-2">
+			<div class="mb-3 col-2">
 				<button (click)="onSearch()" class="btn btn-dark" placement="bottom"
 				        tooltip="{{'ADMIN.SEARCH_ADVANCED' | translate}}">
 					<fa-icon [icon]="faMagnifyingGlass"></fa-icon>
@@ -41,7 +41,7 @@
 					<fa-icon [icon]="faFileArrowDown"></fa-icon>
 				</button>
 			</div>
-			<div class="form-group col-3">
+			<div class="mb-3 col-3">
 				<pagination (pageChanged)="onPageChanged($event)"
 				            [(ngModel)]="currentPage"
 				            [boundaryLinks]="true"
@@ -49,13 +49,13 @@
 				            [maxSize]="maxSize"
 				            [pageBtnClass]="'pagination-style'"
 				            [totalItems]="totalItem()"
-				            class="float-right" firstText="&laquo;" lastText="&raquo;" nextText="&rsaquo;"
+				            class="float-end" firstText="&laquo;" lastText="&raquo;" nextText="&rsaquo;"
 				            previousText="&lsaquo;">
 				</pagination>
 			</div>
-			<div class="form-group col-1">
+			<div class="mb-3 col-1">
 				<select (change)="paging(searchResults())" [(ngModel)]="itemPerPage"
-				        class="btn btn-outline-dark float-right" placement="bottom"
+				        class="btn btn-outline-dark float-end" placement="bottom"
 				        tooltip="{{'ADMIN.ITEMS_PER_PAGE' | translate}}">
 					@for (val of [5, 10, 20, 50, 100, 200, 500, 1000]; track $index; let i = $index) {
 						<option [selected]="i === 0" [value]="val">{{val}}</option>
@@ -161,50 +161,48 @@
 
 <ng-template #createTemplate>
 	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
-		<h4 class="modal-title pull-left">{{'ADMIN.CREATE_PRODUCT' | translate}}</h4>
-		<button (click)="modalRef.hide()" class="close pull-right">
-			<span aria-hidden="true" class="{{tcPrimary()}}">&times;</span>
-		</button>
+		<h4 class="modal-title float-start">{{'ADMIN.CREATE_PRODUCT' | translate}}</h4>
+		<button (click)="modalRef.hide()" class="btn-close float-end" type="button" aria-label="Close"></button>
 	</div>
 	<div class="modal-body">
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputName"><b>{{'ADMIN.NAME' | translate}}</b></label>
 			<div class="col-sm-9">
 				<input [(ngModel)]="createForm.name" class="form-control" id="inputName" type="text">
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputDescription"><b>{{'ADMIN.DESCRIPTION' | translate}}</b></label>
 			<div class="col-sm-9">
 				<textarea [(ngModel)]="createForm.description" class="form-control" id="inputDescription"
 				          rows="3"></textarea>
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputPrice"><b>{{'ADMIN.PRICE' | translate}}</b></label>
 			<div class="col-sm-9">
 				<input [(ngModel)]="createForm.price" class="form-control" id="inputPrice" type="text">
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputImage"><b>{{'ADMIN.IMAGE' | translate}}</b></label>
 			<div class="col-sm-9">
 				<input [(ngModel)]="createForm.imgUrl" class="form-control" id="inputImage" type="text">
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputQuantity"><b>{{'ADMIN.QUANTITY' | translate}}</b></label>
 			<div class="col-sm-9">
 				<input [(ngModel)]="createForm.quantity" class="form-control" id="inputQuantity" type="number">
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputSaleAmount"><b>{{'ADMIN.SALE_AMOUNT' | translate}}</b></label>
 			<div class="col-sm-9">
 				<input [(ngModel)]="createForm.saleAmount" class="form-control" id="inputSaleAmount" type="number">
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputCategory"><b>{{'ADMIN.CATEGORY' | translate}}</b></label>
 			<div class="col-sm-9">
 				<select (change)="onChangeCategory('craeto')" [(ngModel)]="createForm.categoryName" class="form-control"
@@ -215,7 +213,7 @@
 				</select>
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputType"><b>{{'ADMIN.TYPE' | translate}}</b></label>
 			<div class="col-sm-9">
 				<select [(ngModel)]="createForm.typeName" class="form-control" id="inputType">
@@ -229,57 +227,55 @@
 		</div>
 	</div>
 	<div class="modal-footer bg-light">
-		<button (click)="onCreate()" class="btn btn-success pull-right">{{'ADMIN.SAVE' | translate}}</button>
-		<button (click)="onRefreshCreateForm()" class="btn btn-dark pull-right">{{'ADMIN.REFRESH' | translate}}</button>
+		<button (click)="onCreate()" class="btn btn-success float-end">{{'ADMIN.SAVE' | translate}}</button>
+		<button (click)="onRefreshCreateForm()" class="btn btn-dark float-end">{{'ADMIN.REFRESH' | translate}}</button>
 	</div>
 </ng-template>
 
 <ng-template #editTemplate>
 	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
-		<h4 class="modal-title pull-left">{{'ADMIN.EDIT_PRODUCT' | translate}}</h4>
-		<button (click)="modalRef.hide(); onCloseEdit()" class="close pull-right">
-			<span aria-hidden="true" class="{{tcPrimary()}}">&times;</span>
-		</button>
+		<h4 class="modal-title float-start">{{'ADMIN.EDIT_PRODUCT' | translate}}</h4>
+		<button (click)="modalRef.hide(); onCloseEdit()" class="btn-close float-end" type="button" aria-label="Close"></button>
 	</div>
 	<div class="modal-body">
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputNameE"><b>{{'ADMIN.NAME' | translate}}</b></label>
 			<div class="col-sm-9">
 				<input [(ngModel)]="editForm.name" class="form-control" id="inputNameE" type="text">
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputDescriptionE"><b>{{'ADMIN.DESCRIPTION' | translate}}</b></label>
 			<div class="col-sm-9">
 				<textarea [(ngModel)]="editForm.description" class="form-control" id="inputDescriptionE"
 				          rows="3"></textarea>
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputPriceE"><b>{{'ADMIN.PRICE' | translate}}</b></label>
 			<div class="col-sm-9">
 				<input [(ngModel)]="editForm.price" class="form-control" id="inputPriceE" type="text">
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputImageE"><b>{{'ADMIN.IMAGE' | translate}}</b></label>
 			<div class="col-sm-9">
 				<input [(ngModel)]="editForm.imgUrl" class="form-control" id="inputImageE" type="text">
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputQuantityE"><b>{{'ADMIN.QUANTITY' | translate}}</b></label>
 			<div class="col-sm-9">
 				<input [(ngModel)]="editForm.quantity" class="form-control" id="inputQuantityE" type="number">
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputSaleAmountE"><b>{{'ADMIN.SALE_AMOUNT' | translate}}</b></label>
 			<div class="col-sm-9">
 				<input [(ngModel)]="editForm.saleAmount" class="form-control" id="inputSaleAmountE" type="number">
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputCategoryE"><b>{{'ADMIN.CATEGORY' | translate}}</b></label>
 			<div class="col-sm-9">
 				<select (change)="onChangeCategory('edit')" [(ngModel)]="editForm.categoryName" class="form-control"
@@ -290,7 +286,7 @@
 				</select>
 			</div>
 		</div>
-		<div class="form-group row">
+		<div class="mb-3 row">
 			<label class="col-sm-3 col-form-label" for="inputTypeE"><b>{{'ADMIN.TYPE' | translate}}</b></label>
 			<div class="col-sm-9">
 				<select [(ngModel)]="editForm.typeName" class="form-control" id="inputTypeE">
@@ -304,17 +300,15 @@
 		</div>
 	</div>
 	<div class="modal-footer bg-light">
-		<button (click)="onEdit()" class="btn btn-success pull-right">{{'ADMIN.SAVE' | translate}}</button>
-		<button (click)="onRefreshEditForm()" class="btn btn-dark pull-right">{{'ADMIN.REFRESH' | translate}}</button>
+		<button (click)="onEdit()" class="btn btn-success float-end">{{'ADMIN.SAVE' | translate}}</button>
+		<button (click)="onRefreshEditForm()" class="btn btn-dark float-end">{{'ADMIN.REFRESH' | translate}}</button>
 	</div>
 </ng-template>
 
 <ng-template #deleteTemplate>
 	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
-		<h4 class="modal-title pull-left">{{'ADMIN.DELETE_PRODUCT' | translate}}?</h4>
-		<button (click)="modalRef.hide()" class="close pull-right">
-			<span aria-hidden="true" class="{{tcPrimary()}}">&times;</span>
-		</button>
+		<h4 class="modal-title float-start">{{'ADMIN.DELETE_PRODUCT' | translate}}?</h4>
+		<button (click)="modalRef.hide()" class="btn-close float-end" type="button" aria-label="Close"></button>
 	</div>
 	<div class="modal-body table-responsive wrapper-delete-table">
 		<table class="table table-bordered table-striped table-sm">
@@ -347,7 +341,7 @@
 		</table>
 	</div>
 	<div class="modal-footer bg-light">
-		<button (click)="onDelete()" class="btn btn-danger pull-right" placement="bottom"
+		<button (click)="onDelete()" class="btn btn-danger float-end" placement="bottom"
 		        tooltip="{{'ADMIN.DELETE_PRODUCT' | translate}}">
 			<fa-icon [icon]="faTrash"></fa-icon>
 		</button>
@@ -356,27 +350,18 @@
 
 <ng-template #importExcelTemplate>
 	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
-		<h4 class="modal-title pull-left">{{'ADMIN.IMPORT_EXCEL' | translate}}</h4>
-		<button (click)="modalRef.hide()" class="close pull-right">
-			<span aria-hidden="true" class="{{tcPrimary()}}">&times;</span>
-		</button>
+		<h4 class="modal-title float-start">{{'ADMIN.IMPORT_EXCEL' | translate}}</h4>
+		<button (click)="modalRef.hide()" class="btn-close float-end" type="button" aria-label="Close"></button>
 	</div>
 	<div class="modal-body">
-		<div class="input-group mb-3">
-			<div class="input-group-prepend">
-				<span class="input-group-text" id="inputGroupFileAddon">{{'ADMIN.BROWSE_EXCEL' | translate}}</span>
-			</div>
-			<div class="custom-file">
-				<input (change)="onFileChange($event)" aria-describedby="inputGroupFileAddon" class="custom-file-input"
-				       id="inputGroupFile"
-				       type="file">
-				<label class="custom-file-label" for="inputGroupFile">{{'ADMIN.IMPORT_EXCEL' | translate}}</label>
-			</div>
+		<div class="mb-3">
+			<label class="form-label" for="inputGroupFile">{{'ADMIN.BROWSE_EXCEL' | translate}}</label>
+			<input (change)="onFileChange($event)" class="form-control" id="inputGroupFile" type="file">
 		</div>
 		<span><i>{{'ADMIN.IMPORT_EXCEL_NOTE' | translate}}</i></span>
 	</div>
 	<div class="modal-footer bg-light">
 		<button (click)="onImportExcel(excelData())"
-		        class="btn btn-success pull-right">{{'ADMIN.IMPORT_BUTTON' | translate}}</button>
+		        class="btn btn-success float-end">{{'ADMIN.IMPORT_BUTTON' | translate}}</button>
 	</div>
 </ng-template>
