@@ -10,6 +10,12 @@ NPM := npm
 FRONTEND := frontend
 DB_USER := root
 DB_PASS := flowershop
+DB_HOST := localhost
+DB_PORT := 3306
+export LOCAL_MYSQL_DB_HOST := $(DB_HOST)
+export LOCAL_MYSQL_DB_PORT := $(DB_PORT)
+export LOCAL_MYSQL_DB_USERNAME := $(DB_USER)
+export LOCAL_MYSQL_DB_PASSWORD := $(DB_PASS)
 
 .DEFAULT_GOAL := help
 .PHONY: help env db-up db-down db-nuke db-seed frontend-install frontend-build frontend-lint frontend-test frontend-serve backend-test build package run audit clean
@@ -62,7 +68,7 @@ package: db-up ## full clean build: frontend + backend + tests + repackaged jar
 	@$(MVNW) $(MVN_ARGS) clean package
 
 run: db-up ## run the packaged jar against the compose MySQL
-	@LOCAL_MYSQL_DB_HOST=localhost LOCAL_MYSQL_DB_PORT=3306 LOCAL_MYSQL_DB_USERNAME=$(DB_USER) LOCAL_MYSQL_DB_PASSWORD=$(DB_PASS) "$(JDK27_HOME)/bin/java.exe" -jar target/flowershop-1.1.jar
+	@"$(JDK27_HOME)/bin/java.exe" -jar target/flowershop-1.1.jar
 
 audit: ## npm audit, prod and dev, 0 vulnerabilities or fail
 	@$(NPM) audit --omit=dev --prefix $(FRONTEND)
