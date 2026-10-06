@@ -4,9 +4,6 @@ spring:
     username: ${LOCAL_MYSQL_DB_USERNAME}
     password: ${LOCAL_MYSQL_DB_PASSWORD}
   jpa:
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.${LOCAL_MYSQL_DB_DIALECT}
     hibernate:
       ddl-auto: update
   mail:
