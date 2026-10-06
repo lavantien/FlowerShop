@@ -1,8 +1,12 @@
 SHELL := /usr/bin/sh
 
 JDK27_HOME ?= $(subst \,/,$(USERPROFILE))/dev/jdk/jdk-27_oracle
-JAVA_HOME ?= $(JDK27_HOME)
-export JAVA_HOME
+# Prefer the local JDK 27 install when present; otherwise leave JAVA_HOME alone so
+# mvnw falls back to the java found on PATH (env or command-line JAVA_HOME still wins).
+ifneq ($(wildcard $(JDK27_HOME)/bin/java.exe),)
+  export JAVA_HOME := $(JDK27_HOME)
+endif
+JAVA_BIN := $(if $(JAVA_HOME),$(JAVA_HOME)/bin/java.exe,java)
 
 MVNW := sh ./mvnw
 MVN_ARGS ?=
@@ -41,7 +45,7 @@ db-nuke: ## stop MySQL container and drop the volume
 	@docker compose down -v
 
 db-seed: ## seed the database from db/run.sql (skips its create-database preamble)
-	@tail -n +3 db/run.sql | docker compose exec -T mysql mysql -u$(DB_USER) -p$(DB_PASS) flowershop
+	@tail -n +3 db/run.sql | docker compose exec -T mysql mysql --default-character-set=utf8mb4 -u$(DB_USER) -p$(DB_PASS) flowershop
 
 frontend-install: ## npm install in frontend
 	@$(NPM) install --prefix $(FRONTEND)
@@ -68,7 +72,7 @@ package: db-up ## full clean build: frontend + backend + tests + repackaged jar
 	@$(MVNW) $(MVN_ARGS) clean package
 
 run: db-up ## run the packaged jar against the compose MySQL
-	@"$(JDK27_HOME)/bin/java.exe" -jar target/flowershop-1.1.jar
+	@"$(JAVA_BIN)" -jar target/flowershop-1.1.jar
 
 audit: ## npm audit, prod and dev, 0 vulnerabilities or fail
 	@$(NPM) audit --omit=dev --prefix $(FRONTEND)
