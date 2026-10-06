@@ -25,8 +25,8 @@ The Maven wrapper (`mvnw`) is included and `make` targets wrap every build and r
 
 #### Production environment setup instruction:
 1. Production environment needs only `JDK 27` and `MySQL Server 8.4 (LTS)` installed. Then setup `database` and `application.properties` properly as in `Development Environment`.
-2. Run `make package` (or `./mvnw clean package`) in `cmd` inside root folder. This will create a `Jar` package inside `target` folder named `flowershop-1.1.jar`.
-3. Run this `Jar` package in `cmd` by this command `java -jar target/flowershop-1.1.jar`.
+2. Run `make package` (or `./mvnw clean package`) in `cmd` inside root folder. This will create a `Jar` package inside `target` folder named `flowershop-2.0.jar`.
+3. Run this `Jar` package in `cmd` by this command `java -jar target/flowershop-2.0.jar`.
 4. Access our application via an endpoint, for example an `AWS Cloud Endpoint`.
 
 #### Some pictures:
@@ -81,15 +81,15 @@ The Maven wrapper (`mvnw`) is included and `make` targets wrap every build and r
 [INFO] 
 [INFO] 
 [INFO] --- jar:3.5.1:jar (default-jar) @ flowershop ---
-[INFO] Building jar: C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-1.1.jar
+[INFO] Building jar: C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-2.0.jar
 [INFO] 
 [INFO] --- spring-boot:4.1.1:repackage (repackage) @ flowershop ---
-[INFO] Replacing main artifact C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-1.1.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
-[INFO] The original artifact has been renamed to C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-1.1.jar.original
+[INFO] Replacing main artifact C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-2.0.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-2.0.jar.original
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  13.834 s
-[INFO] Finished at: 2026-10-06T21:13:26+07:00
+[INFO] Total time:  15.161 s
+[INFO] Finished at: 2026-10-06T21:30:24+07:00
 [INFO] ------------------------------------------------------------------------
 ```

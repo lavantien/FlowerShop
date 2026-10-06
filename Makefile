@@ -72,7 +72,7 @@ package: db-up ## full clean build: frontend + backend + tests + repackaged jar
 	@$(MVNW) $(MVN_ARGS) clean package
 
 run: db-up ## run the packaged jar against the compose MySQL
-	@"$(JAVA_BIN)" -jar target/flowershop-1.1.jar
+	@"$(JAVA_BIN)" -jar target/flowershop-2.0.jar
 
 audit: ## npm audit, prod and dev, 0 vulnerabilities or fail
 	@$(NPM) audit --omit=dev --prefix $(FRONTEND)
