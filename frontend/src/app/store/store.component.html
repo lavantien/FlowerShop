@@ -1,13 +1,13 @@
 <div class="wrapper-store">
 	<div class="wrapper-product">
 		<div class="wrapper-filter">
-			<div class="form-row">
-				<div class="form-group col-xl-2 col-lg-2 col-md-2 col-sm-3 col-3">
+			<div class="row">
+				<div class="mb-3 col-xl-2 col-lg-2 col-md-2 col-sm-3 col-3">
 					<input (keyup.enter)="onSearch()" [(ngModel)]="searchForm.name" class="form-control"
 					       placeholder="{{'ADMIN.PRODUCT_NAME' | translate}}"
 					       type="text">
 				</div>
-				<div class="form-group col-xl-2 col-lg-2 col-md-2 col-sm-3 col-3">
+				<div class="mb-3 col-xl-2 col-lg-2 col-md-2 col-sm-3 col-3">
 					<select (change)="onChangeCategory('search'); onSearch()" [(ngModel)]="searchForm.categoryName"
 					        class="form-control">
 						@for (category of categories(); track category.name) {
@@ -15,7 +15,7 @@
 						}
 					</select>
 				</div>
-				<div class="form-group col-xl-2 col-lg-2 col-md-2 col-sm-3 col-3">
+				<div class="mb-3 col-xl-2 col-lg-2 col-md-2 col-sm-3 col-3">
 					<select (change)="onChangeTypeSearch(); onSearch()" [(ngModel)]="searchForm.typeName" class="form-control">
 						@for (type of types(); track type.name) {
 							@if (type.categoryName === searchForm.categoryName) {
@@ -24,13 +24,13 @@
 						}
 					</select>
 				</div>
-				<div class="form-group col-xl-1 col-lg-1 col-md-1 col-sm-3 col-3">
+				<div class="mb-3 col-xl-1 col-lg-1 col-md-1 col-sm-3 col-3">
 					<button (click)="onSearch()" class="btn btn-dark" placement="bottom"
 					        tooltip="{{'ADMIN.SEARCH_ADVANCED' | translate}}">
 						<fa-icon [icon]="faMagnifyingGlass"></fa-icon>
 					</button>
 				</div>
-				<div class="form-group col-xl-3 col-lg-3 col-md-3 col-sm-8 col-8">
+				<div class="mb-3 col-xl-3 col-lg-3 col-md-3 col-sm-8 col-8">
 					<pagination (pageChanged)="onPageChanged($event)"
 					            [(ngModel)]="currentPage"
 					            [boundaryLinks]="true"
@@ -42,7 +42,7 @@
 					            previousText="&lsaquo;">
 					</pagination>
 				</div>
-				<div class="form-group col-xl-1 col-lg-1 col-md-1 col-sm-1 col-1">
+				<div class="mb-3 col-xl-1 col-lg-1 col-md-1 col-sm-1 col-1">
 					<button (click)="onSortPrice()" class="btn btn-dark responsive-float"
 					        placement="bottom" tooltip="{{'SHOP.SORT_PRICE' | translate}}">
 						@if (sortFlip) {
@@ -53,7 +53,7 @@
 						}
 					</button>
 				</div>
-				<div class="form-group col-xl-1 col-lg-1 col-md-1 col-sm-3 col-3">
+				<div class="mb-3 col-xl-1 col-lg-1 col-md-1 col-sm-3 col-3">
 					<select (change)="paging(searchResults())" [(ngModel)]="itemPerPage"
 					        class="btn btn-outline-dark responsive-float" placement="bottom"
 					        tooltip="{{'ADMIN.ITEMS_PER_PAGE' | translate}}">
@@ -76,8 +76,8 @@
 									     class="card-img-top">
 								</div>
 								<div class="card-footer {{bgPrimary()}} {{tcPrimary()}}">
-									<span class="float-left">{{product.price.toLocaleString(translate.currentLang() ?? 'en')}} đ</span>
-									<span class="float-right">
+									<span class="float-start">{{product.price.toLocaleString(translate.currentLang() ?? 'en')}} đ</span>
+									<span class="float-end">
 									<button (click)="onAddToCart(i)" class="btn btn-dark" placement="bottom"
 									        tooltip="{{'SHOP.ADD_TO_CART' | translate}}">
 										<fa-icon [icon]="faCartPlus"></fa-icon>
