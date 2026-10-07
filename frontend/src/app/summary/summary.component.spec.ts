@@ -5,20 +5,34 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {provideRouter} from '@angular/router';
 import {provideTranslateService} from '@ngx-translate/core';
 import {beforeEach, afterEach, describe, expect, it} from 'vitest';
-import {SummaryComponent} from './summary.component';
+import {BillRow, SummaryComponent} from './summary.component';
+import {SessionService, SessionUser} from '../core/session.service';
 import {Product} from '../_models/product';
-import {Bill} from '../_models/bill';
 
 @Component({selector: 'app-empty', template: ''})
 class EmptyComponent {
 }
 
+const member: SessionUser = {
+	id: 4,
+	name: 'Member',
+	email: 'member@flowershop.example',
+	phone: '0900000004',
+	address: 'A',
+	district: 'Binh Thanh',
+	city: 'Ho Chi Minh',
+	role: 'USER',
+	enable: true
+};
+
+const admin: SessionUser = {...member, id: 1, role: 'ADMIN'};
+
 const products: Product[] = [{
 	id: 1,
 	name: 'Rose',
 	description: 'red flower',
-	price: 1,
-	imgUrl: 'aGk=',
+	price: 250000,
+	imgUrl: 'https://img/rose',
 	quantity: 5,
 	saleAmount: 0,
 	categoryName: 'Fresh',
@@ -27,7 +41,7 @@ const products: Product[] = [{
 	id: 2,
 	name: 'Tulip',
 	description: 'pink flower',
-	price: 1,
+	price: 120000,
 	imgUrl: '',
 	quantity: 3,
 	saleAmount: 0,
@@ -35,16 +49,12 @@ const products: Product[] = [{
 	typeName: 'Daily'
 }];
 
-const bills: Bill[] = [{
-	placementDate: '2026-10-07T08:00:00',
+const bills: BillRow[] = [{
 	productId: 1,
 	productQuantity: 2,
-	price: 13230,
-	userId: 4,
+	price: 500000,
 	settlementDate: '2026-10-07T09:00:00',
-	status: 'SUCCESS',
-	phone: '0900000004',
-	detailAddress: 'A, Bình Thạnh, Hồ Chí Minh'
+	userId: 4
 }];
 
 describe('SummaryComponent', () => {
@@ -52,6 +62,7 @@ describe('SummaryComponent', () => {
 	let fixture: ComponentFixture<SummaryComponent>;
 
 	beforeEach(() => {
+		localStorage.clear();
 		TestBed.configureTestingModule({
 			imports: [SummaryComponent],
 			providers: [
@@ -73,8 +84,12 @@ describe('SummaryComponent', () => {
 		localStorage.clear();
 	});
 
+	function loginAs(user: SessionUser): void {
+		TestBed.inject(SessionService).login('token-1', user);
+	}
+
 	it('renders every settled bill across users', () => {
-		localStorage.setItem('token', btoa('1+ADMIN'));
+		loginAs(admin);
 		fixture = TestBed.createComponent(SummaryComponent);
 		fixture.detectChanges();
 		httpMock.expectOne('/api/product').flush(products.map(p => ({...p})));
@@ -83,11 +98,11 @@ describe('SummaryComponent', () => {
 		const component = fixture.componentInstance;
 		expect(component.isLoggedIn).toBe(true);
 		expect(component.isAdmin).toBe(true);
-		expect(component.products()[0].imgUrl).toBe('hi');
-		expect(component.products()[0].price).toBe(1 * 23000.0 - 9770);
+		expect(component.products()[0].imgUrl).toBe('https://img/rose');
+		expect(component.products()[0].price).toBe(250000);
 		expect(component.billsRender().map(p => p.name)).toEqual(['Rose']);
 		expect(component.countOfIndividualProduct()).toEqual([2]);
-		expect(component.totalPriceOfAddedProduct()).toBe(13230);
+		expect(component.totalPriceOfAddedProduct()).toBe(500000);
 		expect(component.userIds()).toEqual([4]);
 		expect(component.settlementDate()).toEqual(['2026-10-07T09:00:00']);
 		expect(fixture.nativeElement.textContent).toContain('Rose');
@@ -114,7 +129,7 @@ describe('SummaryComponent', () => {
 	});
 
 	it('treats null payloads as empty and reports bill api errors', () => {
-		localStorage.setItem('token', btoa('4+MEMBER'));
+		loginAs(member);
 		fixture = TestBed.createComponent(SummaryComponent);
 		fixture.detectChanges();
 		expect(fixture.componentInstance.isLoggedIn).toBe(true);

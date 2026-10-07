@@ -1,24 +1,18 @@
-import {Component, OnDestroy, OnInit, TemplateRef, inject, signal} from '@angular/core';
+import {Component, OnInit, TemplateRef, inject, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {HttpClient} from '@angular/common/http';
-import {Router} from '@angular/router';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
 	faArrowDownShortWide,
 	faArrowUpShortWide,
 	faCartPlus,
-	faDna,
 	faMagnifyingGlass
 } from '@fortawesome/free-solid-svg-icons';
 import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
 import {TooltipDirective} from 'ngx-bootstrap/tooltip';
 import {PageChangedEvent, PaginationComponent} from 'ngx-bootstrap/pagination';
-import {Subscription} from 'rxjs';
-import {DataTranslateService} from '../_services/data-translate.service';
-import {SharedService} from '../_services/shared.service';
-import {SessionService} from '../_services/session.service';
-import {TokenService} from '../_services/token.service';
+import {CartService} from '../core/cart.service';
 import {Product} from '../_models/product';
 import {Category} from '../_models/category';
 import {Type} from '../_models/type';
@@ -35,18 +29,15 @@ import {Type} from '../_models/type';
 	templateUrl: './store.component.html',
 	styleUrls: ['./store.component.scss']
 })
-export class StoreComponent implements OnInit, OnDestroy {
+export class StoreComponent implements OnInit {
 	faMagnifyingGlass = faMagnifyingGlass;
 	faCartPlus = faCartPlus;
-	faDna = faDna;
 	faArrowUpShortWide = faArrowUpShortWide;
 	faArrowDownShortWide = faArrowDownShortWide;
 	modalRef!: BsModalRef;
 	products = signal<Product[]>([]);
 	categories = signal<Category[]>([]);
 	types = signal<Type[]>([]);
-	bgPrimary = signal('');
-	tcPrimary = signal('');
 	totalItem = signal(0);
 	itemPerPage = signal(24);
 	currentPage = signal(1);
@@ -62,58 +53,28 @@ export class StoreComponent implements OnInit, OnDestroy {
 	lightboxCaption = signal('');
 	sortFlip = false;
 	firstTimeSort = true;
-	isAdmin = false;
-	isLoggedIn = false;
 
 	private readonly http = inject(HttpClient);
-	private readonly router = inject(Router);
 	private readonly modalService = inject(BsModalService);
-	private readonly dataTranslateService = inject(DataTranslateService);
-	private readonly sharedService = inject(SharedService);
-	private readonly sessionService = inject(SessionService);
-	private readonly tokenService = inject(TokenService);
+	private readonly cart = inject(CartService);
 	readonly translate = inject(TranslateService);
-	private readonly subscriptions = new Subscription();
 
 	ngOnInit() {
-		this.isLoggedIn = this.tokenService.isLoggedIn();
-		this.isAdmin = this.tokenService.isAdmin();
-		if (this.isAdmin) {
-			this.router.navigate(['/admin']);
-		}
-		if (!this.isLoggedIn) {
-			this.router.navigate(['/shop']);
-		}
 		this.getProducts();
 		this.getCategories();
 		this.getTypes();
-		this.subscriptions.add(this.sharedService.getGlobalBackgroundPrimary().subscribe(bg => {
-			this.bgPrimary.set(bg[0]);
-			this.tcPrimary.set(bg[1]);
-		}));
-	}
-
-	ngOnDestroy() {
-		this.subscriptions.unsubscribe();
 	}
 
 	getProducts() {
 		this.http.get<Product[]>('/api/product').subscribe(data => {
 			if (data) {
 				this.products.set(data);
-				this.products().forEach(product => {
-					product.imgUrl = product.imgUrl ? atob(product.imgUrl) : '';
-					product.price = this.dataTranslateService.getPrice(product.price, 'vi');
-					// TODO: Translate product name
-					// TODO: Translate product production
-				});
 				this.searchResults.set(data);
 				this.paging(this.searchResults());
 			}
 		}, error => {
 			console.log(`Error: ${error}`);
 			this.products.set([]);
-		}, () => {
 		});
 	}
 
@@ -127,7 +88,6 @@ export class StoreComponent implements OnInit, OnDestroy {
 			console.log(`Error: ${error}`);
 			this.categories.set([]);
 			this.searchForm.categoryName = '';
-		}, () => {
 		});
 	}
 
@@ -141,7 +101,6 @@ export class StoreComponent implements OnInit, OnDestroy {
 			console.log(`Error: ${error}`);
 			this.types.set([]);
 			this.searchForm.typeName = '';
-		}, () => {
 		});
 	}
 
@@ -168,12 +127,13 @@ export class StoreComponent implements OnInit, OnDestroy {
 		this.searchResults.set(searchResults);
 	}
 
-	onChangeCategory(mode: string) {
-		if (mode === 'search') {
-			this.searchForm.name = '';
-			this.searchForm.typeName = this.types()[this.types().findIndex(x => x.categoryName === this.searchForm.categoryName)].name;
-			this.firstTimeSort = false;
+	onChangeCategory() {
+		this.searchForm.name = '';
+		const matching = this.types().find(type => type.categoryName === this.searchForm.categoryName);
+		if (matching !== undefined) {
+			this.searchForm.typeName = matching.name;
 		}
+		this.firstTimeSort = false;
 	}
 
 	onChangeTypeSearch() {
@@ -213,6 +173,6 @@ export class StoreComponent implements OnInit, OnDestroy {
 	}
 
 	onAddToCart(index: number) {
-		this.sessionService.updateNewlyAddedProduct(this.displayProducts()[index]);
+		this.cart.add(this.displayProducts()[index]);
 	}
 }

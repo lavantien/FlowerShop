@@ -2,10 +2,17 @@ import {Component, OnInit, inject, signal} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {Router} from '@angular/router';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
-import {DataTranslateService} from '../_services/data-translate.service';
-import {TokenService} from '../_services/token.service';
+import {SessionService} from '../core/session.service';
 import {Product} from '../_models/product';
-import {Bill} from '../_models/bill';
+
+// v2 bill shape still consumed here until the dashboard rewrite moves to /api/report/sales
+export interface BillRow {
+	productId: number;
+	productQuantity: number;
+	price: number;
+	settlementDate: string;
+	userId: number;
+}
 
 @Component({
 	selector: 'app-summary',
@@ -28,13 +35,12 @@ export class SummaryComponent implements OnInit {
 
 	private readonly http = inject(HttpClient);
 	private readonly router = inject(Router);
-	private readonly dataTranslateService = inject(DataTranslateService);
-	private readonly tokenService = inject(TokenService);
+	private readonly session = inject(SessionService);
 	readonly translate = inject(TranslateService);
 
 	ngOnInit() {
-		this.isLoggedIn = this.tokenService.isLoggedIn();
-		this.isAdmin = this.tokenService.isAdmin();
+		this.isLoggedIn = this.session.isLoggedIn();
+		this.isAdmin = this.session.isAdmin();
 		if (!this.isLoggedIn) {
 			this.router.navigate(['/shop']);
 		}
@@ -45,10 +51,6 @@ export class SummaryComponent implements OnInit {
 		this.http.get<Product[]>('/api/product').subscribe(products => {
 			if (products) {
 				this.products.set(products);
-				this.products().forEach(product => {
-					product.imgUrl = product.imgUrl ? atob(product.imgUrl) : '';
-					product.price = this.dataTranslateService.getPrice(product.price, 'vi');
-				});
 			}
 		}, error => {
 			console.log(`Error: ${error}`);
@@ -59,7 +61,7 @@ export class SummaryComponent implements OnInit {
 	}
 
 	getBills() {
-		this.http.get<Bill[]>('/api/bill').subscribe(rs => {
+		this.http.get<BillRow[]>('/api/bill').subscribe(rs => {
 			if (rs) {
 				rs.forEach(item => {
 					this.billsRender.update(bills => [...bills, this.products()[this.products().findIndex(x => x.id === item.productId)]]);
@@ -72,7 +74,6 @@ export class SummaryComponent implements OnInit {
 			}
 		}, error => {
 			console.log(`Error: ${error}`);
-		}, () => {
 		});
 	}
 }

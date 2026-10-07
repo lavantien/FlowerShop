@@ -1,0 +1,190 @@
+@if (visible()) {
+	<div class="modal-backdrop show"></div>
+	<div class="modal d-block" role="dialog" tabindex="-1">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				@switch (mode()) {
+					@case ('login') {
+						<div class="modal-header bg-light text-dark">
+							<h4 class="modal-title float-start">{{'MAIN.LOGIN' | translate}}</h4>
+							<button (click)="close()" class="btn-close float-end" type="button" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<form (ngSubmit)="onLogin()" [formGroup]="loginForm">
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputEmail"><b>{{'MAIN.EMAIL' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input class="form-control" formControlName="email" id="inputEmail" type="email">
+									</div>
+								</div>
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputPassword"><b>{{'MAIN.PASSWORD' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input (keyup.enter)="onLogin()" class="form-control" formControlName="password"
+										       id="inputPassword" type="password">
+									</div>
+								</div>
+								@if (wrongLogin()) {
+									<div class="mb-3 row">
+										<span class="col-sm-12 text-danger">{{'MAIN.WRONG_INPUT' | translate}}</span>
+									</div>
+								}
+							</form>
+						</div>
+						<div class="modal-footer bg-light">
+							<button (click)="onLogin()" class="btn btn-success float-end">{{'MAIN.LOGIN' | translate}}</button>
+							<button (click)="switchMode('register')"
+							        class="btn btn-primary float-end">{{'MAIN.SIGN_UP' | translate}}</button>
+							<button (click)="switchMode('forgot')"
+							        class="btn btn-warning float-end">{{'MAIN.FORGOT_PASSWORD' | translate}}</button>
+							<button (click)="resetLoginForm()" class="btn btn-dark float-end">{{'MAIN.REFRESH' | translate}}</button>
+						</div>
+					}
+					@case ('register') {
+						<div class="modal-header bg-light text-dark">
+							<h4 class="modal-title float-start">{{'MAIN.SIGN_UP' | translate}}</h4>
+							<button (click)="close()" class="btn-close float-end" type="button" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<form (ngSubmit)="onRegister()" [formGroup]="registerForm">
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputNameS"><b>{{'MAIN.NAME' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input class="form-control" formControlName="name" id="inputNameS" type="text">
+									</div>
+								</div>
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputEmailS"><b>{{'MAIN.EMAIL' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input class="form-control" formControlName="email" id="inputEmailS" type="email">
+									</div>
+								</div>
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputReEmailS"><b>{{'MAIN.RE_EMAIL' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input class="form-control" formControlName="reEmail" id="inputReEmailS" type="email">
+									</div>
+								</div>
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputPasswordS"><b>{{'MAIN.PASSWORD' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input class="form-control" formControlName="password" id="inputPasswordS" type="password">
+									</div>
+								</div>
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputRePasswordS"><b>{{'MAIN.RE_PASSWORD' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input class="form-control" formControlName="rePassword" id="inputRePasswordS" type="password">
+									</div>
+								</div>
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputAnswerS"><b>{{'MAIN.ANSWER' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input class="form-control" formControlName="answer" id="inputAnswerS" type="password">
+									</div>
+								</div>
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputReAnswerS"><b>{{'MAIN.RE_ANSWER' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input class="form-control" formControlName="reAnswer" id="inputReAnswerS" type="password">
+									</div>
+								</div>
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputPhoneS"><b>{{'MAIN.PHONE' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input class="form-control" formControlName="phone" id="inputPhoneS" type="text">
+									</div>
+								</div>
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputAddressS"><b>{{'MAIN.ADDRESS' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input class="form-control" formControlName="address" id="inputAddressS" type="text">
+									</div>
+								</div>
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputCityS"><b>{{'MAIN.CITY' | translate}}</b></label>
+									<div class="col-sm-8">
+										<select (change)="onCityChange()" class="form-control" formControlName="city" id="inputCityS">
+											@for (city of geo.cities(); track city.name) {
+												<option [value]="city.name">{{city.name}}</option>
+											}
+										</select>
+									</div>
+								</div>
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputDistrictS"><b>{{'MAIN.DISTRICT' | translate}}</b></label>
+									<div class="col-sm-8">
+										<select class="form-control" formControlName="district" id="inputDistrictS">
+											@for (district of geo.districts(); track district.name) {
+												@if (district.cityName === registerForm.controls.city.value) {
+													<option [value]="district.name">{{district.name}}</option>
+												}
+											}
+										</select>
+									</div>
+								</div>
+								@if (wrongCreate()) {
+									<div class="mb-3 row">
+										<span class="col-sm-12 text-danger">{{'MAIN.WRONG_INPUT_OR_DUPLICATE' | translate}}</span>
+									</div>
+								}
+							</form>
+						</div>
+						<div class="modal-footer bg-light">
+							<button (click)="onRegister()" class="btn btn-success float-end">{{'MAIN.SIGN_UP' | translate}}</button>
+							<button (click)="switchMode('login')" class="btn btn-primary float-end">{{'MAIN.LOGIN' | translate}}</button>
+							<button (click)="resetRegisterForm()" class="btn btn-dark float-end">{{'MAIN.REFRESH' | translate}}</button>
+						</div>
+					}
+					@case ('forgot') {
+						<div class="modal-header bg-light text-dark">
+							<h4 class="modal-title float-start">{{'MAIN.FORGOT_PASSWORD' | translate}}</h4>
+							<button (click)="close()" class="btn-close float-end" type="button" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<form (ngSubmit)="onForgot()" [formGroup]="forgotForm">
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputEmailF"><b>{{'MAIN.EMAIL' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input class="form-control" formControlName="email" id="inputEmailF" type="email">
+									</div>
+								</div>
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputAnswerF"><b>{{'MAIN.ANSWER' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input class="form-control" formControlName="answer" id="inputAnswerF" type="password">
+									</div>
+								</div>
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label" for="inputNewPasswordF"><b>{{'MAIN.NEW_PASSWORD' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input class="form-control" formControlName="newPassword" id="inputNewPasswordF"
+										       type="password">
+									</div>
+								</div>
+								<div class="mb-3 row">
+									<label class="col-sm-4 col-form-label"
+									       for="inputReNewPasswordF"><b>{{'MAIN.RE_NEW_PASSWORD' | translate}}</b></label>
+									<div class="col-sm-8">
+										<input (keyup.enter)="onForgot()" class="form-control" formControlName="reNewPassword"
+										       id="inputReNewPasswordF" type="password">
+									</div>
+								</div>
+								@if (wrongForgot()) {
+									<div class="mb-3 row">
+										<span class="col-sm-12 text-danger">{{'MAIN.WRONG_INPUT_OR_DUPLICATE' | translate}}</span>
+									</div>
+								}
+							</form>
+						</div>
+						<div class="modal-footer bg-light">
+							<button (click)="onForgot()" class="btn btn-success float-end">{{'MAIN.VERIFY_EMAIL' | translate}}</button>
+							<button (click)="switchMode('login')" class="btn btn-primary float-end">{{'MAIN.LOGIN' | translate}}</button>
+							<button (click)="resetForgotForm()" class="btn btn-dark float-end">{{'MAIN.REFRESH' | translate}}</button>
+						</div>
+					}
+				}
+			</div>
+		</div>
+	</div>
+}

@@ -3,15 +3,29 @@ import {HttpTestingController, provideHttpClientTesting} from '@angular/common/h
 import {TestBed} from '@angular/core/testing';
 import {provideRouter} from '@angular/router';
 import {provideTranslateService} from '@ngx-translate/core';
+import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
 import {beforeEach, afterEach, describe, expect, it, vi} from 'vitest';
 import {AdminComponent, buildExportFilename} from './admin.component';
+import {SessionService, SessionUser} from '../core/session.service';
 import {Product} from '../_models/product';
+
+const admin: SessionUser = {
+	id: 1,
+	name: 'Admin',
+	email: 'admin@flowershop.example',
+	phone: '0900000001',
+	address: 'A',
+	district: 'Binh Thanh',
+	city: 'Ho Chi Minh',
+	role: 'ADMIN',
+	enable: true
+};
 
 describe('AdminComponent request bodies', () => {
 	let httpMock: HttpTestingController;
 
 	beforeEach(() => {
-		localStorage.setItem('token', btoa('1+ADMIN'));
+		localStorage.clear();
 		vi.stubGlobal('alert', vi.fn());
 		TestBed.configureTestingModule({
 			imports: [AdminComponent],
@@ -22,6 +36,8 @@ describe('AdminComponent request bodies', () => {
 				provideTranslateService()
 			]
 		});
+		TestBed.inject(SessionService).login('token-1', admin);
+		vi.spyOn(TestBed.inject(BsModalService), 'show').mockReturnValue({hide: vi.fn()} as unknown as BsModalRef);
 		httpMock = TestBed.inject(HttpTestingController);
 	});
 
@@ -29,22 +45,24 @@ describe('AdminComponent request bodies', () => {
 		httpMock.verify();
 		TestBed.resetTestingModule();
 		vi.unstubAllGlobals();
-		localStorage.removeItem('token');
+		localStorage.clear();
 	});
 
-	function createAdmin(): AdminComponent {
-		const component = TestBed.createComponent(AdminComponent).componentInstance;
+	function createAdmin(productList: Product[] = []): AdminComponent {
+		const created = TestBed.createComponent(AdminComponent);
+		created.detectChanges();
 		httpMock.match(() => true).forEach(req => {
 			if (req.request.url === '/api/product') {
-				req.flush([]);
+				req.flush(productList);
 			} else {
 				req.flush([{name: 'C'}]);
 			}
 		});
-		return component;
+		created.detectChanges();
+		return created.componentInstance;
 	}
 
-	it('posts the create form as a json body with encoded image and en price', () => {
+	it('posts the create form as a plain json body, no encoding, no price conversion', () => {
 		const component = createAdmin();
 		component.createForm = {
 			name: 'Rose',
@@ -62,8 +80,8 @@ describe('AdminComponent request bodies', () => {
 		expect(req.request.body).toEqual({
 			name: 'Rose',
 			description: 'red flower',
-			price: (460000 + 9770) / 23000.0,
-			imgUrl: btoa('https://example.com/rose.png'),
+			price: 460000,
+			imgUrl: 'https://example.com/rose.png',
 			quantity: 5,
 			saleAmount: 0,
 			categoryName: 'Fresh',
@@ -75,7 +93,7 @@ describe('AdminComponent request bodies', () => {
 		httpMock.expectOne('/api/product').flush([]);
 	});
 
-	it('puts the edit form as a json body derived from editForm values', () => {
+	it('puts the edit form as a plain json body', () => {
 		const component = createAdmin();
 		component.currentId = 7;
 		component.createForm.price = 111;
@@ -95,8 +113,8 @@ describe('AdminComponent request bodies', () => {
 		expect(req.request.body).toEqual({
 			name: 'Tulip',
 			description: 'pink flower',
-			price: (222 + 9770) / 23000.0,
-			imgUrl: btoa('https://example.com/tulip.png'),
+			price: 222,
+			imgUrl: 'https://example.com/tulip.png',
 			quantity: 3,
 			saleAmount: 10,
 			categoryName: 'Fresh',
@@ -107,7 +125,7 @@ describe('AdminComponent request bodies', () => {
 		httpMock.expectOne('/api/product').flush([]);
 	});
 
-	it('posts the parsed excel rows with en prices', () => {
+	it('posts the parsed excel rows untouched', () => {
 		const component = createAdmin();
 		const rows: Product[] = [{
 			id: 1,
@@ -127,7 +145,7 @@ describe('AdminComponent request bodies', () => {
 			id: 1,
 			name: 'Rose',
 			description: 'red flower',
-			price: (460000 + 9770) / 23000.0,
+			price: 460000,
 			imgUrl: '',
 			quantity: 5,
 			saleAmount: 0,
@@ -137,6 +155,31 @@ describe('AdminComponent request bodies', () => {
 		req.flush(rows);
 		httpMock.expectOne('/api/product').flush([]);
 		expect(alert).toHaveBeenCalledTimes(1);
+	});
+
+	it('clones the edited row so the form does not mutate the table', () => {
+		const row: Product = {
+			id: 7,
+			name: 'Tulip',
+			description: 'a description longer than the fifty character truncation applied to the table',
+			price: 222,
+			imgUrl: '',
+			quantity: 3,
+			saleAmount: 10,
+			categoryName: 'Fresh',
+			typeName: 'Daily'
+		};
+		const component = createAdmin([row]);
+		component.openEditModal({} as never, 7);
+		component.editForm.name = 'Edited';
+		expect(component.data()[0].name).toBe('Tulip');
+	});
+
+	it('ignores an edit open for a missing product', () => {
+		const component = createAdmin();
+		expect(component.modalRef).toBeUndefined();
+		component.openEditModal({} as never, 999);
+		expect(component.modalRef).toBeUndefined();
 	});
 });
 

@@ -3,11 +3,17 @@ import {FormsModule} from '@angular/forms';
 import {HttpClient} from '@angular/common/http';
 import {Router} from '@angular/router';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
-import {DataTranslateService} from '../_services/data-translate.service';
-import {TokenService} from '../_services/token.service';
+import {SessionService} from '../core/session.service';
 import {Product} from '../_models/product';
-import {Bill} from '../_models/bill';
 import {User} from '../_models/user';
+
+// v2 bill shape still consumed here until the history rewrite moves to /api/order/me
+export interface BillRow {
+	productId: number;
+	productQuantity: number;
+	price: number;
+	settlementDate: string;
+}
 
 @Component({
 	selector: 'app-info',
@@ -41,20 +47,19 @@ export class InfoComponent implements OnInit {
 
 	private readonly http = inject(HttpClient);
 	private readonly router = inject(Router);
-	private readonly dataTranslateService = inject(DataTranslateService);
-	private readonly tokenService = inject(TokenService);
+	private readonly session = inject(SessionService);
 	readonly translate = inject(TranslateService);
 
 	ngOnInit() {
-		this.isLoggedIn = this.tokenService.isLoggedIn();
-		this.isAdmin = this.tokenService.isAdmin();
+		this.isLoggedIn = this.session.isLoggedIn();
+		this.isAdmin = this.session.isAdmin();
 		if (this.isAdmin) {
 			this.router.navigate(['/admin']);
 		}
 		if (!this.isLoggedIn) {
 			this.router.navigate(['/shop']);
 		}
-		this.userId = this.tokenService.userId();
+		this.userId = this.session.user()?.id ?? 0;
 		this.getUser();
 		this.getProducts();
 	}
@@ -79,7 +84,6 @@ export class InfoComponent implements OnInit {
 				}
 			}, error => {
 				console.log(`Error: ${error}`);
-			}, () => {
 			});
 		}
 	}
@@ -88,10 +92,6 @@ export class InfoComponent implements OnInit {
 		this.http.get<Product[]>('/api/product').subscribe(products => {
 			if (products) {
 				this.products.set(products);
-				this.products().forEach(product => {
-					product.imgUrl = product.imgUrl ? atob(product.imgUrl) : '';
-					product.price = this.dataTranslateService.getPrice(product.price, 'vi');
-				});
 			}
 		}, error => {
 			console.log(`Error: ${error}`);
@@ -102,7 +102,7 @@ export class InfoComponent implements OnInit {
 	}
 
 	getBills() {
-		this.http.get<Bill[]>(`/api/bill/user/${this.userId}`).subscribe(rs => {
+		this.http.get<BillRow[]>(`/api/bill/user/${this.userId}`).subscribe(rs => {
 			if (rs) {
 				rs.forEach(item => {
 					this.billsRender.update(bills => [...bills, this.products()[this.products().findIndex(x => x.id === item.productId)]]);
@@ -114,7 +114,6 @@ export class InfoComponent implements OnInit {
 			}
 		}, error => {
 			console.log(`Error: ${error}`);
-		}, () => {
 		});
 	}
 }

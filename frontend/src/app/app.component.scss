@@ -3,13 +3,6 @@
 		nav {
 			padding: 0 1rem;
 
-			a {
-				.rainbow-text {
-					background-image: linear-gradient(to left, violet, indigo, blue, green, yellow, orange, red);
-					-webkit-background-clip: text;
-				}
-			}
-
 			.btn-lang {
 				margin-right: 15px;
 			}
@@ -30,56 +23,4 @@
 	.wrapper-router {
 		padding: 10px;
 	}
-
-	// Bootstrap's fixed-bottom pins both edges, which stretches a button across
-	// the whole viewport; release the right edge so the buttons stay squares.
-	.fixed-bottom {
-		right: auto;
-	}
-
-	.fixed-bottom-2 {
-		position: fixed;
-		bottom: 0;
-		// 46px = the scroll-top button's full width (20px icon + padding + border),
-		// so the second button abuts it instead of overlapping by 6px.
-		left: 46px;
-		right: auto;
-	}
-
-	.fixed-bottom-3 {
-		position: fixed;
-		bottom: 0;
-		left: 80px;
-		right: auto;
-	}
-
-	.fixed-bottom-4 {
-		position: fixed;
-		bottom: 0;
-		left: 120px;
-		right: auto;
-	}
-}
-
-.col-hoverable {
-	&:hover {
-		color: #212529;
-		background-color: rgba(0, 0, 0, .075);
-	}
-}
-
-.wrapper-cart-table {
-	max-height: 600px;
-	overflow: auto;
-}
-
-@media only screen and (min-width: 1920px) {
-	.wrapper-cart-table {
-		max-height: 800px;
-		overflow: auto;
-	}
-}
-
-.personal-info {
-
 }

@@ -3,7 +3,6 @@
 		<nav class="navbar navbar-expand navbar-light bg-light">
 			<a class="navbar-brand ms-2" routerLink="">
 				<img alt="{{'MAIN.FLOWER_SHOP' | translate}}" height="30" src="../assets/images/brand.png"/>
-				<!--				<span class="rainbow-text">&nbsp;&nbsp;{{'MAIN.FLOWER_SHOP' | translate}}</span>-->
 			</a>
 			<div class="collapse navbar-collapse row" id="navbarSupportedContent">
 				<div class="col-sm-6">
@@ -17,7 +16,8 @@
 						}
 						@if (!isAdmin()) {
 							<li class="nav-item" placement="bottom" tooltip="{{'MAIN.INFO' | translate}}">
-								<a [tabindex]="isLoggedIn() ? null : -1" class="nav-link {{isLoggedIn() ? '' : 'disabled'}}"
+								<a [tabindex]="isLoggedIn() ? null : -1"
+								   class="nav-link {{isLoggedIn() ? '' : 'disabled'}}"
 								   routerLink="/info"
 								   routerLinkActive="active">
 									<fa-icon [icon]="faUser"></fa-icon>
@@ -26,27 +26,23 @@
 						}
 						@if (isAdmin()) {
 							<li class="nav-item" placement="bottom" tooltip="{{'MAIN.ADMIN' | translate}}">
-								<a [tabindex]="isAdmin() ? null : -1" class="nav-link {{isAdmin() ? '' : 'disabled'}}"
-								   routerLink="/admin"
-								   routerLinkActive="active">
+								<a class="nav-link" routerLink="/admin" routerLinkActive="active">
 									<fa-icon [icon]="faWarehouse"></fa-icon>
 								</a>
 							</li>
 						}
 						@if (isAdmin()) {
 							<li class="nav-item" placement="bottom" tooltip="{{'MAIN.SUMMARY' | translate}}">
-								<a [tabindex]="isAdmin() ? null : -1" class="nav-link {{isAdmin() ? '' : 'disabled'}}"
-								   routerLink="/summary"
-								   routerLinkActive="active">
-								<fa-icon [icon]="faChartLine"></fa-icon>
+								<a class="nav-link" routerLink="/summary" routerLinkActive="active">
+									<fa-icon [icon]="faChartLine"></fa-icon>
+								</a>
+							</li>
+						}
+						<li class="nav-item" placement="bottom" tooltip="{{'MAIN.CONTACT' | translate}}">
+							<a class="nav-link" routerLink="/contact" routerLinkActive="active">
+								<fa-icon [icon]="faHandshake"></fa-icon>
 							</a>
 						</li>
-					}
-					<li class="nav-item" placement="bottom" tooltip="{{'MAIN.CONTACT' | translate}}">
-						<a class="nav-link" routerLink="/contact" routerLinkActive="active">
-							<fa-icon [icon]="faHandshake"></fa-icon>
-						</a>
-					</li>
 					</ul>
 				</div>
 				<div class="col-sm-6">
@@ -59,35 +55,28 @@
 							}
 						</select>
 						@if (!isAdmin()) {
-							<button (click)="openCartModal(cartTemplate)" class="btn btn-dark btn-lang"
-							        placement="bottom" tooltip="{{'MAIN.CART' | translate}}">
+							<button class="btn btn-dark btn-lang" placement="bottom" tooltip="{{'MAIN.CART' | translate}}"
+							        type="button">
 								<fa-icon [icon]="faShoppingCart"></fa-icon>
-								<span> ({{countAddedProduct()}})</span>
+								@if (cartCount() > 0) {
+									<span> ({{cartCount()}})</span>
+								}
 							</button>
 						}
 						@if (!isLoggedIn()) {
-							<button (click)="openLoginModal(loginTemplate)" class="btn btn-dark"
-							        placement="bottom" tooltip="{{'MAIN.LOGIN' | translate}}">
+							<button (click)="session.requestLogin()" class="btn btn-dark"
+							        placement="bottom" tooltip="{{'MAIN.LOGIN' | translate}}" type="button">
 								<fa-icon [icon]="faRightToBracket"></fa-icon>
 							</button>
 						}
 						@if (isLoggedIn()) {
 							<button (click)="onLogout()" class="btn btn-dark" placement="bottom"
-							        tooltip="{{'MAIN.LOGOUT' | translate}}">
+							        tooltip="{{'MAIN.LOGOUT' | translate}}" type="button">
 								<fa-icon [icon]="faRightFromBracket"></fa-icon>
 							</button>
 						}
 					</div>
 				</div>
-				<!--				<form class="form-inline my-2">-->
-				<!--					<input class="form-control" placeholder="{{'MAIN.SEARCH_EVERYTHING' | translate}}"-->
-				<!--					       type="search">-->
-				<!--					<button class="btn btn-outline-success" type="submit"><fa-icon [icon]="faMagnifyingGlass" tooltip="{{'MAIN.SEARCH' | translate}}"></fa-icon></button>-->
-				<!--				</form>-->
-				<!--				<select (change)="onChangeThemeColor()" [(ngModel)]="displayBg" class="btn btn-outline-dark btn-lang"-->
-				<!--				        tooltip="{{'MAIN.THEME_COLOR' | translate}}">-->
-				<!--					<option *ngFor="let bg of displayBgs" [value]="bg">{{'MAIN.' + bg | translate}}</option>-->
-				<!--				</select>-->
 			</div>
 		</nav>
 	</div>
@@ -105,286 +94,6 @@
 			<span><b>{{'MAIN.CREDIT' | translate}}</b></span>
 		</div>
 	</div>
-	<button (click)="scrollTop()" class="btn btn-dark fixed-bottom" placement="top"
-	        tooltip="{{'MAIN.SCROLL_TOP' | translate}}">
-		<fa-icon [icon]="faAnglesUp"></fa-icon>
-	</button>
-	<button (click)="scrollBottom()" class="btn btn-dark fixed-bottom-2" placement="top"
-	        tooltip="{{'MAIN.SCROLL_BOT' | translate}}">
-		<fa-icon [icon]="faAnglesDown"></fa-icon>
-	</button>
-	<app-toasts></app-toasts>
-	<!--	<button (click)="scrollLeft()" class="btn btn-outline-dark fixed-bottom-3" tooltip="{{'MAIN.SCROLL_LEFT' | translate}}" placement="bottom">-->
-	<!--		<fa-icon [icon]="faArrowLeft"></fa-icon>-->
-	<!--	</button>-->
-	<!--	<button (click)="scrollRight()" class="btn btn-outline-dark fixed-bottom-4" tooltip="{{'MAIN.SCROLL_RIGHT' | translate}}" placement="bottom">-->
-	<!--		<fa-icon [icon]="faArrowRight"></fa-icon>-->
-	<!--	</button>-->
 </div>
-
-<ng-template #loginTemplate>
-	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
-		<h4 class="modal-title float-start">{{'MAIN.LOGIN' | translate}}</h4>
-		<button (click)="modalRef.hide()" class="btn-close float-end" type="button" aria-label="Close"></button>
-	</div>
-	<div class="modal-body">
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputEmail"><b>{{'MAIN.EMAIL' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input [(ngModel)]="loginForm.email" class="form-control" id="inputEmail" type="email">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputPassword"><b>{{'MAIN.PASSWORD' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input (keyup.enter)="onLogin()" [(ngModel)]="loginForm.password" class="form-control" id="inputPassword"
-				       type="password">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			@if (wrongLogin) {
-				<span class="col-sm-12 text-danger">{{'MAIN.WRONG_INPUT' | translate}}</span>
-			}
-		</div>
-	</div>
-	<div class="modal-footer bg-light">
-		<button (click)="onLogin()" class="btn btn-success float-end">{{'MAIN.LOGIN' | translate}}</button>
-		<button (click)="openSignUpModal(signUpTemplate)"
-		        class="btn btn-primary float-end">{{'MAIN.SIGN_UP' | translate}}</button>
-		<button (click)="openForgotPasswordModal(forgotPasswordTemplate)"
-		        class="btn btn-warning float-end">{{'MAIN.FORGOT_PASSWORD' | translate}}</button>
-		<button (click)="onRefreshLoginForm()" class="btn btn-dark float-end">{{'MAIN.REFRESH' | translate}}</button>
-	</div>
-</ng-template>
-
-<ng-template #signUpTemplate>
-	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
-		<h4 class="modal-title float-start">{{'MAIN.SIGN_UP' | translate}}</h4>
-		<button (click)="modalRef2.hide()" class="btn-close float-end" type="button" aria-label="Close"></button>
-	</div>
-	<div class="modal-body">
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputNameS"><b>{{'MAIN.NAME' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input [(ngModel)]="signUpForm.name" class="form-control" id="inputNameS" type="text">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputEmailS"><b>{{'MAIN.EMAIL' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input [(ngModel)]="signUpForm.email" class="form-control" id="inputEmailS" type="email">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputReEmailS"><b>{{'MAIN.RE_EMAIL' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input [(ngModel)]="signUpForm.reEmail" class="form-control" id="inputReEmailS" type="email">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputPasswordS"><b>{{'MAIN.PASSWORD' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input [(ngModel)]="signUpForm.password" class="form-control" id="inputPasswordS" type="password">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputRePasswordS"><b>{{'MAIN.RE_PASSWORD' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input [(ngModel)]="signUpForm.rePassword" class="form-control" id="inputRePasswordS" type="password">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputAnswerS"><b>{{'MAIN.ANSWER' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input [(ngModel)]="signUpForm.answer" class="form-control" id="inputAnswerS" type="password">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputReAnswerS"><b>{{'MAIN.RE_ANSWER' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input [(ngModel)]="signUpForm.reAnswer" class="form-control" id="inputReAnswerS" type="password">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputPhoneS"><b>{{'MAIN.PHONE' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input [(ngModel)]="signUpForm.phone" class="form-control" id="inputPhoneS" type="text">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputAddressS"><b>{{'MAIN.ADDRESS' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input [(ngModel)]="signUpForm.address" class="form-control" id="inputAddressS" type="text">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputCityS"><b>{{'MAIN.CITY' | translate}}</b></label>
-			<div class="col-sm-8">
-				<select [(ngModel)]="signUpForm.city" class="form-control" id="inputCityS">
-					@for (city of cities(); track city.name) {
-						<option [value]="city.name">{{city.name}}</option>
-					}
-				</select>
-			</div>
-		</div>
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputDistrictS"><b>{{'MAIN.DISTRICT' | translate}}</b></label>
-			<div class="col-sm-8">
-				<select [(ngModel)]="signUpForm.district" class="form-control" id="inputDistrictS">
-					@for (district of districts(); track district.name) {
-						@if (district.cityName === signUpForm.city) {
-							<option [value]="district.name">{{district.name}}</option>
-						}
-					}
-				</select>
-			</div>
-		</div>
-		<div class="mb-3 row">
-			@if (wrongCreate) {
-				<span class="col-sm-12 text-danger">{{'MAIN.WRONG_INPUT_OR_DUPLICATE' | translate}}</span>
-			}
-		</div>
-	</div>
-	<div class="modal-footer bg-light">
-		<button (click)="onCreateUser()" class="btn btn-success float-end">{{'MAIN.SIGN_UP' | translate}}</button>
-		<button (click)="onRefreshSignUpForm()" class="btn btn-dark float-end">{{'MAIN.REFRESH' | translate}}</button>
-	</div>
-</ng-template>
-
-<ng-template #forgotPasswordTemplate>
-	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
-		<h4 class="modal-title float-start">{{'MAIN.FORGOT_PASSWORD' | translate}}</h4>
-		<button (click)="modalRef2.hide()" class="btn-close float-end" type="button" aria-label="Close"></button>
-	</div>
-	<div class="modal-body">
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputEmailF"><b>{{'MAIN.EMAIL' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input [(ngModel)]="forgotPasswordForm.email" class="form-control" id="inputEmailF" type="email">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputAnswerF"><b>{{'MAIN.ANSWER' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input [(ngModel)]="forgotPasswordForm.answer" class="form-control" id="inputAnswerF" type="password">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label" for="inputNewPasswordF"><b>{{'MAIN.NEW_PASSWORD' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input [(ngModel)]="forgotPasswordForm.password" class="form-control" id="inputNewPasswordF" type="password">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			<label class="col-sm-4 col-form-label"
-			       for="inputReNewPasswordF"><b>{{'MAIN.RE_NEW_PASSWORD' | translate}}</b></label>
-			<div class="col-sm-8">
-				<input (keyup.enter)="onVerify()" [(ngModel)]="forgotPasswordForm.rePassword" class="form-control"
-				       id="inputReNewPasswordF" type="password">
-			</div>
-		</div>
-		<div class="mb-3 row">
-			@if (wrongForgot) {
-				<span class="col-sm-12 text-danger">{{'MAIN.WRONG_INPUT_OR_DUPLICATE' | translate}}</span>
-			}
-		</div>
-	</div>
-	<div class="modal-footer bg-light">
-		<button (click)="onVerify()" class="btn btn-success float-end">{{'MAIN.VERIFY_EMAIL' | translate}}</button>
-		<button (click)="onRefreshForgotPasswordForm()"
-		        class="btn btn-dark float-end">{{'MAIN.REFRESH' | translate}}</button>
-	</div>
-</ng-template>
-
-<ng-template #cartTemplate>
-	<div class="modal-header {{bgPrimary()}} {{tcPrimary()}}">
-		<h4 class="modal-title float-start">{{'MAIN.CART' | translate}}</h4>
-		<button (click)="modalRef.hide()" class="btn-close float-end" type="button" aria-label="Close"></button>
-	</div>
-	<div class="modal-body table-responsive wrapper-cart-table">
-		<table class="table table-bordered table-striped table-sm table-hover text-center">
-			<thead class="{{bgPrimary()}} {{tcPrimary()}}">
-			<tr>
-				<th scope="col">#</th>
-				<th scope="col">{{'ADMIN.NAME' | translate}}</th>
-				<th scope="col">{{'ADMIN.CATEGORY' | translate}}</th>
-				<th scope="col">{{'ADMIN.TYPE' | translate}}</th>
-				<th scope="col">{{'ADMIN.PRICE' | translate}}</th>
-				<th scope="col">{{'ADMIN.QUANTITY_CART' | translate}}</th>
-				<th scope="col">{{'ADMIN.TOTAL_PRICE' | translate}}</th>
-				<th class="col-hoverable" scope="col">
-					<fa-icon (click)="cancelAndDecreaseItem(-1)" [icon]="faMinus"></fa-icon>
-				</th>
-			</tr>
-			</thead>
-			<tbody>
-			@for (product of addedProducts(); track $index; let i = $index) {
-				<tr>
-					<th scope="row">{{i + 1}}</th>
-					<td>{{product.name}}</td>
-					<td>{{'DATA.' + product.categoryName | translate}}</td>
-					<td>{{'DATA.' + product.typeName | translate}}</td>
-					<td>{{product.price.toLocaleString(translate.currentLang() ?? 'en')}}</td>
-					<td>{{countOfIndividualProduct()[i]}}</td>
-					<td>{{totalPriceOfIndividualProduct()[i].toLocaleString(translate.currentLang() ?? 'en')}}</td>
-					<td>
-						<fa-icon (click)="increaseItem(i)" [icon]="faPlus"></fa-icon>&nbsp;
-						<fa-icon (click)="cancelAndDecreaseItem(i)" [icon]="faMinus"></fa-icon>
-					</td>
-				</tr>
-			}
-			@if (addedProducts().length !== 0) {
-				<tr>
-					<td colspan="6"><b>{{'ADMIN.TOTAL_PRICE' | translate}}</b></td>
-					<td><b>{{totalPriceOfAddedProduct().toLocaleString(translate.currentLang() ?? 'en')}}</b></td>
-					<td></td>
-				</tr>
-			}
-			@if (addedProducts().length === 0) {
-				<tr>
-					<td colspan="8"><i>{{'ADMIN.NO_PRODUCT_FOUND' | translate}}</i></td>
-				</tr>
-			}
-			</tbody>
-		</table>
-		<div class="personal-info">
-			<div class="mb-3 row">
-				<label class="col-sm-4 col-form-label" for="inputPhoneC"><b>{{'MAIN.PHONE' | translate}}</b></label>
-				<div class="col-sm-8">
-					<input [(ngModel)]="cartForm.phone" class="form-control" id="inputPhoneC" type="text">
-				</div>
-			</div>
-			<div class="mb-3 row">
-				<label class="col-sm-4 col-form-label" for="inputAddressC"><b>{{'MAIN.ADDRESS' | translate}}</b></label>
-				<div class="col-sm-8">
-					<input [(ngModel)]="cartForm.address" class="form-control" id="inputAddressC" type="text">
-				</div>
-			</div>
-			<div class="mb-3 row">
-				<label class="col-sm-4 col-form-label" for="inputCityC"><b>{{'MAIN.CITY' | translate}}</b></label>
-				<div class="col-sm-8">
-					<select [(ngModel)]="cartForm.city" class="form-control" id="inputCityC">
-						@for (city of cities(); track city.name) {
-							<option [value]="city.name">{{city.name}}</option>
-						}
-					</select>
-				</div>
-			</div>
-			<div class="mb-3 row">
-				<label class="col-sm-4 col-form-label" for="inputDistrictC"><b>{{'MAIN.DISTRICT' | translate}}</b></label>
-				<div class="col-sm-8">
-					<select [(ngModel)]="cartForm.district" class="form-control" id="inputDistrictC">
-						@for (district of districts(); track district.name) {
-							@if (district.cityName === cartForm.city) {
-								<option [value]="district.name">{{district.name}}</option>
-							}
-						}
-					</select>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div class="modal-footer bg-light">
-		<button (click)="onSettle()" class="btn btn-success float-end">{{'MAIN.CONFIRM_ORDER' | translate}}</button>
-	</div>
-</ng-template>
+<app-toasts></app-toasts>
+<app-auth-modal></app-auth-modal>

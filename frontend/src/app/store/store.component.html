@@ -8,7 +8,7 @@
 					       type="text">
 				</div>
 				<div class="mb-3 col-xl-2 col-lg-2 col-md-2 col-sm-3 col-3">
-					<select (change)="onChangeCategory('search'); onSearch()" [(ngModel)]="searchForm.categoryName"
+					<select (change)="onChangeCategory(); onSearch()" [(ngModel)]="searchForm.categoryName"
 					        class="form-control">
 						@for (category of categories(); track category.name) {
 							<option [value]="category.name">{{'DATA.' + category.name | translate}}</option>
@@ -70,12 +70,12 @@
 					@for (product of displayProducts(); track $index; let i = $index) {
 						<div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 card-group mb-2 px-1">
 							<div class="card">
-								<div class="card-header {{bgPrimary()}} {{tcPrimary()}}"><b>{{product.name}}</b></div>
+								<div class="card-header bg-light text-dark"><b>{{product.name}}</b></div>
 								<div class="card-body">
 									<img (click)="onOpenImage(i, imageTemplate)" [alt]="product.name" [src]="product.imgUrl"
 									     class="card-img-top">
 								</div>
-								<div class="card-footer {{bgPrimary()}} {{tcPrimary()}}">
+								<div class="card-footer bg-light text-dark">
 									<span class="float-start">{{product.price.toLocaleString(translate.currentLang() ?? 'en')}} đ</span>
 									<span class="float-end">
 									<button (click)="onAddToCart(i)" class="btn btn-dark" placement="bottom"

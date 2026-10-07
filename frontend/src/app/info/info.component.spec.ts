@@ -5,20 +5,34 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {provideRouter} from '@angular/router';
 import {provideTranslateService} from '@ngx-translate/core';
 import {beforeEach, afterEach, describe, expect, it} from 'vitest';
-import {InfoComponent} from './info.component';
+import {BillRow, InfoComponent} from './info.component';
+import {SessionService, SessionUser} from '../core/session.service';
 import {Product} from '../_models/product';
-import {Bill} from '../_models/bill';
 
 @Component({selector: 'app-empty', template: ''})
 class EmptyComponent {
 }
 
+const member: SessionUser = {
+	id: 4,
+	name: 'Member',
+	email: 'member@flowershop.example',
+	phone: '0900000004',
+	address: 'A',
+	district: 'Binh Thanh',
+	city: 'Ho Chi Minh',
+	role: 'USER',
+	enable: true
+};
+
+const admin: SessionUser = {...member, id: 1, role: 'ADMIN'};
+
 const products: Product[] = [{
 	id: 1,
 	name: 'Rose',
 	description: 'red flower',
-	price: 1,
-	imgUrl: 'aGk=',
+	price: 250000,
+	imgUrl: 'https://img/rose',
 	quantity: 5,
 	saleAmount: 0,
 	categoryName: 'Fresh',
@@ -27,7 +41,7 @@ const products: Product[] = [{
 	id: 2,
 	name: 'Tulip',
 	description: 'pink flower',
-	price: 1,
+	price: 120000,
 	imgUrl: '',
 	quantity: 3,
 	saleAmount: 0,
@@ -35,16 +49,11 @@ const products: Product[] = [{
 	typeName: 'Daily'
 }];
 
-const bills: Bill[] = [{
-	placementDate: '2026-10-07T08:00:00',
+const bills: BillRow[] = [{
 	productId: 1,
 	productQuantity: 2,
-	price: 13230,
-	userId: 4,
-	settlementDate: '2026-10-07T09:00:00',
-	status: 'SUCCESS',
-	phone: '0900000004',
-	detailAddress: 'A, Bình Thạnh, Hồ Chí Minh'
+	price: 500000,
+	settlementDate: '2026-10-07T09:00:00'
 }];
 
 describe('InfoComponent', () => {
@@ -52,6 +61,7 @@ describe('InfoComponent', () => {
 	let fixture: ComponentFixture<InfoComponent>;
 
 	beforeEach(() => {
+		localStorage.clear();
 		TestBed.configureTestingModule({
 			imports: [InfoComponent],
 			providers: [
@@ -73,7 +83,11 @@ describe('InfoComponent', () => {
 		localStorage.clear();
 	});
 
-	function flushBackend(productList: Product[], billList: Bill[], status = 200) {
+	function loginAs(user: SessionUser): void {
+		TestBed.inject(SessionService).login('token-1', user);
+	}
+
+	function flushBackend(productList: Product[], billList: BillRow[], status = 200) {
 		const component = fixture.componentInstance;
 		if (component.userId !== 0) {
 			httpMock.expectOne(`api/user/${component.userId}`).flush({name: 'Member'});
@@ -87,7 +101,7 @@ describe('InfoComponent', () => {
 	}
 
 	it('renders the member profile with their purchase history', () => {
-		localStorage.setItem('token', btoa('4+MEMBER'));
+		loginAs(member);
 		fixture = TestBed.createComponent(InfoComponent);
 		fixture.detectChanges();
 		flushBackend(products, bills);
@@ -97,11 +111,11 @@ describe('InfoComponent', () => {
 		expect(component.isAdmin).toBe(false);
 		expect(component.userId).toBe(4);
 		expect(component.user().name).toBe('Member');
-		expect(component.products()[0].imgUrl).toBe('hi');
-		expect(component.products()[0].price).toBe(1 * 23000.0 - 9770);
+		expect(component.products()[0].imgUrl).toBe('https://img/rose');
+		expect(component.products()[0].price).toBe(250000);
 		expect(component.billsRender().map(p => p.name)).toEqual(['Rose']);
 		expect(component.countOfIndividualProduct()).toEqual([2]);
-		expect(component.totalPriceOfAddedProduct()).toBe(13230);
+		expect(component.totalPriceOfAddedProduct()).toBe(500000);
 		expect(fixture.nativeElement.textContent).toContain('Rose');
 	});
 
@@ -119,7 +133,7 @@ describe('InfoComponent', () => {
 	});
 
 	it('falls back to the stored address when the profile omits it', () => {
-		localStorage.setItem('token', btoa('4+MEMBER'));
+		loginAs(member);
 		localStorage.setItem('detailAddress', 'B, Gò Vấp, Hồ Chí Minh');
 		fixture = TestBed.createComponent(InfoComponent);
 		fixture.detectChanges();
@@ -129,7 +143,7 @@ describe('InfoComponent', () => {
 	});
 
 	it('keeps empty signals when the product api fails', () => {
-		localStorage.setItem('token', btoa('4+MEMBER'));
+		loginAs(member);
 		fixture = TestBed.createComponent(InfoComponent);
 		fixture.detectChanges();
 		flushBackend([], [], 500);
@@ -138,8 +152,7 @@ describe('InfoComponent', () => {
 	});
 
 	it('treats null payloads as empty and reports api errors', () => {
-		localStorage.setItem('token', btoa('4+MEMBER'));
-		localStorage.removeItem('detailAddress');
+		loginAs(member);
 		fixture = TestBed.createComponent(InfoComponent);
 		fixture.detectChanges();
 		httpMock.expectOne('api/user/4').flush({name: 'Member'});
@@ -152,7 +165,7 @@ describe('InfoComponent', () => {
 	});
 
 	it('marks an admin session and redirects', () => {
-		localStorage.setItem('token', btoa('1+ADMIN'));
+		loginAs(admin);
 		fixture = TestBed.createComponent(InfoComponent);
 		fixture.detectChanges();
 		httpMock.expectOne('api/user/1').flush({name: 'Admin'});

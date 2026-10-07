@@ -1,7 +1,7 @@
-import {Component, OnDestroy, OnInit, TemplateRef, inject, signal} from '@angular/core';
+import {Component, OnInit, TemplateRef, inject, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormsModule} from '@angular/forms';
 import {HttpClient} from '@angular/common/http';
-import {Router} from '@angular/router';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -17,14 +17,12 @@ import {
 import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
 import {TooltipDirective} from 'ngx-bootstrap/tooltip';
 import {PageChangedEvent, PaginationComponent} from 'ngx-bootstrap/pagination';
-import {Subscription} from 'rxjs';
 import * as XLSX from 'xlsx';
-import {DataTranslateService} from '../_services/data-translate.service';
-import {SharedService} from '../_services/shared.service';
-import {TokenService} from '../_services/token.service';
 import {Product} from '../_models/product';
 import {Category} from '../_models/category';
 import {Type} from '../_models/type';
+
+type FormMode = 'search' | 'create' | 'edit';
 
 export function buildExportFilename(lang: string, date: Date): string {
 	const name = lang === 'vi' ? 'sản_phẩm' : 'data';
@@ -43,7 +41,7 @@ export function buildExportFilename(lang: string, date: Date): string {
 	templateUrl: './admin.component.html',
 	styleUrls: ['./admin.component.scss']
 })
-export class AdminComponent implements OnInit, OnDestroy {
+export class AdminComponent implements OnInit {
 	modalRef!: BsModalRef;
 	data = signal<Product[]>([]);
 	displayProducts = signal<Product[]>([]);
@@ -90,60 +88,31 @@ export class AdminComponent implements OnInit, OnDestroy {
 	faFileArrowDown = faFileArrowDown;
 	faArrowUpShortWide = faArrowUpShortWide;
 	faArrowDownShortWide = faArrowDownShortWide;
-	bgPrimary = signal('');
-	tcPrimary = signal('');
 	excelData = signal<Product[]>([]);
 	numOfSortableCol = 5; // name, price, quantity, saleAmount, id
 	sortFlip: boolean[] = [];
 	firstTimeSort = true;
 	isSelected = signal<boolean[]>([]);
-	isAdmin = false;
 	lightboxSrc = signal('');
 	lightboxCaption = signal('');
-	translateWrongExcel = signal('');
-	translateWrongFormat = signal('');
-	translateImportSuccessful = signal('');
 
 	private readonly http = inject(HttpClient);
-	private readonly router = inject(Router);
 	private readonly modalService = inject(BsModalService);
-	private readonly dataTranslateService = inject(DataTranslateService);
-	private readonly sharedService = inject(SharedService);
-	private readonly tokenService = inject(TokenService);
 	readonly translate = inject(TranslateService);
-	private readonly subscriptions = new Subscription();
+	readonly translateWrongExcel = toSignal(this.translate.stream('ALERT.NOT_EXCEL'), {initialValue: ''});
+	readonly translateWrongFormat = toSignal(this.translate.stream('ALERT.WRONG_FORMAT'), {initialValue: ''});
+	readonly translateImportSuccessful = toSignal(this.translate.stream('ALERT.IMPORT_SUCCESSFUL'), {initialValue: ''});
 
 	constructor() {
 		for (let i = 0; i < this.numOfSortableCol; ++i) {
 			this.sortFlip[i] = false;
 		}
-		this.subscriptions.add(this.sharedService.getGlobalBackgroundPrimary().subscribe(bg => {
-			this.bgPrimary.set(bg[0]);
-			this.tcPrimary.set(bg[1]);
-		}));
-		this.subscriptions.add(this.translate.stream('ALERT.NOT_EXCEL').subscribe(rs => {
-			this.translateWrongExcel.set(rs);
-		}));
-		this.subscriptions.add(this.translate.stream('ALERT.WRONG_FORMAT').subscribe(rs => {
-			this.translateWrongFormat.set(rs);
-		}));
-		this.subscriptions.add(this.translate.stream('ALERT.IMPORT_SUCCESSFUL').subscribe(rs => {
-			this.translateImportSuccessful.set(rs);
-		}));
 	}
 
 	ngOnInit() {
 		this.getProducts();
 		this.getCategories();
 		this.getTypes();
-		this.isAdmin = this.tokenService.isAdmin();
-		if (!this.isAdmin) {
-			this.router.navigate(['/shop']);
-		}
-	}
-
-	ngOnDestroy() {
-		this.subscriptions.unsubscribe();
 	}
 
 	getProducts() {
@@ -152,10 +121,8 @@ export class AdminComponent implements OnInit, OnDestroy {
 				this.data.set(data);
 				this.productsOriginalDescription.length = 0;
 				this.data().forEach(product => {
-					product.imgUrl = product.imgUrl ? atob(product.imgUrl) : '';
 					this.productsOriginalDescription.push(product.description);
-					product.description = product.description.substr(0, 50) + (product.description.length > 60 ? '...' : '');
-					product.price = this.dataTranslateService.getPrice(product.price, 'vi');
+					product.description = product.description.slice(0, 50) + (product.description.length > 60 ? '...' : '');
 				});
 				this.searchResults.set(data);
 				this.paging(this.searchResults());
@@ -163,7 +130,6 @@ export class AdminComponent implements OnInit, OnDestroy {
 		}, error => {
 			console.log(`Error: ${error}`);
 			this.data.set([]);
-		}, () => {
 		});
 	}
 
@@ -192,14 +158,23 @@ export class AdminComponent implements OnInit, OnDestroy {
 		this.searchResults.set(searchResults);
 	}
 
-	onChangeCategory(mode: string) {
+	onChangeCategory(mode: FormMode) {
 		if (mode === 'search') {
 			this.searchForm.name = '';
-			this.searchForm.typeName = this.types()[this.types().findIndex(x => x.categoryName === this.searchForm.categoryName)].name;
+			const matching = this.types().find(type => type.categoryName === this.searchForm.categoryName);
+			if (matching !== undefined) {
+				this.searchForm.typeName = matching.name;
+			}
 		} else if (mode === 'create') {
-			this.createForm.typeName = this.types()[this.types().findIndex(x => x.categoryName === this.createForm.categoryName)].name;
-		} else if (mode === 'edit') {
-			this.editForm.typeName = this.types()[this.types().findIndex(x => x.categoryName === this.editForm.categoryName)].name;
+			const matching = this.types().find(type => type.categoryName === this.createForm.categoryName);
+			if (matching !== undefined) {
+				this.createForm.typeName = matching.name;
+			}
+		} else {
+			const matching = this.types().find(type => type.categoryName === this.editForm.categoryName);
+			if (matching !== undefined) {
+				this.editForm.typeName = matching.name;
+			}
 		}
 		this.firstTimeSort = false;
 	}
@@ -221,7 +196,6 @@ export class AdminComponent implements OnInit, OnDestroy {
 			this.categories.set([]);
 			this.createForm.categoryName = '';
 			this.searchForm.categoryName = '';
-		}, () => {
 		});
 	}
 
@@ -237,7 +211,6 @@ export class AdminComponent implements OnInit, OnDestroy {
 			this.types.set([]);
 			this.createForm.typeName = '';
 			this.searchForm.typeName = '';
-		}, () => {
 		});
 	}
 
@@ -272,38 +245,30 @@ export class AdminComponent implements OnInit, OnDestroy {
 	}
 
 	onCreate() {
-		const body = {
-			...this.createForm,
-			imgUrl: btoa(this.createForm.imgUrl),
-			price: this.dataTranslateService.getPrice(this.createForm.price, 'en')
-		};
-		this.http.post<Product>('/api/product/create', body).subscribe(() => {
+		this.http.post<Product>('/api/product/create', {...this.createForm}).subscribe(() => {
 			this.getProducts();
 		}, error => {
 			console.log(`Error: ${error}`);
-		}, () => {
 		});
 	}
 
 	openEditModal(template: TemplateRef<void>, currentId: number) {
+		const original = this.data().find(product => product.id === currentId);
+		if (original === undefined) {
+			return;
+		}
 		this.modalRef = this.modalService.show(template);
 		this.currentId = currentId;
-		this.editForm = JSON.parse(JSON.stringify(this.data().find(x => x.id === this.currentId)));
-		this.editIndex = this.data().findIndex(x => x.id === this.currentId);
+		this.editForm = structuredClone(original);
+		this.editIndex = this.data().findIndex(product => product.id === currentId);
 		this.editForm.description = this.productsOriginalDescription[this.editIndex];
 	}
 
 	onEdit() {
-		const body = {
-			...this.editForm,
-			imgUrl: btoa(this.editForm.imgUrl),
-			price: this.dataTranslateService.getPrice(this.editForm.price, 'en')
-		};
-		this.http.put<Product>(`/api/product/${this.currentId}`, body).subscribe(() => {
+		this.http.put<Product>(`/api/product/${this.currentId}`, {...this.editForm}).subscribe(() => {
 			this.getProducts();
 		}, error => {
 			console.log(`Error: ${error}`);
-		}, () => {
 		});
 	}
 
@@ -322,7 +287,6 @@ export class AdminComponent implements OnInit, OnDestroy {
 				this.getProducts();
 			}, error => {
 				console.log(`Error: ${error}`);
-			}, () => {
 			});
 		} else {
 			const delProdIds: number[] = [];
@@ -335,7 +299,6 @@ export class AdminComponent implements OnInit, OnDestroy {
 				this.getProducts();
 			}, error => {
 				console.log(`Error: ${error}`);
-			}, () => {
 			});
 		}
 	}
@@ -345,7 +308,6 @@ export class AdminComponent implements OnInit, OnDestroy {
 	}
 
 	onFileChange(evt: Event) {
-		/* wire up file reader */
 		const target = evt.target as HTMLInputElement;
 		if (target.files === null || target.files.length !== 1) {
 			throw new Error('Cannot use multiple files');
@@ -357,13 +319,11 @@ export class AdminComponent implements OnInit, OnDestroy {
 		}
 		const reader: FileReader = new FileReader();
 		reader.onload = () => {
-			/* read workbook */
-			const bstr: string = reader.result as string;
-			const wb: XLSX.WorkBook = XLSX.read(bstr, {type: 'binary'});
+			const workbook: XLSX.WorkBook = XLSX.read(reader.result, {type: 'array'});
 
 			/* grab first sheet */
-			const wsname: string = wb.SheetNames[0];
-			const ws: XLSX.WorkSheet = wb.Sheets[wsname];
+			const wsname: string = workbook.SheetNames[0];
+			const ws: XLSX.WorkSheet = workbook.Sheets[wsname];
 
 			/* save data */
 			this.excelData.set(XLSX.utils.sheet_to_json<Product>(ws, {header: ['id', 'name', 'description', 'imgUrl', 'price', 'quantity', 'saleAmount', 'typeName', 'categoryName']}).slice(1));
@@ -373,33 +333,24 @@ export class AdminComponent implements OnInit, OnDestroy {
 				alert(this.translateWrongFormat());
 			}
 		};
-		reader.readAsBinaryString(target.files[0]);
+		reader.readAsArrayBuffer(file);
 	}
 
 	onImportExcel(excelData: Product[]) {
-		const body = excelData.map(product => ({
-			...product,
-			price: this.dataTranslateService.getPrice(product.price, 'en')
-		}));
-		this.http.post<Product[]>('/api/product', body).subscribe(() => {
+		this.http.post<Product[]>('/api/product', excelData).subscribe(() => {
 			alert(this.translateImportSuccessful());
 			this.getProducts();
 		}, error => {
 			console.log(`Error: ${error}`);
-		}, () => {
 		});
 	}
 
 	onExportExcel() {
 		/* prepare data */
-		const isVi = this.translate.currentLang() === 'vi';
 		const tempDescriptions: string[] = [];
-		this.data().forEach((data, index) => {
-			tempDescriptions[index] = data.description;
-			data.description = this.productsOriginalDescription[index];
-			if (!isVi) {
-				data.price = this.dataTranslateService.getPrice(data.price, 'en');
-			}
+		this.data().forEach((row, index) => {
+			tempDescriptions[index] = row.description;
+			row.description = this.productsOriginalDescription[index];
 		});
 
 		/* generate worksheet */
@@ -407,17 +358,14 @@ export class AdminComponent implements OnInit, OnDestroy {
 
 		/* generate workbook and add the worksheet */
 		const wb: XLSX.WorkBook = XLSX.utils.book_new();
-		XLSX.utils.book_append_sheet(wb, ws, isVi ? 'Sản phẩm' : 'Products');
+		XLSX.utils.book_append_sheet(wb, ws, this.translate.currentLang() === 'vi' ? 'Sản phẩm' : 'Products');
 
 		/* save to file */
 		XLSX.writeFile(wb, buildExportFilename(this.translate.currentLang() ?? 'en', new Date()));
 
 		/* restore data state */
-		this.data().forEach((data, index) => {
-			data.description = tempDescriptions[index];
-			if (!isVi) {
-				data.price = this.dataTranslateService.getPrice(data.price, 'vi');
-			}
+		this.data().forEach((row, index) => {
+			row.description = tempDescriptions[index];
 		});
 	}
 
