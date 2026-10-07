@@ -31,7 +31,9 @@ insert into type (id, name, category_name) values (23, 'BLOOMING PLANTS', 'PLANT
 insert into type (id, name, category_name) values (24, 'GREEN PLANTS', 'PLANTS');
 insert into type (id, name, category_name) values (25, 'ORCHIDS & TROPICALS', 'PLANTS');
 
-insert into user (id, address, city, district, email, enable, name, password, phone, type) values (1, 'Đường Đời', 'Hồ Chí Minh', 'Bình Thạnh', 'flowershop.noreply@gmail.com', true, 'lavantien', 'MTIzNHF3ZXI=', '0960960096', 'ADMIN');
-insert into user (id, address, city, district, email, enable, name, password, phone, type) values (2, 'Đường Đời', 'Hồ Chí Minh', 'Bình Thạnh', 'flowershop1.noreply@gmail.com', true, 'nguyentuanphuongnam', 'MTIzNHF3ZXI=', '0960960096', 'ADMIN');
-insert into user (id, address, city, district, email, enable, name, password, phone, type) values (3, 'Đường Đời', 'Hồ Chí Minh', 'Bình Thạnh', 'flowershop2.noreply@gmail.com', true, 'leviethuynh', 'MTIzNHF3ZXI=', '0960960096', 'ADMIN');
-insert into user (id, address, city, district, email, enable, name, password, phone, type) values (4, 'Đường Phan Đăng Lưu', 'Hồ Chí Minh', 'Phú Nhuận', 'chuatebongdem666@gmail.com', true, 'chuatebongdem', 'MTIzNDU2Nzg=', '0900900090', 'USER');
+-- Demo personas, passwords are bcrypt hashes: ids 1-3 use 1234qwer, id 4 uses 12345678.
+-- Regenerate with: make db-hash DB_HASH_PASSWORDS="1234qwer 1234qwer 1234qwer 12345678"
+insert into user (id, address, city, district, email, enable, name, password, phone, type, answer) values (1, '01 Demo Lane', 'Hồ Chí Minh', 'Bình Thạnh', 'admin@flowershop.example', true, 'Demo Admin', '$2a$10$uzdoc6WXic8cZwxUQJ3hGuhoqFrrRwAWm3o3ytSXYkgHRsJcXwPFe', '0900000001', 'ADMIN', 'demo');
+insert into user (id, address, city, district, email, enable, name, password, phone, type, answer) values (2, '02 Demo Lane', 'Hồ Chí Minh', 'Bình Thạnh', 'editor@flowershop.example', true, 'Demo Editor', '$2a$10$f750MCkKwTYc/pnZqKthW.QbUfpkHfY7FPlZ.CYIHSEvtoIL8tT2a', '0900000002', 'ADMIN', 'demo');
+insert into user (id, address, city, district, email, enable, name, password, phone, type, answer) values (3, '03 Demo Lane', 'Hồ Chí Minh', 'Bình Thạnh', 'staff@flowershop.example', true, 'Demo Staff', '$2a$10$HKoKsRib2VpH/o0xV5yaFuOkN0uyt6oztOLtEpDuwHs/BogDyZ3L2', '0900000003', 'ADMIN', 'demo');
+insert into user (id, address, city, district, email, enable, name, password, phone, type, answer) values (4, '04 Demo Lane', 'Hồ Chí Minh', 'Phú Nhuận', 'member@flowershop.example', true, 'Demo Member', '$2a$10$dGEbCpYmZvHyww8Q0LazIOf423RfSDj/7a3lebBoiNF2./ue66RVm', '0900000004', 'USER', 'demo');

@@ -14,8 +14,8 @@ const CONFIG = {
 	outDir: path.join(REPO_ROOT, 'project-pictures'),
 	viewport: {width: 1600, height: 900},
 	locale: 'en',
-	member: {email: 'chuatebongdem666@gmail.com', password: '12345678', userId: 4},
-	admin: {email: 'flowershop.noreply@gmail.com', password: '1234qwer'},
+	member: {email: 'member@flowershop.example', password: '12345678', userId: 4},
+	admin: {email: 'admin@flowershop.example', password: '1234qwer'},
 	healthTimeoutMs: 180_000,
 	imageTimeoutMs: 45_000
 };
