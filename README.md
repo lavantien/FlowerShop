@@ -5,60 +5,96 @@
 [![frontend coverage](https://raw.githubusercontent.com/lavantien/FlowerShop/badges/frontend-coverage.svg)](https://github.com/lavantien/FlowerShop/actions/workflows/ci.yml)
 ![aws ready](https://raw.githubusercontent.com/lavantien/FlowerShop/badges/aws-ready.svg)
 
-eCommerce web app: a Spring Boot 4 REST API with JPA, BCrypt password hashing, and token auth, an Angular 22 storefront with an admin console, and MySQL 9.7 LTS storage. The Maven wrapper and `make` targets wrap every build, test, and run step, and the build provisions its own Node 24, so the host needs only a JDK, Docker, and make. For a simpler legacy architecture, check the [v2.0 tag](https://github.com/lavantien/FlowerShop/tree/v2.0).
+eCommerce web app: a Spring Boot 4 REST API with JPA, BCrypt password hashing, and token auth, an Angular 22 storefront with an admin console, and MySQL 9.7 LTS storage. v3 adds server-priced orders with an atomic stock guard, HMAC-signed payment sessions, coupons, wishlists, and sales reports. The Maven wrapper and `make` targets wrap every build, test, and run step, and the build provisions its own Node 24 for the Angular bundle, so the host needs a JDK, Docker, make, and Node for the tooling scripts. For a simpler legacy architecture, check the [v2.0 tag](https://github.com/lavantien/FlowerShop/tree/v2.0).
 
-## Requirements
+## Table of contents
 
-1. `JDK 27`
-2. `Docker`, which runs MySQL 9.7 LTS through `make db-up`
-3. `MySQL Server 9.7 LTS`, or the Docker container above
-4. An editor of your choice: Neovim (my config lives at [github.com/lavantien/dotfiles](https://github.com/lavantien/dotfiles)), VS Code, or IntelliJ IDEA Community
-5. `Postman` or `CURL` for ad hoc API calls
+1. [v3 quickstart](#v3-quickstart)
+2. [Pictures](#pictures)
+3. [QA harness](#qa-harness)
+4. [Build logs](#build-logs)
+5. [Architecture and flows](#architecture-and-flows)
+
+## v3 quickstart
+
+Prerequisites: `JDK 27`, `Docker`, `make`, and `Node 24` with npm on PATH. CURL or Postman helps for ad hoc API calls, and any editor works.
+
+1. Start MySQL and seed it: `make db-up` then `make db-seed`, or `make db-reset` to drop the volume and redo both in one step. The seed writes the schema, 4 demo users, the taxonomy, 79 products, 6 Ho Chi Minh City branches with stock rows, and 3 coupons (`WELCOME10` percent, `SHIP50K` fixed, `EXPIRED5` inactive).
+2. Build and run: `make package` runs the full clean build with tests, then `make run` starts the newest `target/flowershop-*.jar` against the compose MySQL and serves the built SPA. The Makefile exports the `LOCAL_MYSQL_DB_*` variables matching compose, so no `application.yml` edit is needed unless you run your own MySQL.
+3. Log in over JSON as the seeded admin (password `1234qwer`):
+
+    ```sh
+    curl -s -X POST http://localhost:8080/api/auth/login \
+      -H "Content-Type: application/json" \
+      -d '{"email": "admin@flowershop.example", "password": "1234qwer"}'
+    ```
+
+    The 200 body is `{"token": "...", "user": {user}}`. Tokens are minted by login, rotated on every fresh login, and die on logout or restart, since sessions live in memory.
+4. Send the token in the `X-Auth-Token` header on every authenticated call:
+
+    ```sh
+    curl -s http://localhost:8080/api/user/me -H "X-Auth-Token: <token>"
+    ```
+
+    The whole contract, including the error code list and the payment signature scheme, is frozen in [docs/api-v3.md](docs/api-v3.md).
+5. For frontend work: `make frontend-install` then `make frontend-serve` serves the dev build at `http://localhost:4200`, proxying `/api` to `:8080`.
+6. To deploy elsewhere, copy the jar from `make package` and run `java -jar target/flowershop-*.jar` against your own MySQL 9.7. On AWS an EC2 instance or a Lightsail VPS runs the jar, RDS serves MySQL, and S3 holds backups and static assets.
 
 ## Pictures
 
+The v3 user journey first, then the admin console. Regenerate the set against the current build with `make screenshots`.
+
 1. Guest shop page
 ![Guest shop page](./project-pictures/01-shop-page.png)
-2. Guest shopping cart
+2. Product details
+![Product details](./project-pictures/11-product-details.png)
+3. Guest shopping cart
 ![Guest shopping cart](./project-pictures/02-shopping-cart.png)
-3. Member account details
+4. Checkout with a coupon applied
+![Checkout with a coupon applied](./project-pictures/12-checkout-coupon.png)
+5. Payment gateway page
+![Payment gateway page](./project-pictures/13-pay-gateway.png)
+6. Member account details
 ![Member account details](./project-pictures/03-member-account-details.png)
-4. Admin products listing
+7. Order history with cancel while pending
+![Order history](./project-pictures/14-info-order-history.png)
+8. Wishlist
+![Wishlist](./project-pictures/15-info-wishlist.png)
+9. Not-found page
+![Not-found page](./project-pictures/19-not-found.png)
+10. Admin dashboard with the sales report
+![Admin dashboard](./project-pictures/18-admin-dashboard.png)
+11. Admin products listing
 ![Admin products listing](./project-pictures/04-admin-products.png)
-5. Admin transaction summary
-![Admin transaction summary](./project-pictures/05-admin-transaction-summary.png)
-6. Admin create new product
+12. Admin create new product
 ![Admin create new product](./project-pictures/06-admin-create-product.png)
-7. Admin import products from Excel
-![Admin import products from Excel](./project-pictures/07-admin-import-excel.png)
-8. Admin export products to Excel
-![Admin export products to Excel](./project-pictures/08-admin-export-excel.png)
-9. Admin edit product
+13. Admin edit product
 ![Admin edit product](./project-pictures/09-admin-edit-product.png)
-10. Admin batch delete
+14. Admin batch delete
 ![Admin batch delete](./project-pictures/10-admin-batch-delete.png)
-11. Product details on click
-![Product details on click](./project-pictures/11-product-details.png)
+15. Admin import products from Excel
+![Admin import products from Excel](./project-pictures/07-admin-import-excel.png)
+16. Admin export products to Excel
+![Admin export products to Excel](./project-pictures/08-admin-export-excel.png)
+17. Admin orders with the status filter
+![Admin orders](./project-pictures/05-admin-transaction-summary.png)
+18. Admin coupons
+![Admin coupons](./project-pictures/16-admin-coupons.png)
+19. Admin branch stock editor
+![Admin branch stock editor](./project-pictures/17-admin-branch-stock.png)
 
-Regenerate this set against the current build with `make screenshots`.
+Shot 17 keeps its legacy filename `05-admin-transaction-summary.png`, the v3 capture regenerated it as the admin orders screen.
 
-## Development environment setup
+## QA harness
 
-1. Open the root folder in your editor: Neovim with [github.com/lavantien/dotfiles](https://github.com/lavantien/dotfiles), VS Code, or IntelliJ IDEA Community. No build step depends on the choice.
-2. Edit `application.yml` for your MySQL account, or set the `LOCAL_MYSQL_DB_*` environment variables.
-3. Start the database with `make db-up`, then run the first 2 lines of `db/run.sql` to create the `flowershop` schema.
-4. Launch `FlowershopApplication`, or run `make run` to start the jar and `make backend-test` for the test suite. The first boot creates the tables.
-5. Run the rest of `db/run.sql` to seed the demo data.
-6. In `Postman`, log in as the demo admin (`admin@flowershop.example` / `1234qwer`, `POST` at `http://localhost:8080/api/user/login`), then call `POST` at `http://localhost:8080/api/product` with the `JSON body` copied from `db/product.json` and the returned token in the `X-Auth-Token` header.
-7. Run `make frontend-install`, then `make frontend-serve` for the dev server at `http://localhost:4200`, proxying `/api` requests to `:8080`.
-8. Open `http://localhost:4200` in a browser.
+Every gate runs through a make target, and the committed reports under [docs/qa/](docs/qa) hold the numbers below.
 
-## Production environment setup
-
-1. The host needs `JDK 27` and `MySQL Server 9.7 LTS`. Set up the database and `application.yml` as in development.
-2. Run `make package` (or `./mvnw clean package`) from the root folder. This creates `target/flowershop-2.0.jar`.
-3. Run the jar with `java -jar target/flowershop-2.0.jar`.
-4. On AWS: an EC2 instance or a Lightsail VPS runs the jar, RDS serves MySQL 9.7, and S3 holds backups and static assets.
+1. `make backend-test`: `mvn verify` with a JaCoCo bundle gate at 0.90 covered ratio on lines and instructions, plus the concurrency suites for oversell, payment replay, and signature tamper.
+2. `make test-coverage`: the vitest suite with thresholds at 90 percent on statements, branches, functions, and lines.
+3. `make fuzz`: boots the packaged jar on a scratch port and fires the committed corpus plus seeded generated variants at every endpoint, asserting documented statuses only, problem+json with contract codes on errors, and zero 5xx, hangs, or run-budget breaches. Baseline run: 312 requests over 54 endpoint templates, zero assertion failures, seed 20261007. Report: [docs/qa/fuzz-report.md](docs/qa/fuzz-report.md).
+4. `make mutate`: source-level mutation harness sweeping 23 operators over the logic-dense backend classes, one mutant per run against its mapped test classes, tree restored and verified between runs. Baseline run: 128 mutants, 128 killed, 0 survivors. Report: [docs/qa/mutation-report.md](docs/qa/mutation-report.md).
+5. `make mutate-front`: the same conventions over the TypeScript core and services classes with 19 operators. Baseline run: 90 mutants, 90 killed, 0 survivors. Report: [docs/qa/mutation-front-report.md](docs/qa/mutation-front-report.md).
+6. CI runs three jobs on every push and pull request: backend tests against a MySQL 9.7.2 service container on JDK 27, frontend lint, coverage, and build on Node 24, and the npm audit zero-vulnerability gate. A badges job publishes the ci and coverage badges above from master pushes.
 
 ## Build logs
 
@@ -123,3 +159,88 @@ Regenerate this set against the current build with `make screenshots`.
 [INFO] Finished at: 2026-10-07T10:51:45+07:00
 [INFO] ------------------------------------------------------------------------
 ```
+
+### Build log (v3.0 release)
+
+<!-- placeholder: the release commit appends the final v3.0 build log under this heading -->
+
+## Architecture and flows
+
+<details>
+<summary>Expand for the 4 structural graphs and 14 sequence diagrams</summary>
+
+System overview, the whole stack at a glance:
+
+![System overview](./docs/diagrams/system-overview.png)
+
+Backend component graph, the controller, service, and repository layering with the token interceptor:
+
+![Backend components](./docs/diagrams/backend-components.png)
+
+Frontend component graph, the shell, routed feature areas, core services, and guards:
+
+![Frontend components](./docs/diagrams/frontend-components.png)
+
+Data model graph, the JPA entities with order, payment session, stock, coupon, and wishlist:
+
+![Data model](./docs/diagrams/data-model.png)
+
+Login and logout, token mint and burn:
+
+![Login and logout](./docs/diagrams/seq-login-logout.png)
+
+Register and password reset:
+
+![Register and reset](./docs/diagrams/seq-register-reset.png)
+
+Browse and catalog query, paging, filters, and the sort whitelist:
+
+![Browse and catalog query](./docs/diagrams/seq-browse-catalog.png)
+
+Add to cart, the persisted client cart:
+
+![Add to cart](./docs/diagrams/seq-add-to-cart.png)
+
+Checkout with payment confirm, server-side pricing, the stock guard, and the signed gateway redirect:
+
+![Checkout with payment confirm](./docs/diagrams/seq-checkout-confirm.png)
+
+Payment cancel, order cancellation and stock restore:
+
+![Payment cancel](./docs/diagrams/seq-payment-cancel.png)
+
+User order cancel while pending:
+
+![User order cancel](./docs/diagrams/seq-order-cancel.png)
+
+Admin fulfillment transitions across order statuses:
+
+![Fulfillment transitions](./docs/diagrams/seq-fulfillment.png)
+
+Coupon lifecycle, create, validate, and checkout integration:
+
+![Coupon lifecycle](./docs/diagrams/seq-coupon-lifecycle.png)
+
+Wishlist toggle:
+
+![Wishlist toggle](./docs/diagrams/seq-wishlist-toggle.png)
+
+User admin, listing, edits, and the delete guard:
+
+![User admin](./docs/diagrams/seq-user-admin.png)
+
+Excel import and export of the catalog:
+
+![Excel import and export](./docs/diagrams/seq-excel-import-export.png)
+
+Stock and branch admin:
+
+![Stock and branch admin](./docs/diagrams/seq-stock-branch-admin.png)
+
+Dashboard report, the sales aggregates:
+
+![Dashboard report](./docs/diagrams/seq-dashboard-report.png)
+
+</details>
+
+Regenerate the PNG files from the committed PlantUML sources with `make diagrams`.
