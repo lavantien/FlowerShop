@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.user;
 
+import com.jayway.jsonpath.JsonPath;
 import com.lavantien.flowershop.api.security.TokenInterceptor;
 import com.lavantien.flowershop.service.PasswordService;
 import com.lavantien.flowershop.service.UserService;
@@ -17,6 +18,7 @@ import java.util.Optional;
 
 import static com.lavantien.flowershop.api.security.AuthTestSupport.persona;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.prime;
+import static com.lavantien.flowershop.api.security.AuthTestSupport.tokenIdentity;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.tokenOf;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -63,10 +65,10 @@ class UserControllerTest {
 		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
 				.content(loginBody("admin@flowershop.example", "1234qwer")))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(tokenOf(1, "ADMIN")))
+			.andExpect(tokenIdentity("1+ADMIN"))
 			.andExpect(jsonPath("$.phone").value("0900000001"))
 			.andExpect(jsonPath("$.detailAddress").value("01 Demo Lane, Binh Thanh, Ho Chi Minh"));
-		assertTrue(userService.loggedInIds.contains(1L));
+		assertTrue(userService.isLoggedIn(1L));
 	}
 
 	@Test
@@ -78,7 +80,7 @@ class UserControllerTest {
 				.content(loginBody("member@flowershop.example", "wrong")))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-		assertFalse(userService.loggedInIds.contains(4L));
+		assertFalse(userService.isLoggedIn(4L));
 	}
 
 	@Test
@@ -89,7 +91,7 @@ class UserControllerTest {
 				.content(loginBody("nobody@flowershop.example", "1234qwer")))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-		assertTrue(userService.loggedInIds.isEmpty());
+		assertFalse(userService.isLoggedIn(1L));
 	}
 
 	@Test
@@ -133,13 +135,37 @@ class UserControllerTest {
 		mockMvc.perform(post("/api/user/resetPassword").contentType(MediaType.APPLICATION_JSON)
 				.content("{\"email\":\"member@flowershop.example\",\"answer\":\"demo\",\"password\":\"newpass123\"}"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(tokenOf(4, "USER")));
+			.andExpect(tokenIdentity("4+USER"));
 
 		ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
 		verify(userRepository).save(saved.capture());
 		assertTrue(passwordService.matches("newpass123", saved.getValue().getPassword()),
-			"the stored password must be a bcrypt hash of the submitted one");
-		assertTrue(userService.loggedInIds.contains(4L));
+			"the stored password must be bcrypt of the submitted one");
+		assertTrue(userService.isLoggedIn(4L));
+	}
+
+	@Test
+	void resetPasswordWithoutAStoredAnswerStaysGuestEvenWhenOmittedToo() throws Exception {
+		User user = persona(5, "USER", "blank@flowershop.example");
+		user.setAnswer(null);
+		when(userRepository.findByEmail("blank@flowershop.example")).thenReturn(user);
+
+		mockMvc.perform(post("/api/user/resetPassword").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"email\":\"blank@flowershop.example\",\"password\":\"hacked123\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
+		assertFalse(userService.isLoggedIn(5L), "null must not match null on the security answer");
+	}
+
+	@Test
+	void createRefusesAnEmailAlreadyInUse() throws Exception {
+		when(userRepository.findByEmail("member@flowershop.example"))
+			.thenReturn(persona(4, "USER", "member@flowershop.example"));
+
+		mockMvc.perform(post("/api/user/create").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Clone\",\"email\":\"member@flowershop.example\",\"password\":\"1234qwer\","
+					+ "\"rePassword\":\"1234qwer\",\"answer\":\"demo\"}"))
+			.andExpect(status().isConflict());
 	}
 
 	@Test
@@ -349,7 +375,19 @@ class UserControllerTest {
 				.content("{\"token\":\"" + tokenOf(4, "USER") + "\",\"phone\":\"0\",\"detailAddress\":\"x\"}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-		assertFalse(userService.loggedInIds.contains(4L), "a valid logout must drop the session id");
+		assertFalse(userService.isLoggedIn(4L), "a valid logout must drop the session");
+	}
+
+	@Test
+	void logoutWithAWrongSecretLeavesTheSessionAlive() throws Exception {
+		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+		String forged = Base64.getEncoder().encodeToString("4+USER+deadbeefdeadbeef".getBytes(StandardCharsets.UTF_8));
+
+		mockMvc.perform(post("/api/user/logout").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"token\":\"" + forged + "\",\"phone\":\"0\",\"detailAddress\":\"x\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
+		assertTrue(userService.isLoggedIn(4L), "a forged token must not log anybody out");
 	}
 
 	@Test
@@ -361,22 +399,30 @@ class UserControllerTest {
 				.content("{\"token\":\"" + unparsable + "\",\"phone\":\"0\",\"detailAddress\":\"x\"}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-		assertTrue(userService.loggedInIds.contains(4L), "a garbage token must not log anybody out");
+		assertTrue(userService.isLoggedIn(4L), "a garbage token must not log anybody out");
 	}
 
 	@Test
-	void loginIsIdempotentWhileAlreadyLoggedIn() throws Exception {
+	void aFreshLoginRotatesTheSecretAndKillsTheOldToken() throws Exception {
 		User user = persona(1, "ADMIN", "admin@flowershop.example");
 		when(userRepository.findByEmail("admin@flowershop.example")).thenReturn(user);
+		when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
-				.content(loginBody("admin@flowershop.example", "1234qwer")))
-			.andExpect(status().isOk());
-		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
-				.content(loginBody("admin@flowershop.example", "1234qwer")))
-			.andExpect(status().isOk());
+		String firstToken = loginAndGetToken("admin@flowershop.example", "1234qwer");
+		String secondToken = loginAndGetToken("admin@flowershop.example", "1234qwer");
 
-		assertTrue(userService.loggedInIds.size() == 1, "repeat logins must not duplicate the session id");
+		mockMvc.perform(get("/api/user").header("X-Auth-Token", firstToken))
+			.andExpect(status().isUnauthorized());
+		mockMvc.perform(get("/api/user").header("X-Auth-Token", secondToken))
+			.andExpect(status().isOk());
+	}
+
+	private String loginAndGetToken(String email, String password) throws Exception {
+		String body = mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
+				.content(loginBody(email, password)))
+			.andExpect(status().isOk())
+			.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+		return JsonPath.read(body, "$.token");
 	}
 
 	@Test
@@ -390,7 +436,7 @@ class UserControllerTest {
 		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
 				.content(loginBody("editor@flowershop.example", "1234qwer")))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(tokenOf(2, "USER")))
+			.andExpect(tokenIdentity("2+USER"))
 			.andExpect(jsonPath("$.detailAddress").value("01 Demo Lane, Cau Giay, Hanoi"));
 	}
 

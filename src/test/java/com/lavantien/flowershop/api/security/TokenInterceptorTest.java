@@ -116,6 +116,34 @@ class TokenInterceptorTest {
 	}
 
 	@Test
+	void tokenWithAWrongSecretIsRejected() throws Exception {
+		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+
+		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOfRaw("4+USER+0000deadbeef0000")))
+			.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void tokenWithoutASecretSegmentIsRejected() throws Exception {
+		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+
+		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOfRaw("4+USER")))
+			.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void theOldTokenBouncesAfterAFreshLoginRotatesTheSecret() throws Exception {
+		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+		String firstToken = tokenOf(4, "USER");
+		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+
+		mockMvc.perform(get("/api/probe").header("X-Auth-Token", firstToken))
+			.andExpect(status().isUnauthorized());
+		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOf(4, "USER")))
+			.andExpect(status().isOk());
+	}
+
+	@Test
 	void requireRoleAllowsTheAdminAndRejectsTheMember() throws Exception {
 		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
 		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
