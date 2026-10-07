@@ -224,6 +224,12 @@ export class AppComponent implements OnInit, OnDestroy {
 		this.modalRef = this.modalService.show(template);
 	}
 
+	// btoa throws on anything outside Latin1, so passwords with Vietnamese or
+	// emoji would crash the login click; encode the UTF-8 bytes instead.
+	private toBase64Utf8(value: string): string {
+		return btoa(String.fromCharCode(...new TextEncoder().encode(value)));
+	}
+
 	onLogin() {
 		if (!this.inputValidator.isEmail(this.loginForm.email) || !this.inputValidator.isPassword(this.loginForm.password)) {
 			this.wrongLogin = true;
@@ -231,7 +237,7 @@ export class AppComponent implements OnInit, OnDestroy {
 			return;
 		}
 		this.wrongLogin = false;
-		this.http.post<TokenDto>('/api/user/login', btoa(this.loginForm.email + 'j0z' + this.loginForm.password), {headers: new HttpHeaders({'Content-Type': 'text/plain'})}).subscribe((rs) => {
+		this.http.post<TokenDto>('/api/user/login', this.toBase64Utf8(this.loginForm.email + 'j0z' + this.loginForm.password), {headers: new HttpHeaders({'Content-Type': 'text/plain'})}).subscribe((rs) => {
 			localStorage.removeItem('token');
 			localStorage.setItem('token', rs.token);
 			localStorage.removeItem('phone');

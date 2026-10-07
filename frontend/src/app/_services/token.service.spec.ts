@@ -47,4 +47,12 @@ describe('TokenService', () => {
 		expect(service.isLoggedIn()).toBe(true);
 		expect(service.userId()).toBe(9);
 	});
+
+	it('treats a malformed stored token as guest instead of throwing', () => {
+		localStorage.setItem('token', '%%% not base64 %%%');
+		expect(service.userId()).toBe(0);
+		expect(service.role()).toBe('');
+		expect(service.isAdmin()).toBe(false);
+		expect(service.isLoggedIn()).toBe(false);
+	});
 });

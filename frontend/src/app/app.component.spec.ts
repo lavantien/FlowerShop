@@ -72,4 +72,16 @@ describe('AppComponent reset password', () => {
 		login.flush({token: btoa('4+MEMBER'), phone: '0900000004', detailAddress: 'A, Bình Thạnh, Hồ Chí Minh'});
 		expect(component.loginForm.password).toBe('1234qwer');
 	});
+
+	it('encodes a non-latin1 password into the login body without throwing', () => {
+		const component = createApp();
+		component.modalRef = {hide: vi.fn()} as unknown as BsModalRef;
+		component.loginForm.email = 'member@flowershop.example';
+		component.loginForm.password = 'đường#123';
+		component.onLogin();
+		const login = httpMock.expectOne('/api/user/login');
+		const raw = 'member@flowershop.example' + 'j0z' + 'đường#123';
+		expect(login.request.body).toBe(btoa(String.fromCharCode(...new TextEncoder().encode(raw))));
+		login.flush({token: btoa('0+GUESS'), phone: '0', detailAddress: 'x'});
+	});
 });
