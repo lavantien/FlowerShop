@@ -266,11 +266,12 @@ export class AdminComponent implements OnInit, OnDestroy {
 	}
 
 	onCreate() {
-		this.http.post<Product>('/api/product/create', () => {
-			this.createForm.imgUrl = btoa(this.createForm.imgUrl);
-			this.createForm.price = this.dataTranslateService.getPrice(this.createForm.price, 'en');
-			return this.createForm;
-		}).subscribe(() => {
+		const body = {
+			...this.createForm,
+			imgUrl: btoa(this.createForm.imgUrl),
+			price: this.dataTranslateService.getPrice(this.createForm.price, 'en')
+		};
+		this.http.post<Product>('/api/product/create', body).subscribe(() => {
 			this.getProducts();
 		}, error => {
 			console.log(`Error: ${error}`);
@@ -287,11 +288,12 @@ export class AdminComponent implements OnInit, OnDestroy {
 	}
 
 	onEdit() {
-		this.http.put<Product>(`/api/product/${this.currentId}`, () => {
-			this.editForm.imgUrl = btoa(this.editForm.imgUrl);
-			this.createForm.price = this.dataTranslateService.getPrice(this.createForm.price, 'en');
-			return this.editForm;
-		}).subscribe(() => {
+		const body = {
+			...this.editForm,
+			imgUrl: btoa(this.editForm.imgUrl),
+			price: this.dataTranslateService.getPrice(this.editForm.price, 'en')
+		};
+		this.http.put<Product>(`/api/product/${this.currentId}`, body).subscribe(() => {
 			this.getProducts();
 		}, error => {
 			console.log(`Error: ${error}`);
@@ -359,7 +361,7 @@ export class AdminComponent implements OnInit, OnDestroy {
 
 			/* save data */
 			this.excelData.set(XLSX.utils.sheet_to_json<Product>(ws, {header: ['id', 'name', 'description', 'imgUrl', 'price', 'quantity', 'saleAmount', 'typeName', 'categoryName']}).slice(1));
-			if (!!this.excelData() && typeof this.excelData() === typeof this.data()) {
+			if (this.excelData().length > 0) {
 				this.onImportExcel(this.excelData());
 			} else {
 				alert(this.translateWrongFormat());
@@ -369,16 +371,13 @@ export class AdminComponent implements OnInit, OnDestroy {
 	}
 
 	onImportExcel(excelData: Product[]) {
-		this.http.post<Product[]>('/api/product', () => {
-			this.data().forEach(data => {
-				data.price = this.dataTranslateService.getPrice(data.price, 'en');
-			});
-			return this.data();
-		}).subscribe(data => {
-			if (data === excelData) {
-				alert(this.translateImportSuccessful());
-				this.getProducts();
-			}
+		const body = excelData.map(product => ({
+			...product,
+			price: this.dataTranslateService.getPrice(product.price, 'en')
+		}));
+		this.http.post<Product[]>('/api/product', body).subscribe(() => {
+			alert(this.translateImportSuccessful());
+			this.getProducts();
 		}, error => {
 			console.log(`Error: ${error}`);
 		}, () => {
