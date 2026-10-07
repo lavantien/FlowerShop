@@ -7,6 +7,7 @@
     "start-dev": "ng serve --proxy-config proxy.conf.js",
     "build": "ng build",
     "test": "ng test",
+    "test:coverage": "ng test --configuration=coverage",
     "lint": "ng lint"
   },
   "private": true,
@@ -37,6 +38,7 @@
     "@angular/compiler-cli": "22.2.1",
     "@angular/language-service": "22.2.1",
     "@eslint/js": "^9.0.0",
+    "@vitest/coverage-v8": "5.0.3",
     "angular-eslint": "22.5.0",
     "eslint": "^9.0.0",
     "jsdom": "^30.0.0",

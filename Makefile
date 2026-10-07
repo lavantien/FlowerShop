@@ -22,7 +22,7 @@ export LOCAL_MYSQL_DB_USERNAME := $(DB_USER)
 export LOCAL_MYSQL_DB_PASSWORD := $(DB_PASS)
 
 .DEFAULT_GOAL := help
-.PHONY: help env db-up db-down db-nuke db-seed db-hash frontend-install frontend-build frontend-lint frontend-test frontend-serve backend-test build package run screenshots audit clean
+.PHONY: help env db-up db-down db-nuke db-seed db-hash frontend-install frontend-build frontend-lint frontend-test test-coverage frontend-serve backend-test build package run screenshots audit clean
 
 # Set SKIP_DB_UP=1 when MySQL already runs elsewhere (CI service container);
 # every target below then skips its db-up prerequisite.
@@ -67,6 +67,9 @@ frontend-lint: ## lint the Angular app
 
 frontend-test: ## run the vitest suite
 	@$(NPM) run test --prefix $(FRONTEND)
+
+test-coverage: ## run the vitest suite with coverage thresholds enforced at 90 percent
+	@$(NPM) run test:coverage --prefix $(FRONTEND)
 
 frontend-serve: ## dev server on :4200 proxying /api to :8080
 	@$(NPM) run start-dev --prefix $(FRONTEND)
