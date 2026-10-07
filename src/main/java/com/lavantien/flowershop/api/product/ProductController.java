@@ -1,6 +1,7 @@
 package com.lavantien.flowershop.api.product;
 
 import com.lavantien.flowershop.api.PageDto;
+import com.lavantien.flowershop.api.PageQuery;
 import com.lavantien.flowershop.api.branch.StockLevelRepository;
 import com.lavantien.flowershop.api.error.NotFoundException;
 import com.lavantien.flowershop.api.security.RequireRole;
@@ -27,9 +28,9 @@ public class ProductController {
 	// sort policy live, so both the controller and its tests read one rule.
 	record CatalogQuery(String search, String category, String type, Sort sort, int page, int size) {
 		static CatalogQuery of(String search, String category, String type, String sort, Integer page, Integer size) {
+			PageQuery paging = PageQuery.of(page, size);
 			return new CatalogQuery(blankToNull(search), blankToNull(category), blankToNull(type), sortOf(sort),
-				page == null ? 0 : Math.max(page, 0),
-				size == null ? 12 : Math.min(Math.max(size, 1), 48));
+				paging.page(), paging.size());
 		}
 
 		private static String blankToNull(String value) {

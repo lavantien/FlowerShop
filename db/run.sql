@@ -24,14 +24,16 @@ create table if not exists user (
 create table if not exists category (
 	id bigint not null auto_increment,
 	name varchar(255) default null,
-	primary key (id)
+	primary key (id),
+	unique key UK_category_name (name)
 ) engine=InnoDB default charset=utf8mb4 collate=utf8mb4_0900_ai_ci;
 
 create table if not exists type (
 	id bigint not null auto_increment,
 	category_name varchar(255) default null,
 	name varchar(255) default null,
-	primary key (id)
+	primary key (id),
+	unique key UK_type_name (name)
 ) engine=InnoDB default charset=utf8mb4 collate=utf8mb4_0900_ai_ci;
 
 create table if not exists branch (

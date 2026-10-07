@@ -3,6 +3,8 @@ package com.lavantien.flowershop.api.error;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
@@ -47,6 +49,30 @@ class ApiExceptionHandlerTest {
 		assertEquals(409, problem.getStatus());
 		assertEquals("Conflict", problem.getTitle());
 		assertEquals("EMAIL_IN_USE", problem.getProperties().get("code"));
+	}
+
+	@Test
+	void invalidDataAccessUsageAnswersA400ProblemDocumentNotA500() {
+		ProblemDetail problem = new ApiExceptionHandler()
+			.handleInvalidUsage(new InvalidDataAccessApiUsageException("Page offset exceeds Integer.MAX_VALUE"),
+				requestOn("/api/product"));
+
+		assertEquals(400, problem.getStatus());
+		assertEquals("Bad Request", problem.getTitle());
+		assertEquals("VALIDATION", problem.getProperties().get("code"));
+		assertEquals("/api/product", problem.getInstance().toString());
+	}
+
+	@Test
+	void dataIntegrityViolationsAnswerA400ProblemDocumentNotA500() {
+		ProblemDetail problem = new ApiExceptionHandler()
+			.handleIntegrityViolation(new DataIntegrityViolationException("Data too long for column 'phone'"),
+				requestOn("/api/branch"));
+
+		assertEquals(400, problem.getStatus());
+		assertEquals("Bad Request", problem.getTitle());
+		assertEquals("VALIDATION", problem.getProperties().get("code"));
+		assertEquals("/api/branch", problem.getInstance().toString());
 	}
 
 	@Test

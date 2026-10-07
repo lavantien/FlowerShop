@@ -1,6 +1,7 @@
 package com.lavantien.flowershop.api.category;
 
 import com.lavantien.flowershop.api.error.ApiExceptionHandler;
+import com.lavantien.flowershop.api.product.ProductRepository;
 import com.lavantien.flowershop.api.security.TokenInterceptor;
 import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.UserRepository;
@@ -22,25 +23,29 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class CategoryControllerTest {
 	private CategoryRepository categoryRepository;
+	private ProductRepository productRepository;
 	private MockMvc mockMvc;
 
 	@BeforeEach
 	void setUp() {
 		categoryRepository = mock(CategoryRepository.class);
+		productRepository = mock(ProductRepository.class);
 		UserRepository userRepository = mock(UserRepository.class);
 		UserService userService = new UserService();
-		mockMvc = MockMvcBuilders.standaloneSetup(new CategoryController(categoryRepository))
+		mockMvc = MockMvcBuilders.standaloneSetup(new CategoryController(categoryRepository, productRepository))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
 			.setControllerAdvice(new ApiExceptionHandler())
 			.build();
@@ -137,6 +142,7 @@ class CategoryControllerTest {
 
 	@Test
 	void adminCreatesASinglePersistedCategory() throws Exception {
+		when(categoryRepository.existsByName("BOUQUET")).thenReturn(false);
 		when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		mockMvc.perform(post("/api/category/create").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
@@ -148,6 +154,19 @@ class CategoryControllerTest {
 		ArgumentCaptor<Category> saved = ArgumentCaptor.forClass(Category.class);
 		verify(categoryRepository).save(saved.capture());
 		assertTrue(saved.getValue().getName().equals("BOUQUET"));
+	}
+
+	@Test
+	void duplicateCreateAnswers409NameInUse() throws Exception {
+		when(categoryRepository.existsByName("BOUQUET")).thenReturn(true);
+
+		mockMvc.perform(post("/api/category/create").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"BOUQUET\"}"))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("NAME_IN_USE"));
+
+		verify(categoryRepository, never()).save(any(Category.class));
 	}
 
 	@Test
@@ -177,13 +196,41 @@ class CategoryControllerTest {
 	}
 
 	@Test
-	void deleteRemovesAnExistingCategory() throws Exception {
+	void renamingOntoAnExistingNameAnswers409NameInUse() throws Exception {
 		when(categoryRepository.findById(3L)).thenReturn(Optional.of(bouquet()));
+		when(categoryRepository.existsByNameAndIdNot("POTTED", 3L)).thenReturn(true);
+
+		mockMvc.perform(put("/api/category/3").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"id\":3,\"name\":\"POTTED\"}"))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("NAME_IN_USE"));
+
+		verify(categoryRepository, never()).save(any(Category.class));
+	}
+
+	@Test
+	void deleteRemovesAnUnreferencedCategoryWith204AndAnEmptyBody() throws Exception {
+		when(categoryRepository.findById(3L)).thenReturn(Optional.of(bouquet()));
+		when(productRepository.existsByCategoryName("BOUQUET")).thenReturn(false);
 
 		mockMvc.perform(delete("/api/category/3").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
-			.andExpect(status().isOk());
+			.andExpect(status().isNoContent())
+			.andExpect(content().string(""));
 
 		verify(categoryRepository).deleteById(3L);
+	}
+
+	@Test
+	void deleteRefusesANameProductsStillReferenceWith409() throws Exception {
+		when(categoryRepository.findById(3L)).thenReturn(Optional.of(bouquet()));
+		when(productRepository.existsByCategoryName("BOUQUET")).thenReturn(true);
+
+		mockMvc.perform(delete("/api/category/3").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("NAME_IN_USE"));
+
+		verify(categoryRepository, never()).deleteById(3L);
 	}
 
 	@Test

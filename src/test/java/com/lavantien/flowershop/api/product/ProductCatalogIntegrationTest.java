@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // The standalone suite pins controller shapes with mocked repositories; this
 // class runs the Specification, the sort whitelist, and the paging clamps
@@ -98,5 +99,20 @@ class ProductCatalogIntegrationTest {
 		Page<Product> clamped = run(null, "IT-PAGE", null, null, -4, 0);
 		assertEquals(0, clamped.getNumber());
 		assertEquals(1, clamped.getSize());
+	}
+
+	@Test
+	void anOverflowingPageClampsIntoIntOffsetRangeAndServesAnEmptyPage() {
+		persist("Overflow Rose", "100000", "IT-T", "IT-OVERFLOW");
+
+		// Pre-fix this exact pipeline answered 500: Spring Data rejects a
+		// pageable whose page*size leaves int range. The clamp keeps the
+		// offset legal, and a page past the data is simply empty.
+		Page<Product> page = run(null, "IT-OVERFLOW", null, null, 2147483647, 48);
+		long offset = (long) page.getNumber() * page.getSize();
+		assertTrue(offset + page.getSize() <= Integer.MAX_VALUE);
+		assertEquals(44739241, page.getNumber());
+		assertTrue(page.getContent().isEmpty());
+		assertEquals(1, page.getTotalElements());
 	}
 }

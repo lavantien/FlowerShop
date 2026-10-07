@@ -1,6 +1,8 @@
 package com.lavantien.flowershop.api.error;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
@@ -33,6 +35,27 @@ public class ApiExceptionHandler {
 			errors.putIfAbsent(error.getField(), error.getDefaultMessage());
 		}
 		problem.setProperty("errors", errors);
+		return problem;
+	}
+
+	// Defense in depth under the bean validation: a paging or integrity misuse
+	// that slips past the clamps must still answer problem+json, never a 500.
+	@ExceptionHandler(InvalidDataAccessApiUsageException.class)
+	public ProblemDetail handleInvalidUsage(InvalidDataAccessApiUsageException exception, HttpServletRequest request) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+			"the request arguments are out of range");
+		problem.setInstance(URI.create(request.getRequestURI()));
+		problem.setProperty("code", "VALIDATION");
+		return problem;
+	}
+
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ProblemDetail handleIntegrityViolation(DataIntegrityViolationException exception,
+		HttpServletRequest request) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+			"the request would violate a data constraint");
+		problem.setInstance(URI.create(request.getRequestURI()));
+		problem.setProperty("code", "VALIDATION");
 		return problem;
 	}
 }

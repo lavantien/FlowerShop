@@ -127,6 +127,24 @@ class ProductControllerTest {
 		assertEquals(48, ProductController.CatalogQuery.of(null, null, null, null, 9, 48).size());
 		assertEquals(1, ProductController.CatalogQuery.of(null, null, null, null, 9, 1).size());
 		assertEquals(7, ProductController.CatalogQuery.of(null, null, null, null, 7, 20).page());
+		assertEquals(44739241, ProductController.CatalogQuery.of(null, null, null, null, 2147483647, 48).page(),
+			"an int-overflowing page must clamp into offset range, not 500 at the data layer");
+	}
+
+	@Test
+	void anOverflowingCatalogPageAnswersAnEmptyPageNotA500() throws Exception {
+		when(productRepository.findAll(any(Specification.class), any(Pageable.class)))
+			.thenReturn(Page.empty());
+
+		mockMvc.perform(get("/api/product").param("page", "2147483647").param("size", "48"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content").isEmpty())
+			.andExpect(jsonPath("$.totalElements").value(0));
+
+		ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+		verify(productRepository).findAll(any(Specification.class), pageable.capture());
+		assertTrue(pageable.getValue().getOffset() + pageable.getValue().getPageSize() <= Integer.MAX_VALUE,
+			"the pageable handed to Spring Data must keep its offset inside int range");
 	}
 
 	@Test

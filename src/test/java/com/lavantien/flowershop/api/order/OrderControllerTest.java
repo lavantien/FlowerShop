@@ -47,6 +47,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -630,6 +631,43 @@ class OrderControllerTest {
 		assertEquals(0, pageable.getValue().getPageNumber());
 		assertEquals(1, pageable.getValue().getPageSize());
 		assertEquals("id: DESC", pageable.getValue().getSort().toString());
+	}
+
+	@Test
+	void anOverflowingPageAnswersAnEmptyPageNotA500() throws Exception {
+		when(orderRepository.findByUserId(eq(4L), any(Pageable.class)))
+			.thenReturn(new PageImpl<>(List.of(), PageRequest.of(44739241, 48), 0));
+
+		mockMvc.perform(get("/api/order/me").header("X-Auth-Token", tokenOf(4, Role.USER))
+				.queryParam("page", "2147483647").queryParam("size", "48"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content").isEmpty())
+			.andExpect(jsonPath("$.totalElements").value(0));
+
+		ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+		verify(orderRepository).findByUserId(eq(4L), pageable.capture());
+		assertTrue(pageable.getValue().getOffset() + pageable.getValue().getPageSize() <= Integer.MAX_VALUE,
+			"the pageable handed to Spring Data must keep its offset inside int range");
+	}
+
+	@Test
+	void checkoutRejectsAStringPastTheColumnWidthInsteadOfTruncatingAtTheDatabase() throws Exception {
+		mockMvc.perform(post("/api/order").header("X-Auth-Token", tokenOf(4, Role.USER))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+						"items": [{"productId": 1, "quantity": 1}],
+						"phone": "0900000001",
+						"address": "01 Demo Lane",
+						"district": "Quận 1",
+						"city": "%s"
+					}
+					""".formatted("x".repeat(256))))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("VALIDATION"))
+			.andExpect(jsonPath("$.errors.city").value("size must be between 0 and 255"));
+
+		verify(orderRepository, never()).save(any(Order.class));
 	}
 
 	@Test

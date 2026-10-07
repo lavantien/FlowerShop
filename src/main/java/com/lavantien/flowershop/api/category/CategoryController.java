@@ -1,6 +1,8 @@
 package com.lavantien.flowershop.api.category;
 
+import com.lavantien.flowershop.api.error.ConflictException;
 import com.lavantien.flowershop.api.error.NotFoundException;
+import com.lavantien.flowershop.api.product.ProductRepository;
 import com.lavantien.flowershop.api.security.RequireRole;
 import com.lavantien.flowershop.api.user.Role;
 import org.springframework.http.ResponseEntity;
@@ -12,9 +14,11 @@ import java.util.List;
 @RequestMapping("/api/category")
 public class CategoryController {
 	private final CategoryRepository categoryRepository;
+	private final ProductRepository productRepository;
 
-	public CategoryController(CategoryRepository categoryRepository) {
+	public CategoryController(CategoryRepository categoryRepository, ProductRepository productRepository) {
 		this.categoryRepository = categoryRepository;
+		this.productRepository = productRepository;
 	}
 
 	@GetMapping
@@ -48,6 +52,7 @@ public class CategoryController {
 	@RequireRole(Role.ADMIN)
 	@PostMapping("/create")
 	public ResponseEntity<Category> create(@RequestBody Category category) {
+		requireFreeName(category.getName(), null);
 		return ResponseEntity.ok(categoryRepository.save(category));
 	}
 
@@ -55,14 +60,29 @@ public class CategoryController {
 	@PutMapping("/{id}")
 	public ResponseEntity<Category> update(@PathVariable Long id, @RequestBody Category category) {
 		categoryRepository.findById(id).orElseThrow(() -> new NotFoundException("no category with id " + id));
+		requireFreeName(category.getName(), id);
 		return ResponseEntity.ok(categoryRepository.save(category));
 	}
 
 	@RequireRole(Role.ADMIN)
 	@DeleteMapping("/{id}")
-	public ResponseEntity<?> delete(@PathVariable Long id) {
-		categoryRepository.findById(id).orElseThrow(() -> new NotFoundException("no category with id " + id));
+	public ResponseEntity<Void> delete(@PathVariable Long id) {
+		Category category = categoryRepository.findById(id)
+			.orElseThrow(() -> new NotFoundException("no category with id " + id));
+		// Products reference the name, not the id: deleting the row would
+		// strand every product still pointing at it.
+		if (productRepository.existsByCategoryName(category.getName())) {
+			throw new ConflictException("NAME_IN_USE", "products still reference category " + category.getName());
+		}
 		categoryRepository.deleteById(id);
-		return ResponseEntity.ok().build();
+		return ResponseEntity.noContent().build();
+	}
+
+	private void requireFreeName(String name, Long ownedBy) {
+		boolean taken = ownedBy == null ? categoryRepository.existsByName(name)
+			: categoryRepository.existsByNameAndIdNot(name, ownedBy);
+		if (taken) {
+			throw new ConflictException("NAME_IN_USE", "category name " + name + " is already in use");
+		}
 	}
 }

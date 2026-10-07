@@ -137,6 +137,18 @@ class BranchControllerTest {
 	}
 
 	@Test
+	void adminCreateRejectsAStringPastTheColumnWidthInsteadOfTruncatingAtTheDatabase() throws Exception {
+		mockMvc.perform(post("/api/branch").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"" + "x".repeat(256) + "\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("VALIDATION"))
+			.andExpect(jsonPath("$.errors.name").value("size must be between 0 and 255"));
+
+		verify(branchRepository, never()).save(any(Branch.class));
+	}
+
+	@Test
 	void createRequiresAName() throws Exception {
 		mockMvc.perform(post("/api/branch").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)

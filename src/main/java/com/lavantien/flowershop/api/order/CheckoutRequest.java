@@ -6,17 +6,18 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
 public record CheckoutRequest(
 	@NotEmpty(message = "must not be empty") List<@Valid Item> items,
-	@NotBlank(message = "must not be blank") String phone,
-	@NotBlank(message = "must not be blank") String address,
-	@NotBlank(message = "must not be blank") String district,
-	@NotBlank(message = "must not be blank") String city,
+	@NotBlank(message = "must not be blank") @Size(max = 255) String phone,
+	@NotBlank(message = "must not be blank") @Size(max = 255) String address,
+	@NotBlank(message = "must not be blank") @Size(max = 255) String district,
+	@NotBlank(message = "must not be blank") @Size(max = 255) String city,
 	Long branchId,
-	String couponCode) {
+	@Size(max = 255) String couponCode) {
 
 	// The ceiling keeps one absurd quantity from blowing past DECIMAL(12,0)
 	// in the line math; no real cart needs five digits of one flower.

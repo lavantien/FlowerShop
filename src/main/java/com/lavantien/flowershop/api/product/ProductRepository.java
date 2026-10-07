@@ -7,6 +7,10 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
 
+	boolean existsByTypeName(String typeName);
+
+	boolean existsByCategoryName(String categoryName);
+
 	// Hibernate 7 merge no longer inserts a detached entity whose row is absent,
 	// so explicit-id seeding needs a native insert that honors the given id.
 	// Runs inside the caller's transaction: a repo-level @Transactional here would

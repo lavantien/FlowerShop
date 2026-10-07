@@ -8,6 +8,7 @@ import com.lavantien.flowershop.api.user.Role;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +20,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/branch")
 public class BranchController {
-	public record BranchInput(@NotBlank String name, String address, String district, String city,
+	// The Size ceilings mirror the 255-wide columns so a wide string fails
+	// validation instead of blowing up at the database.
+	public record BranchInput(@NotBlank @Size(max = 255) String name, @Size(max = 255) String address,
+		@Size(max = 255) String district, @Size(max = 255) String city,
 		Double lat, Double lng, Boolean active) {
 
 		Branch toBranch() {

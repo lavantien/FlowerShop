@@ -222,6 +222,44 @@ class UserControllerTest {
 	}
 
 	@Test
+	void putMeRejectsAStringPastTheColumnWidthInsteadOfTruncatingAtTheDatabase() throws Exception {
+		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
+
+		mockMvc.perform(put("/api/user/me").header("X-Auth-Token", tokenOf(4, Role.USER))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Overlong\",\"phone\":\"" + "x".repeat(256) + "\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("VALIDATION"))
+			.andExpect(jsonPath("$.errors.phone").value("size must be between 0 and 255"));
+
+		verify(userRepository, never()).save(any(User.class));
+	}
+
+	@Test
+	void createRejectsAStringPastTheColumnWidthInsteadOfTruncatingAtTheDatabase() throws Exception {
+		mockMvc.perform(post("/api/user/create").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Eve\",\"password\":\"pw123456\",\"email\":\"eve@flowershop.example\","
+					+ "\"address\":\"" + "x".repeat(256) + "\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("VALIDATION"))
+			.andExpect(jsonPath("$.errors.address").value("size must be between 0 and 255"));
+
+		verify(userRepository, never()).save(any(User.class));
+	}
+
+	@Test
+	void adminPutRejectsAStringPastTheColumnWidthInsteadOfTruncatingAtTheDatabase() throws Exception {
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
+
+		mockMvc.perform(put("/api/user/4").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"" + "x".repeat(256) + "\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("VALIDATION"))
+			.andExpect(jsonPath("$.errors.name").value("size must be between 0 and 255"));
+	}
+
+	@Test
 	void passwordChangeStoresTheNewHashAndEndsEverySession() throws Exception {
 		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
 		when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -328,7 +366,7 @@ class UserControllerTest {
 		mockMvc.perform(post("/api/user/create").contentType(MediaType.APPLICATION_JSON)
 				.content("{\"id\":1,\"name\":\"Eve\",\"password\":\"pw123456\",\"email\":\"eve@flowershop.example\","
 					+ "\"role\":\"ADMIN\",\"enable\":false}"))
-			.andExpect(status().isOk())
+			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.email").value("eve@flowershop.example"))
 			.andExpect(jsonPath("$.role").value("USER"))
 			.andExpect(jsonPath("$.enable").value(true));

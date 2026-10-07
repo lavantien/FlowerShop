@@ -13,6 +13,8 @@ import com.lavantien.flowershop.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,15 +25,20 @@ import java.util.List;
 public class UserController {
 	// Self registration never binds the entity raw: a submitted id would
 	// merge into someone else's row and a submitted enable or role would
-	// leak admin powers onto a public endpoint.
-	public record CreateRequest(@NotBlank String name, @NotBlank String email, @NotBlank String password,
-		String phone, String address, String district, String city, String answer) {}
+	// leak admin powers onto a public endpoint. The Size ceilings mirror the
+	// 255-wide columns so a wide string fails validation instead of blowing
+	// up at the database.
+	public record CreateRequest(@NotBlank @Size(max = 255) String name, @NotBlank @Size(max = 255) String email,
+		@NotBlank String password, @Size(max = 255) String phone, @Size(max = 255) String address,
+		@Size(max = 255) String district, @Size(max = 255) String city, @Size(max = 255) String answer) {}
 
-	public record UpdateMeRequest(@NotBlank String name, String phone, String address, String district, String city) {}
+	public record UpdateMeRequest(@NotBlank @Size(max = 255) String name, @Size(max = 255) String phone,
+		@Size(max = 255) String address, @Size(max = 255) String district, @Size(max = 255) String city) {}
 
 	public record PasswordChangeRequest(@NotBlank String currentPassword, @NotBlank String newPassword) {}
 
-	public record AdminUpdateRequest(@NotBlank String name, String phone, Role role, Boolean enable) {}
+	public record AdminUpdateRequest(@NotBlank @Size(max = 255) String name, @Size(max = 255) String phone,
+		Role role, Boolean enable) {}
 
 	public record ResetPasswordRequest(@NotBlank String email, @NotBlank String answer, @NotBlank String newPassword) {}
 
@@ -126,7 +133,7 @@ public class UserController {
 			request.district(), request.city(), request.answer());
 		user.setRole(Role.USER);
 		hashPassword(user);
-		return ResponseEntity.ok(UserView.from(userRepository.save(user)));
+		return ResponseEntity.status(HttpStatus.CREATED).body(UserView.from(userRepository.save(user)));
 	}
 
 	@PostMapping("/resetPassword")
