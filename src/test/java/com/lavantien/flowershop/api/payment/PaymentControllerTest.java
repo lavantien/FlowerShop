@@ -245,4 +245,61 @@ class PaymentControllerTest {
 		mockMvc.perform(get("/api/payment/pid-1").queryParam("sig", stolen))
 			.andExpect(status().isUnauthorized());
 	}
+
+	@Test
+	void confirmOnASessionWhoseOrderIsMissingIsANotFound() throws Exception {
+		PaymentSession session = pendingSession();
+		when(paymentSessionRepository.lockById("pid-1")).thenReturn(Optional.of(session));
+		when(orderRepository.lockById(12L)).thenReturn(Optional.empty());
+
+		mockMvc.perform(post("/api/payment/pid-1/confirm").queryParam("sig", paymentService.sign(session)))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
+	}
+
+	@Test
+	void cancelOnASessionWhoseOrderIsMissingIsANotFound() throws Exception {
+		PaymentSession session = pendingSession();
+		when(paymentSessionRepository.lockById("pid-1")).thenReturn(Optional.of(session));
+		when(orderRepository.lockById(12L)).thenReturn(Optional.empty());
+
+		mockMvc.perform(post("/api/payment/pid-1/cancel").queryParam("sig", paymentService.sign(session)))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
+	}
+
+	@Test
+	void confirmNeverRetransitionsAnOrderThatAlreadyMoved() throws Exception {
+		PaymentSession session = pendingSession();
+		Order alreadyPaid = pendingOrder();
+		alreadyPaid.transitionTo(OrderStatus.PAID, Instant.parse("2026-10-07T05:00:00Z"));
+		when(paymentSessionRepository.lockById("pid-1")).thenReturn(Optional.of(session));
+		when(orderRepository.lockById(12L)).thenReturn(Optional.of(alreadyPaid));
+
+		mockMvc.perform(post("/api/payment/pid-1/confirm").queryParam("sig", paymentService.sign(session)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("CONFIRMED"));
+
+		assertEquals(PaymentStatus.CONFIRMED, session.getStatus());
+		assertEquals(OrderStatus.PAID, alreadyPaid.getStatus());
+		assertEquals(Instant.parse("2026-10-07T05:00:00Z"), alreadyPaid.getPaidAt(),
+			"the second wall must not stamp the order twice");
+	}
+
+	@Test
+	void cancelLeavesAnOrderThatAlreadyMovedAndItsStockAlone() throws Exception {
+		PaymentSession session = pendingSession();
+		Order alreadyCancelled = pendingOrder();
+		alreadyCancelled.transitionTo(OrderStatus.CANCELLED, Instant.parse("2026-10-07T05:00:00Z"));
+		when(paymentSessionRepository.lockById("pid-1")).thenReturn(Optional.of(session));
+		when(orderRepository.lockById(12L)).thenReturn(Optional.of(alreadyCancelled));
+
+		mockMvc.perform(post("/api/payment/pid-1/cancel").queryParam("sig", paymentService.sign(session)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("CANCELLED"));
+
+		assertEquals(PaymentStatus.CANCELLED, session.getStatus());
+		verify(stockLevelRepository, never()).findByBranchIdAndProductId(anyLong(), anyLong());
+		verify(stockLevelRepository, never()).save(any(StockLevel.class));
+	}
 }

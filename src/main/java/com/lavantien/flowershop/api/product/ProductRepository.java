@@ -12,9 +12,9 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 	// Runs inside the caller's transaction: a repo-level @Transactional here would
 	// mark it rollback-only on duplicate-key before the caller can fall back.
 	@Modifying
-	@Query(value = "insert into product (id, name, description, img_url, price, quantity, sale_amount, type_name, category_name) "
+	@Query(value = "insert into product (id, name, description, img_url, price, type_name, category_name) "
 			+ "values (:#{#product.id}, :#{#product.name}, :#{#product.description}, :#{#product.imgUrl}, "
-			+ ":#{#product.price}, :#{#product.quantity}, :#{#product.saleAmount}, :#{#product.typeName}, :#{#product.categoryName})",
+			+ ":#{#product.price}, :#{#product.typeName}, :#{#product.categoryName})",
 			nativeQuery = true)
 	void insertWithId(Product product);
 }

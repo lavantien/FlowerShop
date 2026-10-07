@@ -43,13 +43,8 @@ public class WishlistItem {
 			'}';
 	}
 
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
+	// The id stays database-private: the user and product pair is the whole
+	// identity the app ever reads.
 
 	public Long getUserId() {
 		return userId;

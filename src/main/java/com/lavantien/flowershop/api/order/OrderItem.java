@@ -60,10 +60,6 @@ public class OrderItem {
 		return orderId;
 	}
 
-	public void setOrderId(Long orderId) {
-		this.orderId = orderId;
-	}
-
 	public Long getProductId() {
 		return productId;
 	}

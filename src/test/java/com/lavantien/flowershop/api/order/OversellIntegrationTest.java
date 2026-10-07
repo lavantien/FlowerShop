@@ -81,7 +81,7 @@ class OversellIntegrationTest {
 
 	private Product persistProduct(String name) {
 		Product product = productRepository.save(new Product(name, "oversell row",
-			"https://cdn.example/oversell.jpg", BigDecimal.valueOf(100000), null, null, "IT-T", "IT-OVERSELL"));
+			"https://cdn.example/oversell.jpg", BigDecimal.valueOf(100000), "IT-T", "IT-OVERSELL"));
 		products.add(product.getId());
 		return product;
 	}

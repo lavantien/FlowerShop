@@ -1,10 +1,10 @@
 package com.lavantien.flowershop.api.user;
 
-import com.lavantien.flowershop.api.bill.BillRepository;
 import com.lavantien.flowershop.api.error.ConflictException;
 import com.lavantien.flowershop.api.error.ForbiddenException;
 import com.lavantien.flowershop.api.error.NotFoundException;
 import com.lavantien.flowershop.api.error.UnauthenticatedException;
+import com.lavantien.flowershop.api.order.OrderRepository;
 import com.lavantien.flowershop.api.security.Auth;
 import com.lavantien.flowershop.api.security.RequireRole;
 import com.lavantien.flowershop.api.security.SessionView;
@@ -36,14 +36,14 @@ public class UserController {
 	public record ResetPasswordRequest(@NotBlank String email, @NotBlank String answer, @NotBlank String newPassword) {}
 
 	private final UserRepository userRepository;
-	private final BillRepository billRepository;
+	private final OrderRepository orderRepository;
 	private final UserService userService;
 	private final PasswordService passwordService;
 
-	public UserController(UserRepository userRepository, BillRepository billRepository, UserService userService,
+	public UserController(UserRepository userRepository, OrderRepository orderRepository, UserService userService,
 		PasswordService passwordService) {
 		this.userRepository = userRepository;
-		this.billRepository = billRepository;
+		this.orderRepository = orderRepository;
 		this.userService = userService;
 		this.passwordService = passwordService;
 	}
@@ -103,9 +103,7 @@ public class UserController {
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> delete(@PathVariable Long id) {
 		userRepository.findById(id).orElseThrow(() -> new NotFoundException("no user with id " + id));
-		// Orders do not exist yet: bills stand in for the reference and the
-		// order entity will swap the check without touching the contract.
-		if (billRepository.existsByUserId(id)) {
+		if (orderRepository.existsByUserId(id)) {
 			throw new ConflictException("HAS_ORDERS", "user " + id + " has orders; disable the account instead");
 		}
 		userRepository.deleteById(id);

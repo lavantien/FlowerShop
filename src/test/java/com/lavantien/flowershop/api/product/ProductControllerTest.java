@@ -63,7 +63,7 @@ class ProductControllerTest {
 
 	private static Product rose() {
 		Product product = new Product("Rose", "A dozen red roses", "https://cdn.example/rose.jpg",
-			BigDecimal.valueOf(288000), 40L, 3L, "ROSES", "BOUQUET");
+			BigDecimal.valueOf(288000), "ROSES", "BOUQUET");
 		product.setId(2L);
 		return product;
 	}
@@ -368,15 +368,5 @@ class ProductControllerTest {
 
 		mockMvc.perform(delete("/api/product/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isNotFound());
-	}
-
-	@Test
-	void theSeedColumnsStayReadableForTheNativeInsert() {
-		// The insertWithId SpEL reads quantity and saleAmount through
-		// property access, so the getters must keep answering.
-		Product product = rose();
-		assertEquals(BigDecimal.valueOf(288000), product.getPrice());
-		assertEquals(40L, product.getQuantity());
-		assertEquals(3L, product.getSaleAmount());
 	}
 }

@@ -18,6 +18,8 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
 	// The report window: from inclusive, to exclusive on whole UTC days.
 	List<Order> findByPlacedAtGreaterThanEqualAndPlacedAtLessThan(Instant from, Instant to);
 
+	boolean existsByUserId(Long userId);
+
 	// Mutating paths read the order under SELECT ... FOR UPDATE, always after
 	// the payment row lock, so confirm, cancel, and admin transitions
 	// serialize per order.

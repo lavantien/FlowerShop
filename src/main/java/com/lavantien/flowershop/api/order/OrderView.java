@@ -6,7 +6,7 @@ import java.util.List;
 
 public record OrderView(Long id, Long userId, OrderStatus status, Instant placedAt, Instant paidAt,
 	Instant shippedAt, Instant completedAt, Instant cancelledAt, String phone, String address, String district,
-	String city, Long branchId, String branchName, double distanceKm, BigDecimal deliveryFee, String couponCode,
+	String city, Long branchId, String branchName, Double distanceKm, BigDecimal deliveryFee, String couponCode,
 	BigDecimal discountAmount, BigDecimal subtotal, BigDecimal total, List<OrderItemView> items) {
 
 	public record OrderItemView(Long id, Long productId, String productName, BigDecimal unitPrice, int quantity,

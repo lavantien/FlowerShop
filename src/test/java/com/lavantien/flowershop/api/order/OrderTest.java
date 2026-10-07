@@ -49,4 +49,27 @@ class OrderTest {
 	void toStringNamesTheOrderForLogs() {
 		assertTrue(order().toString().contains("PENDING"));
 	}
+
+	@Test
+	void pendingIsNotATimestampedLanding() {
+		Order order = order();
+		order.transitionTo(OrderStatus.PAID, Instant.parse("2026-10-07T04:00:00Z"));
+
+		order.transitionTo(OrderStatus.PENDING, Instant.parse("2026-10-07T08:00:00Z"));
+
+		assertEquals(OrderStatus.PENDING, order.getStatus());
+		assertEquals(Instant.parse("2026-10-07T04:00:00Z"), order.getPaidAt(),
+				"the switch keeps every landing in its own slot and PENDING stamps nothing");
+		assertNull(order.getCancelledAt());
+	}
+
+	@Test
+	void itemToStringNamesTheSnapshotForLogs() {
+		OrderItem item = new OrderItem(12L, 1L, "Red Rose", BigDecimal.valueOf(100000), 2,
+			BigDecimal.valueOf(200000));
+
+		assertTrue(item.toString().contains("productName='Red Rose'"));
+		assertTrue(item.toString().contains("unitPrice=100000"));
+		assertTrue(item.toString().contains("lineTotal=200000"));
+	}
 }

@@ -2,12 +2,18 @@ package com.lavantien.flowershop.service;
 
 import com.lavantien.flowershop.api.payment.PaymentSession;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
+import javax.crypto.Mac;
 import java.math.BigDecimal;
+import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mockStatic;
 
 class PaymentServiceTest {
 	private static final ShopProperties PROPERTIES = new ShopProperties(
@@ -54,5 +60,27 @@ class PaymentServiceTest {
 		PaymentSession session = session("pay-demo-id", 12, 265000);
 		assertEquals("/pay/pay-demo-id?sig=" + paymentService.sign(session),
 			paymentService.redirectUrl(session));
+	}
+
+	@Test
+	void toStringNamesTheSessionForLogs() {
+		PaymentSession session = session("pay-demo-id", 12, 265000);
+		session.start(Instant.parse("2026-10-07T04:00:00Z"));
+
+		assertTrue(session.toString().contains("pay-demo-id"));
+		assertTrue(session.toString().contains("orderId=12"));
+		assertTrue(session.toString().contains("status=PENDING"));
+		assertTrue(session.toString().contains("createdAt=2026-10-07T04:00:00Z"));
+	}
+
+	@Test
+	void aBrokenHmacProviderFailsLoudly() {
+		try (MockedStatic<Mac> mac = mockStatic(Mac.class)) {
+			mac.when(() -> Mac.getInstance("HmacSHA256")).thenThrow(new NoSuchAlgorithmException("no hmac"));
+
+			IllegalStateException failure = assertThrows(IllegalStateException.class,
+				() -> paymentService.sign(session("pay-demo-id", 12, 265000)));
+			assertEquals("the hmac signature could not be computed", failure.getMessage());
+		}
 	}
 }

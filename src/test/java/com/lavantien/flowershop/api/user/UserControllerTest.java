@@ -1,6 +1,6 @@
 package com.lavantien.flowershop.api.user;
 
-import com.lavantien.flowershop.api.bill.BillRepository;
+import com.lavantien.flowershop.api.order.OrderRepository;
 import com.lavantien.flowershop.api.error.ApiExceptionHandler;
 import com.lavantien.flowershop.api.security.TokenInterceptor;
 import com.lavantien.flowershop.service.PasswordService;
@@ -36,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class UserControllerTest {
 	private UserRepository userRepository;
-	private BillRepository billRepository;
+	private OrderRepository orderRepository;
 	private UserService userService;
 	private PasswordService passwordService;
 	private MockMvc mockMvc;
@@ -44,11 +44,11 @@ class UserControllerTest {
 	@BeforeEach
 	void setUp() {
 		userRepository = mock(UserRepository.class);
-		billRepository = mock(BillRepository.class);
+		orderRepository = mock(OrderRepository.class);
 		userService = new UserService();
 		passwordService = new PasswordService();
 		mockMvc = MockMvcBuilders.standaloneSetup(
-				new UserController(userRepository, billRepository, userService, passwordService))
+				new UserController(userRepository, orderRepository, userService, passwordService))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
 			.setControllerAdvice(new ApiExceptionHandler())
 			.build();
@@ -359,7 +359,7 @@ class UserControllerTest {
 	void adminDeletesAnAccountWithoutBills() throws Exception {
 		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		when(userRepository.findById(4L)).thenReturn(Optional.of(persona(4, Role.USER, "member@flowershop.example")));
-		when(billRepository.existsByUserId(4L)).thenReturn(false);
+		when(orderRepository.existsByUserId(4L)).thenReturn(false);
 
 		mockMvc.perform(delete("/api/user/4").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isNoContent());
@@ -371,7 +371,7 @@ class UserControllerTest {
 	void adminDeletesAUserWithBillsAnswers409HasOrders() throws Exception {
 		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		when(userRepository.findById(4L)).thenReturn(Optional.of(persona(4, Role.USER, "member@flowershop.example")));
-		when(billRepository.existsByUserId(4L)).thenReturn(true);
+		when(orderRepository.existsByUserId(4L)).thenReturn(true);
 
 		mockMvc.perform(delete("/api/user/4").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isConflict())

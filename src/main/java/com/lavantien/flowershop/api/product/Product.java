@@ -22,21 +22,18 @@ public class Product {
 	private String imgUrl;
 	@Column(precision = 12, scale = 0)
 	private BigDecimal price;
-	private Long quantity;
-	private Long saleAmount = 0L;
 	private String typeName;
 	private String categoryName;
 
 	public Product() {
 	}
 
-	public Product(String name, String description, String imgUrl, BigDecimal price, Long quantity, Long saleAmount, String typeName, String categoryName) {
+	public Product(String name, String description, String imgUrl, BigDecimal price, String typeName,
+		String categoryName) {
 		this.name = name;
 		this.description = description;
 		this.imgUrl = imgUrl;
 		this.price = price;
-		this.quantity = quantity;
-		this.saleAmount = saleAmount;
 		this.typeName = typeName;
 		this.categoryName = categoryName;
 	}
@@ -49,8 +46,6 @@ public class Product {
 			", description='" + description + '\'' +
 			", imgUrl='" + imgUrl + '\'' +
 			", price=" + price +
-			", quantity=" + quantity +
-			", saleAmount=" + saleAmount +
 			", typeName='" + typeName + '\'' +
 			", categoryName='" + categoryName + '\'' +
 			'}';
@@ -94,16 +89,6 @@ public class Product {
 
 	public void setPrice(BigDecimal price) {
 		this.price = price;
-	}
-
-	// quantity and saleAmount keep getters only: the input DTO never writes
-	// them and the stock_level sum plus the legacy-field sweep replace both.
-	public Long getQuantity() {
-		return quantity;
-	}
-
-	public Long getSaleAmount() {
-		return saleAmount;
 	}
 
 	public String getTypeName() {

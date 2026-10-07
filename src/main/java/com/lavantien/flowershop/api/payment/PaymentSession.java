@@ -74,10 +74,6 @@ public class PaymentSession {
 		return status;
 	}
 
-	public Instant getCreatedAt() {
-		return createdAt;
-	}
-
 	public Instant getConfirmedAt() {
 		return confirmedAt;
 	}

@@ -38,7 +38,7 @@ class ProductCatalogIntegrationTest {
 
 	private Product persist(String name, String price, String type, String category) {
 		return productRepository.save(new Product(name, "integration row", "https://cdn.example/integration.jpg",
-			new BigDecimal(price), null, null, type, category));
+			new BigDecimal(price), type, category));
 	}
 
 	@Test

@@ -62,14 +62,13 @@ class WishlistControllerTest {
 
 	private static Product product(long id, String name, long price) {
 		Product product = new Product(name, "demo", "https://cdn.example/x.jpg", BigDecimal.valueOf(price),
-			null, null, "IT-T", "IT-C");
+			"IT-T", "IT-C");
 		product.setId(id);
 		return product;
 	}
 
-	private static WishlistItem row(long id, long userId, long productId, String createdAt) {
+	private static WishlistItem row(long userId, long productId, String createdAt) {
 		WishlistItem item = new WishlistItem(userId, productId);
-		item.setId(id);
 		item.setCreatedAt(Instant.parse(createdAt));
 		return item;
 	}
@@ -83,8 +82,8 @@ class WishlistControllerTest {
 	@Test
 	void memberListsTheirWishlistNewestFirst() throws Exception {
 		when(wishlistItemRepository.findByUserIdOrderByCreatedAtDescIdDesc(4L)).thenReturn(List.of(
-			row(11, 4, 2, "2026-10-06T09:00:00Z"),
-			row(10, 4, 1, "2026-10-05T09:00:00Z")));
+			row(4, 2, "2026-10-06T09:00:00Z"),
+			row(4, 1, "2026-10-05T09:00:00Z")));
 		when(productRepository.findById(1L)).thenReturn(Optional.of(product(1, "Red Rose", 100000)));
 		when(productRepository.findById(2L)).thenReturn(Optional.of(product(2, "White Tulip", 50000)));
 		when(stockLevelRepository.sumQuantityByProductId(1L)).thenReturn(25L);
@@ -107,8 +106,8 @@ class WishlistControllerTest {
 	@Test
 	void listingSkipsRowsWhoseProductIsGone() throws Exception {
 		when(wishlistItemRepository.findByUserIdOrderByCreatedAtDescIdDesc(4L)).thenReturn(List.of(
-			row(11, 4, 2, "2026-10-06T09:00:00Z"),
-			row(10, 4, 99, "2026-10-05T09:00:00Z")));
+			row(4, 2, "2026-10-06T09:00:00Z"),
+			row(4, 99, "2026-10-05T09:00:00Z")));
 		when(productRepository.findById(2L)).thenReturn(Optional.of(product(2, "White Tulip", 50000)));
 		when(stockLevelRepository.sumQuantityByProductId(2L)).thenReturn(7L);
 
@@ -140,7 +139,7 @@ class WishlistControllerTest {
 	@Test
 	void toggleRemovesAnExistingRow() throws Exception {
 		when(productRepository.findById(1L)).thenReturn(Optional.of(product(1, "Red Rose", 100000)));
-		WishlistItem existing = row(10, 4, 1, "2026-10-05T09:00:00Z");
+		WishlistItem existing = row(4, 1, "2026-10-05T09:00:00Z");
 		when(wishlistItemRepository.findByUserIdAndProductId(4L, 1L)).thenReturn(Optional.of(existing));
 
 		mockMvc.perform(post("/api/wishlist/me/1").header("X-Auth-Token", tokenOf(4, Role.USER)))

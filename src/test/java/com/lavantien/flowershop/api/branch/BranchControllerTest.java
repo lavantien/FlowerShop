@@ -67,7 +67,7 @@ class BranchControllerTest {
 
 	private static Product product(long id, String name) {
 		Product product = new Product(name, "demo", "https://cdn.example/x.jpg", BigDecimal.valueOf(100000),
-			null, null, "IT-T", "IT-C");
+			"IT-T", "IT-C");
 		product.setId(id);
 		return product;
 	}

@@ -106,7 +106,7 @@ class OrderControllerTest {
 
 	private static Product product(long id, String name, long price) {
 		Product product = new Product(name, "demo", "https://cdn.example/x.jpg", BigDecimal.valueOf(price),
-			null, null, "T", "C");
+			"T", "C");
 		product.setId(id);
 		return product;
 	}
@@ -660,12 +660,76 @@ class OrderControllerTest {
 	void garbageQueryFiltersFallBackToNoFilter() {
 		assertNull(OrderController.parseStatus("SHREDDER"));
 		assertNull(OrderController.parseStatus(" "));
+		assertNull(OrderController.parseInstant(" ", false));
+		assertNull(OrderController.parseInstant(null, true));
 		assertNull(OrderController.parseInstant("2026-13-45", false));
 		assertNull(OrderController.parseInstant("not a date", true));
 		assertEquals(OrderStatus.PAID, OrderController.parseStatus("paid"));
 		assertEquals(OrderStatus.SHIPPED, OrderController.parseStatus(" SHIPPED "));
 		assertEquals(Instant.parse("2026-10-07T00:00:00Z"), OrderController.parseInstant("2026-10-07", false));
 		assertEquals(Instant.parse("2026-10-08T00:00:00Z"), OrderController.parseInstant("2026-10-07", true));
+	}
+
+	@Test
+	void adminListsOrdersWithoutADateWindow() throws Exception {
+		when(orderRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(
+			new PageImpl<>(List.of(order(12, 4, OrderStatus.PENDING)), PageRequest.of(0, 12), 1));
+		when(orderItemRepository.findByOrderId(12L)).thenReturn(List.of(item(501, 12, 1, "Red Rose", 100000, 2)));
+		when(branchRepository.findById(3L)).thenReturn(Optional.of(branch(3, "Binh Thanh Hub")));
+
+		mockMvc.perform(get("/api/order").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content[0].id").value(12));
+	}
+
+	@Test
+	void aBranchlessOrderViewRendersANullBranchName() throws Exception {
+		Order branchless = new Order(4L, "0900000001", "01 Demo Lane", "Quận 1", "Hồ Chí Minh",
+			null, null, null, null, BigDecimal.ZERO, BigDecimal.valueOf(350000),
+			BigDecimal.valueOf(390000));
+		branchless.setId(12L);
+		branchless.setStatus(OrderStatus.PENDING);
+		branchless.setPlacedAt(Instant.parse("2026-10-07T04:00:00Z"));
+		when(orderRepository.findById(12L)).thenReturn(Optional.of(branchless));
+		when(orderItemRepository.findByOrderId(12L)).thenReturn(List.of(
+			item(501, 12, 1, "Red Rose", 100000, 2)));
+
+		mockMvc.perform(get("/api/order/12").header("X-Auth-Token", tokenOf(4, Role.USER)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.branchId").value(nullValue()))
+			.andExpect(jsonPath("$.branchName").value(nullValue()))
+			.andExpect(jsonPath("$.deliveryFee").value(nullValue()));
+	}
+
+	@Test
+	void changingTheStatusOfAnUnknownOrderIsANotFound() throws Exception {
+		when(paymentSessionRepository.lockByOrderId(404L)).thenReturn(Optional.empty());
+		when(orderRepository.lockById(404L)).thenReturn(Optional.empty());
+
+		mockMvc.perform(post("/api/order/404/status").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"status\": \"SHIPPED\"}"))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
+	}
+
+	@Test
+	void cancellingRestoresThroughAFreshRowWhenTheStockRowIsGone() throws Exception {
+		Order order = stubCancellableOrder(OrderStatus.PENDING, PaymentStatus.PENDING);
+		when(stockLevelRepository.findByBranchIdAndProductId(3L, 1L)).thenReturn(Optional.empty());
+		when(stockLevelRepository.save(any(StockLevel.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		mockMvc.perform(post("/api/order/12/cancel").header("X-Auth-Token", tokenOf(4, Role.USER)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("CANCELLED"));
+
+		assertEquals(OrderStatus.CANCELLED, order.getStatus());
+		ArgumentCaptor<StockLevel> saved = ArgumentCaptor.forClass(StockLevel.class);
+		verify(stockLevelRepository).save(saved.capture());
+		assertEquals(null, saved.getValue().getId(), "a fresh row must let the database assign the id");
+		assertEquals(3L, saved.getValue().getBranchId());
+		assertEquals(1L, saved.getValue().getProductId());
+		assertEquals(2, saved.getValue().getQuantity(), "the whole cancelled quantity comes back");
 	}
 
 	@Test

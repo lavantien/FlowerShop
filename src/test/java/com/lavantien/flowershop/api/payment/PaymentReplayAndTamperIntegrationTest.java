@@ -108,7 +108,7 @@ class PaymentReplayAndTamperIntegrationTest {
 			"Quận 1", "Hồ Chí Minh", 10.775, 106.705, true));
 		branches.add(branch.getId());
 		Product rose = productRepository.save(new Product("Tamper Rose " + marker, "tamper row",
-			"https://cdn.example/tamper.jpg", BigDecimal.valueOf(100000), null, null, "IT-T", "IT-TAMPER"));
+			"https://cdn.example/tamper.jpg", BigDecimal.valueOf(100000), "IT-T", "IT-TAMPER"));
 		products.add(rose.getId());
 		StockLevel row = new StockLevel(branch.getId(), rose.getId(), 5);
 		stockLevelRepository.save(row);
