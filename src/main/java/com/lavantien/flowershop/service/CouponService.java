@@ -24,7 +24,9 @@ public class CouponService {
 		Coupon coupon = couponRepository.findByCode(code)
 			.orElseThrow(() -> new NotFoundException("no coupon with code " + code));
 		Instant now = Instant.now();
-		if (!coupon.isActive() || coupon.getExpiresAt() != null && coupon.getExpiresAt().isBefore(now)) {
+		// The coupon dies at its expiry instant: at now == expiresAt it is
+		// already dead, so only a strictly later expiry still resolves.
+		if (!coupon.isActive() || coupon.getExpiresAt() != null && !coupon.getExpiresAt().isAfter(now)) {
 			throw new ConflictException("COUPON_INACTIVE", "coupon " + code + " is inactive or expired");
 		}
 		return coupon;

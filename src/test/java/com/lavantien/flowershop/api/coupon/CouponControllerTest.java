@@ -342,6 +342,20 @@ class CouponControllerTest {
 	}
 
 	@Test
+	void validateKillsACouponAtItsExactExpiryInstant() throws Exception {
+		// Stamped now: by the time resolve runs, the clock reads at or past
+		// the expiry, and at the boundary the coupon must already be dead.
+		when(couponRepository.findByCode("NOW5"))
+			.thenReturn(Optional.of(coupon(6, "NOW5", CouponKind.PERCENT, "5", true, Instant.now())));
+
+		mockMvc.perform(post("/api/coupon/validate").header("X-Auth-Token", tokenOf(4, Role.USER))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"code\":\"NOW5\",\"subtotal\":100000}"))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("COUPON_INACTIVE"));
+	}
+
+	@Test
 	void validateRequiresACodeAndAPositiveSubtotal() throws Exception {
 		mockMvc.perform(post("/api/coupon/validate").header("X-Auth-Token", tokenOf(4, Role.USER))
 				.contentType(MediaType.APPLICATION_JSON)
