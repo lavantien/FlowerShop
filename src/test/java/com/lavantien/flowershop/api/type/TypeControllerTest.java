@@ -1,6 +1,7 @@
 package com.lavantien.flowershop.api.type;
 
 import com.lavantien.flowershop.api.security.TokenInterceptor;
+import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.UserRepository;
 import com.lavantien.flowershop.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,8 +42,8 @@ class TypeControllerTest {
 		mockMvc = MockMvcBuilders.standaloneSetup(new TypeController(typeRepository))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
 			.build();
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
-		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
+		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
 	}
 
 	private static Type flower() {
@@ -89,7 +90,7 @@ class TypeControllerTest {
 	void adminCreatesManyTypes() throws Exception {
 		when(typeRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(post("/api/type").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(post("/api/type").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[{\"name\":\"FLOWER\",\"categoryName\":\"BOUQUET\"},{\"name\":\"POTTED\",\"categoryName\":\"PLANT\"}]"))
 			.andExpect(status().isOk())
@@ -105,7 +106,7 @@ class TypeControllerTest {
 
 	@Test
 	void deleteManyWithoutABodyWipesEveryType() throws Exception {
-		mockMvc.perform(delete("/api/type").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/type").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk());
 
 		verify(typeRepository).deleteAll();
@@ -115,7 +116,7 @@ class TypeControllerTest {
 	void deleteManyWithIdsDeletesOnlyThoseTypes() throws Exception {
 		when(typeRepository.findAllById(List.of(5L))).thenReturn(List.of(flower()));
 
-		mockMvc.perform(delete("/api/type").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(delete("/api/type").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[5]"))
 			.andExpect(status().isOk());
@@ -128,7 +129,7 @@ class TypeControllerTest {
 
 	@Test
 	void memberCannotCreateASingleType() throws Exception {
-		mockMvc.perform(post("/api/type/create").header("X-Auth-Token", tokenOf(4, "USER"))
+		mockMvc.perform(post("/api/type/create").header("X-Auth-Token", tokenOf(4, Role.USER))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"FLOWER\",\"categoryName\":\"BOUQUET\"}"))
 			.andExpect(status().isForbidden());
@@ -138,7 +139,7 @@ class TypeControllerTest {
 	void adminCreatesASinglePersistedType() throws Exception {
 		when(typeRepository.save(any(Type.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(post("/api/type/create").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(post("/api/type/create").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"FLOWER\",\"categoryName\":\"BOUQUET\"}"))
 			.andExpect(status().isOk())
@@ -155,7 +156,7 @@ class TypeControllerTest {
 		when(typeRepository.findById(5L)).thenReturn(Optional.of(flower()));
 		when(typeRepository.save(any(Type.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(put("/api/type/5").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(put("/api/type/5").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"id\":5,\"name\":\"POTTED\",\"categoryName\":\"PLANT\"}"))
 			.andExpect(status().isOk())
@@ -171,7 +172,7 @@ class TypeControllerTest {
 	void updateAnswersBadRequestForAMissingType() throws Exception {
 		when(typeRepository.findById(99L)).thenReturn(Optional.empty());
 
-		mockMvc.perform(put("/api/type/99").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(put("/api/type/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"POTTED\"}"))
 			.andExpect(status().isBadRequest());
@@ -181,7 +182,7 @@ class TypeControllerTest {
 	void deleteRemovesAnExistingType() throws Exception {
 		when(typeRepository.findById(5L)).thenReturn(Optional.of(flower()));
 
-		mockMvc.perform(delete("/api/type/5").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/type/5").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk());
 
 		verify(typeRepository).deleteById(5L);
@@ -191,7 +192,7 @@ class TypeControllerTest {
 	void deleteAnswersBadRequestForAMissingType() throws Exception {
 		when(typeRepository.findById(99L)).thenReturn(Optional.empty());
 
-		mockMvc.perform(delete("/api/type/99").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/type/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isBadRequest());
 	}
 }

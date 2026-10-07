@@ -59,7 +59,7 @@ class UserControllerTest {
 
 	@Test
 	void loginSucceedsAgainstABcryptStoredPassword() throws Exception {
-		User user = persona(1, "ADMIN", "admin@flowershop.example");
+		User user = persona(1, Role.ADMIN, "admin@flowershop.example");
 		when(userRepository.findByEmail("admin@flowershop.example")).thenReturn(user);
 
 		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
@@ -73,7 +73,7 @@ class UserControllerTest {
 
 	@Test
 	void loginRejectsAWrongPassword() throws Exception {
-		User user = persona(4, "USER", "member@flowershop.example");
+		User user = persona(4, Role.USER, "member@flowershop.example");
 		when(userRepository.findByEmail("member@flowershop.example")).thenReturn(user);
 
 		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
@@ -128,7 +128,7 @@ class UserControllerTest {
 
 	@Test
 	void resetPasswordStoresABcryptHashAndLogsTheUserIn() throws Exception {
-		User user = persona(4, "USER", "member@flowershop.example");
+		User user = persona(4, Role.USER, "member@flowershop.example");
 		when(userRepository.findByEmail("member@flowershop.example")).thenReturn(user);
 		when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -146,7 +146,7 @@ class UserControllerTest {
 
 	@Test
 	void resetPasswordWithoutAStoredAnswerStaysGuestEvenWhenOmittedToo() throws Exception {
-		User user = persona(5, "USER", "blank@flowershop.example");
+		User user = persona(5, Role.USER, "blank@flowershop.example");
 		user.setAnswer(null);
 		when(userRepository.findByEmail("blank@flowershop.example")).thenReturn(user);
 
@@ -160,7 +160,7 @@ class UserControllerTest {
 	@Test
 	void createRefusesAnEmailAlreadyInUse() throws Exception {
 		when(userRepository.findByEmail("member@flowershop.example"))
-			.thenReturn(persona(4, "USER", "member@flowershop.example"));
+			.thenReturn(persona(4, Role.USER, "member@flowershop.example"));
 
 		mockMvc.perform(post("/api/user/create").contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"Clone\",\"email\":\"member@flowershop.example\",\"password\":\"1234qwer\","
@@ -170,11 +170,11 @@ class UserControllerTest {
 
 	@Test
 	void createManyRefusesTheBatchWhenAnyEmailIsAlreadyInUse() throws Exception {
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		when(userRepository.findByEmail("member@flowershop.example"))
-			.thenReturn(persona(4, "USER", "member@flowershop.example"));
+			.thenReturn(persona(4, Role.USER, "member@flowershop.example"));
 
-		mockMvc.perform(post("/api/user").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(post("/api/user").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[{\"name\":\"Clone\",\"email\":\"member@flowershop.example\",\"password\":\"1234qwer\","
 					+ "\"answer\":\"demo\"},{\"name\":\"Fresh\",\"email\":\"fresh@flowershop.example\","
@@ -194,7 +194,7 @@ class UserControllerTest {
 
 	@Test
 	void resetPasswordToleratesASeededRowWithoutAnAnswer() throws Exception {
-		User user = persona(2, "ADMIN", "editor@flowershop.example");
+		User user = persona(2, Role.ADMIN, "editor@flowershop.example");
 		user.setAnswer(null);
 		when(userRepository.findByEmail("editor@flowershop.example")).thenReturn(user);
 
@@ -206,9 +206,9 @@ class UserControllerTest {
 
 	@Test
 	void memberReadsOwnAccountWithoutThePasswordField() throws Exception {
-		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
 
-		mockMvc.perform(get("/api/user/4").header("X-Auth-Token", tokenOf(4, "USER")))
+		mockMvc.perform(get("/api/user/4").header("X-Auth-Token", tokenOf(4, Role.USER)))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.password").doesNotExist())
 			.andExpect(jsonPath("$.email").value("member@flowershop.example"));
@@ -216,26 +216,26 @@ class UserControllerTest {
 
 	@Test
 	void memberCannotReadAForeignAccount() throws Exception {
-		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
 
-		mockMvc.perform(get("/api/user/1").header("X-Auth-Token", tokenOf(4, "USER")))
+		mockMvc.perform(get("/api/user/1").header("X-Auth-Token", tokenOf(4, Role.USER)))
 			.andExpect(status().isForbidden());
 	}
 
 	@Test
 	void nonAdminPutCannotEscalateTypeOrDropEnable() throws Exception {
-		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
 		when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(put("/api/user/4").header("X-Auth-Token", tokenOf(4, "USER"))
+		mockMvc.perform(put("/api/user/4").header("X-Auth-Token", tokenOf(4, Role.USER))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"Renamed\",\"phone\":\"0900000004\",\"address\":\"04 Demo Lane\","
-					+ "\"answer\":\"demo\",\"type\":\"ADMIN\",\"enable\":false,\"password\":\"hacked\"}"))
+					+ "\"answer\":\"demo\",\"role\":\"ADMIN\",\"enable\":false,\"password\":\"hacked\"}"))
 			.andExpect(status().isOk());
 
 		ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
 		verify(userRepository).save(saved.capture());
-		assertTrue(saved.getValue().getType().equals("USER"), "type must stay USER for a non-admin caller");
+		assertTrue(saved.getValue().getRole() == Role.USER, "role must stay USER for a non-admin caller");
 		assertTrue(Boolean.TRUE.equals(saved.getValue().getEnable()), "enable must stay true for a non-admin caller");
 		assertTrue(passwordService.matches("1234qwer", saved.getValue().getPassword()),
 			"password must never be writable through PUT");
@@ -244,26 +244,26 @@ class UserControllerTest {
 
 	@Test
 	void adminPutCanManageTypeAndEnable() throws Exception {
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
-		when(userRepository.findById(4L)).thenReturn(Optional.of(persona(4, "USER", "member@flowershop.example")));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
+		when(userRepository.findById(4L)).thenReturn(Optional.of(persona(4, Role.USER, "member@flowershop.example")));
 		when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(put("/api/user/4").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(put("/api/user/4").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"name\":\"Renamed\",\"type\":\"ADMIN\",\"enable\":false}"))
+				.content("{\"name\":\"Renamed\",\"role\":\"ADMIN\",\"enable\":false}"))
 			.andExpect(status().isOk());
 
 		ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
 		verify(userRepository).save(saved.capture());
-		assertTrue(saved.getValue().getType().equals("ADMIN"));
+		assertTrue(saved.getValue().getRole() == Role.ADMIN);
 		assertTrue(Boolean.FALSE.equals(saved.getValue().getEnable()));
 	}
 
 	@Test
 	void nonAdminPutOnAForeignAccountIsForbidden() throws Exception {
-		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
 
-		mockMvc.perform(put("/api/user/1").header("X-Auth-Token", tokenOf(4, "USER"))
+		mockMvc.perform(put("/api/user/1").header("X-Auth-Token", tokenOf(4, Role.USER))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"Hijacked\"}"))
 			.andExpect(status().isForbidden());
@@ -271,12 +271,12 @@ class UserControllerTest {
 
 	@Test
 	void adminListsEveryAccountWithoutThePasswordField() throws Exception {
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		when(userRepository.findAll()).thenReturn(List.of(
-			persona(1, "ADMIN", "admin@flowershop.example"),
-			persona(4, "USER", "member@flowershop.example")));
+			persona(1, Role.ADMIN, "admin@flowershop.example"),
+			persona(4, Role.USER, "member@flowershop.example")));
 
-		mockMvc.perform(get("/api/user").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(get("/api/user").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].email").value("admin@flowershop.example"))
 			.andExpect(jsonPath("$[0].password").doesNotExist())
@@ -285,10 +285,10 @@ class UserControllerTest {
 
 	@Test
 	void adminCreatesManyAccountsHashingOnlyThePasswordsThatExist() throws Exception {
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		when(userRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(post("/api/user").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(post("/api/user").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[{\"name\":\"Ada\",\"password\":\"secret123\",\"email\":\"ada@flowershop.example\"},"
 					+ "{\"name\":\"Bob\",\"email\":\"bob@flowershop.example\"}]"))
@@ -302,7 +302,7 @@ class UserControllerTest {
 		assertTrue(passwordService.matches("secret123", saved.getValue().get(0).getPassword()),
 			"a submitted password must be stored as a bcrypt hash");
 		assertTrue(saved.getValue().get(1).getPassword() == null, "a null password must stay null, not fail the batch");
-		assertTrue(saved.getValue().get(0).getType().equals("USER"));
+		assertTrue(saved.getValue().get(0).getRole() == Role.USER);
 		assertTrue(saved.getValue().get(0).toString().contains("email='ada@flowershop.example'"),
 			"toString must render the persisted fields");
 	}
@@ -312,22 +312,22 @@ class UserControllerTest {
 		when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		mockMvc.perform(post("/api/user/create").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"name\":\"Eve\",\"password\":\"pw123456\",\"email\":\"eve@flowershop.example\",\"type\":\"ADMIN\"}"))
+				.content("{\"name\":\"Eve\",\"password\":\"pw123456\",\"email\":\"eve@flowershop.example\",\"role\":\"ADMIN\"}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.email").value("eve@flowershop.example"));
 
 		ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
 		verify(userRepository).save(saved.capture());
-		assertTrue(saved.getValue().getType().equals("USER"), "self registration must never mint an ADMIN");
+		assertTrue(saved.getValue().getRole() == Role.USER, "self registration must never mint an ADMIN");
 		assertTrue(passwordService.matches("pw123456", saved.getValue().getPassword()));
 		assertTrue(saved.getValue().getName().equals("Eve"));
 	}
 
 	@Test
 	void deleteManyWithoutABodyWipesEveryAccount() throws Exception {
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 
-		mockMvc.perform(delete("/api/user").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/user").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk());
 
 		verify(userRepository).deleteAll();
@@ -335,11 +335,11 @@ class UserControllerTest {
 
 	@Test
 	void deleteManyWithIdsDeletesOnlyThoseAccounts() throws Exception {
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		when(userRepository.findAllById(List.of(4L, 5L)))
-			.thenReturn(List.of(persona(4, "USER", "member@flowershop.example")));
+			.thenReturn(List.of(persona(4, Role.USER, "member@flowershop.example")));
 
-		mockMvc.perform(delete("/api/user").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(delete("/api/user").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[4,5]"))
 			.andExpect(status().isOk());
@@ -353,19 +353,19 @@ class UserControllerTest {
 
 	@Test
 	void getByIdAnswersBadRequestForAMissingAccount() throws Exception {
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-		mockMvc.perform(get("/api/user/99").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(get("/api/user/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isBadRequest());
 	}
 
 	@Test
 	void updateAnswersBadRequestForAMissingAccount() throws Exception {
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-		mockMvc.perform(put("/api/user/99").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(put("/api/user/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"Ghost\"}"))
 			.andExpect(status().isBadRequest());
@@ -373,10 +373,10 @@ class UserControllerTest {
 
 	@Test
 	void adminDeletesAnExistingAccount() throws Exception {
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
-		when(userRepository.findById(4L)).thenReturn(Optional.of(persona(4, "USER", "member@flowershop.example")));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
+		when(userRepository.findById(4L)).thenReturn(Optional.of(persona(4, Role.USER, "member@flowershop.example")));
 
-		mockMvc.perform(delete("/api/user/4").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/user/4").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk());
 
 		verify(userRepository).deleteById(4L);
@@ -384,16 +384,16 @@ class UserControllerTest {
 
 	@Test
 	void deleteAnswersBadRequestForAMissingAccount() throws Exception {
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		when(userRepository.findById(9L)).thenReturn(Optional.empty());
 
-		mockMvc.perform(delete("/api/user/9").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/user/9").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isBadRequest());
 	}
 
 	@Test
 	void loginRefusesADisabledAccount() throws Exception {
-		User user = persona(3, "ADMIN", "staff@flowershop.example");
+		User user = persona(3, Role.ADMIN, "staff@flowershop.example");
 		user.setEnable(false);
 		when(userRepository.findByEmail("staff@flowershop.example")).thenReturn(user);
 
@@ -406,10 +406,10 @@ class UserControllerTest {
 
 	@Test
 	void adminListingNeverSerializesTheSecurityAnswer() throws Exception {
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
-		when(userRepository.findAll()).thenReturn(List.of(persona(1, "ADMIN", "admin@flowershop.example")));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
+		when(userRepository.findAll()).thenReturn(List.of(persona(1, Role.ADMIN, "admin@flowershop.example")));
 
-		mockMvc.perform(get("/api/user").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(get("/api/user").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].password").doesNotExist())
 			.andExpect(jsonPath("$[0].answer").doesNotExist());
@@ -417,7 +417,7 @@ class UserControllerTest {
 
 	@Test
 	void toStringNeverCarriesThePasswordOrTheAnswer() {
-		User user = persona(1, "ADMIN", "admin@flowershop.example");
+		User user = persona(1, Role.ADMIN, "admin@flowershop.example");
 
 		assertFalse(user.toString().contains("1234qwer"));
 		assertFalse(user.toString().contains("$2a$"));
@@ -426,10 +426,10 @@ class UserControllerTest {
 
 	@Test
 	void logoutWithAValidTokenEndsTheSession() throws Exception {
-		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
 
 		mockMvc.perform(post("/api/user/logout").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"token\":\"" + tokenOf(4, "USER") + "\",\"phone\":\"0\",\"detailAddress\":\"x\"}"))
+				.content("{\"token\":\"" + tokenOf(4, Role.USER) + "\",\"phone\":\"0\",\"detailAddress\":\"x\"}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
 		assertFalse(userService.isLoggedIn(4L), "a valid logout must drop the session");
@@ -437,7 +437,7 @@ class UserControllerTest {
 
 	@Test
 	void logoutWithAWrongSecretLeavesTheSessionAlive() throws Exception {
-		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
 		String forged = Base64.getEncoder().encodeToString("4+USER+deadbeefdeadbeef".getBytes(StandardCharsets.UTF_8));
 
 		mockMvc.perform(post("/api/user/logout").contentType(MediaType.APPLICATION_JSON)
@@ -449,7 +449,7 @@ class UserControllerTest {
 
 	@Test
 	void logoutLeavesTheSessionUntouchedForAnUnparsableId() throws Exception {
-		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
 		String unparsable = Base64.getEncoder().encodeToString("x+USER".getBytes(StandardCharsets.UTF_8));
 
 		mockMvc.perform(post("/api/user/logout").contentType(MediaType.APPLICATION_JSON)
@@ -461,7 +461,7 @@ class UserControllerTest {
 
 	@Test
 	void aFreshLoginRotatesTheSecretAndKillsTheOldToken() throws Exception {
-		User user = persona(1, "ADMIN", "admin@flowershop.example");
+		User user = persona(1, Role.ADMIN, "admin@flowershop.example");
 		when(userRepository.findByEmail("admin@flowershop.example")).thenReturn(user);
 		when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
@@ -484,7 +484,7 @@ class UserControllerTest {
 
 	@Test
 	void loginComposesTheDetailAddressFromTheStoredFields() throws Exception {
-		User user = persona(2, "USER", "editor@flowershop.example");
+		User user = persona(2, Role.USER, "editor@flowershop.example");
 		user.setEmail("editor@flowershop.example");
 		user.setDistrict("Cau Giay");
 		user.setCity("Hanoi");

@@ -1,6 +1,7 @@
 package com.lavantien.flowershop.api.category;
 
 import com.lavantien.flowershop.api.security.TokenInterceptor;
+import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.UserRepository;
 import com.lavantien.flowershop.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,8 +42,8 @@ class CategoryControllerTest {
 		mockMvc = MockMvcBuilders.standaloneSetup(new CategoryController(categoryRepository))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
 			.build();
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
-		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
+		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
 	}
 
 	private static Category bouquet() {
@@ -86,7 +87,7 @@ class CategoryControllerTest {
 	void adminCreatesManyCategories() throws Exception {
 		when(categoryRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(post("/api/category").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(post("/api/category").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[{\"name\":\"BOUQUET\"},{\"name\":\"POTTED\"}]"))
 			.andExpect(status().isOk())
@@ -102,7 +103,7 @@ class CategoryControllerTest {
 
 	@Test
 	void deleteManyWithoutABodyWipesEveryCategory() throws Exception {
-		mockMvc.perform(delete("/api/category").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/category").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk());
 
 		verify(categoryRepository).deleteAll();
@@ -112,7 +113,7 @@ class CategoryControllerTest {
 	void deleteManyWithIdsDeletesOnlyThoseCategories() throws Exception {
 		when(categoryRepository.findAllById(List.of(3L))).thenReturn(List.of(bouquet()));
 
-		mockMvc.perform(delete("/api/category").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(delete("/api/category").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[3]"))
 			.andExpect(status().isOk());
@@ -125,7 +126,7 @@ class CategoryControllerTest {
 
 	@Test
 	void memberCannotCreateASingleCategory() throws Exception {
-		mockMvc.perform(post("/api/category/create").header("X-Auth-Token", tokenOf(4, "USER"))
+		mockMvc.perform(post("/api/category/create").header("X-Auth-Token", tokenOf(4, Role.USER))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"BOUQUET\"}"))
 			.andExpect(status().isForbidden());
@@ -135,7 +136,7 @@ class CategoryControllerTest {
 	void adminCreatesASinglePersistedCategory() throws Exception {
 		when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(post("/api/category/create").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(post("/api/category/create").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"BOUQUET\"}"))
 			.andExpect(status().isOk())
@@ -151,7 +152,7 @@ class CategoryControllerTest {
 		when(categoryRepository.findById(3L)).thenReturn(Optional.of(bouquet()));
 		when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(put("/api/category/3").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(put("/api/category/3").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"id\":3,\"name\":\"POTTED\"}"))
 			.andExpect(status().isOk())
@@ -166,7 +167,7 @@ class CategoryControllerTest {
 	void updateAnswersBadRequestForAMissingCategory() throws Exception {
 		when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
 
-		mockMvc.perform(put("/api/category/99").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(put("/api/category/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"POTTED\"}"))
 			.andExpect(status().isBadRequest());
@@ -176,7 +177,7 @@ class CategoryControllerTest {
 	void deleteRemovesAnExistingCategory() throws Exception {
 		when(categoryRepository.findById(3L)).thenReturn(Optional.of(bouquet()));
 
-		mockMvc.perform(delete("/api/category/3").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/category/3").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk());
 
 		verify(categoryRepository).deleteById(3L);
@@ -186,7 +187,7 @@ class CategoryControllerTest {
 	void deleteAnswersBadRequestForAMissingCategory() throws Exception {
 		when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
 
-		mockMvc.perform(delete("/api/category/99").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/category/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isBadRequest());
 	}
 }

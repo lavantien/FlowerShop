@@ -1,6 +1,7 @@
 package com.lavantien.flowershop.api.product;
 
 import com.lavantien.flowershop.api.security.TokenInterceptor;
+import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.UserRepository;
 import com.lavantien.flowershop.service.ProductService;
 import com.lavantien.flowershop.service.UserService;
@@ -44,7 +45,7 @@ class ProductControllerTest {
 				new ProductController(productRepository, new ProductService(productRepository)))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
 			.build();
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 	}
 
 	private static Product rose() {
@@ -120,7 +121,7 @@ class ProductControllerTest {
 	void adminSeedsRowsWithoutAnIdThroughSave() throws Exception {
 		when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[{\"name\":\"Rose\",\"price\":12.5,\"quantity\":40}]"))
 			.andExpect(status().isOk())
@@ -137,7 +138,7 @@ class ProductControllerTest {
 		when(productRepository.existsById(2L)).thenReturn(true);
 		when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[{\"id\":2,\"name\":\"Rose\",\"price\":15.0}]"))
 			.andExpect(status().isOk())
@@ -152,7 +153,7 @@ class ProductControllerTest {
 		when(productRepository.existsById(9L)).thenReturn(false);
 		when(productRepository.findById(9L)).thenReturn(Optional.of(rose()));
 
-		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[{\"id\":9,\"name\":\"Rose\",\"price\":12.5}]"))
 			.andExpect(status().isOk())
@@ -168,7 +169,7 @@ class ProductControllerTest {
 		when(productRepository.existsById(9L)).thenReturn(false);
 		when(productRepository.findById(9L)).thenReturn(Optional.empty());
 
-		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[{\"id\":9,\"name\":\"Rose\",\"price\":12.5}]"))
 			.andExpect(status().isOk())
@@ -183,7 +184,7 @@ class ProductControllerTest {
 			.thenReturn(true);
 		when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[{\"id\":2,\"name\":\"Rose\",\"price\":12.5}]"))
 			.andExpect(status().isOk())
@@ -195,7 +196,7 @@ class ProductControllerTest {
 
 	@Test
 	void deleteManyWithoutABodyWipesTheCatalog() throws Exception {
-		mockMvc.perform(delete("/api/product").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk());
 
 		verify(productRepository).deleteAll();
@@ -205,7 +206,7 @@ class ProductControllerTest {
 	void deleteManyWithIdsDeletesOnlyThoseRows() throws Exception {
 		when(productRepository.findAllById(List.of(2L, 3L))).thenReturn(List.of(rose()));
 
-		mockMvc.perform(delete("/api/product").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(delete("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[2,3]"))
 			.andExpect(status().isOk());
@@ -221,7 +222,7 @@ class ProductControllerTest {
 	void createPersistsTheSubmittedProduct() throws Exception {
 		when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(post("/api/product/create").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(post("/api/product/create").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"Rose\",\"price\":12.5,\"quantity\":40}"))
 			.andExpect(status().isOk())
@@ -238,7 +239,7 @@ class ProductControllerTest {
 		when(productRepository.findById(2L)).thenReturn(Optional.of(rose()));
 		when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(put("/api/product/2").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(put("/api/product/2").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"id\":2,\"name\":\"Tulip\",\"description\":\"Fresh cut\",\"imgUrl\":\"https://cdn.example/tulip.jpg\","
 					+ "\"price\":9.0,\"quantity\":25,\"saleAmount\":1,\"typeName\":\"FLOWER\",\"categoryName\":\"BOUQUET\"}"))
@@ -260,7 +261,7 @@ class ProductControllerTest {
 	void updateAnswersBadRequestForAMissingRow() throws Exception {
 		when(productRepository.findById(99L)).thenReturn(Optional.empty());
 
-		mockMvc.perform(put("/api/product/99").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(put("/api/product/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"Tulip\"}"))
 			.andExpect(status().isBadRequest());
@@ -270,7 +271,7 @@ class ProductControllerTest {
 	void deleteRemovesAnExistingRow() throws Exception {
 		when(productRepository.findById(2L)).thenReturn(Optional.of(rose()));
 
-		mockMvc.perform(delete("/api/product/2").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/product/2").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk());
 
 		verify(productRepository).deleteById(2L);
@@ -280,7 +281,7 @@ class ProductControllerTest {
 	void deleteAnswersBadRequestForAMissingRow() throws Exception {
 		when(productRepository.findById(99L)).thenReturn(Optional.empty());
 
-		mockMvc.perform(delete("/api/product/99").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/product/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isBadRequest());
 	}
 }

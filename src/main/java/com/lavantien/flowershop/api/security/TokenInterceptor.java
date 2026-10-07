@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.security;
 
+import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.User;
 import com.lavantien.flowershop.api.user.UserRepository;
 import com.lavantien.flowershop.service.UserService;
@@ -53,17 +54,17 @@ public class TokenInterceptor implements HandlerInterceptor {
 		}
 		User user = userRepository.findById(session.id()).orElse(null);
 		if (user == null || !Boolean.TRUE.equals(user.getEnable())
-				|| !session.type().equals(user.getType()) || !userService.hasSession(session.id(), session.secret())) {
+				|| session.role() != user.getRole() || !userService.hasSession(session.id(), session.secret())) {
 			response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
 			return false;
 		}
 		RequireRole requiredRole = ((HandlerMethod) handler).getMethodAnnotation(RequireRole.class);
-		if (requiredRole != null && !requiredRole.value().equals(session.type())) {
+		if (requiredRole != null && requiredRole.value() != session.role()) {
 			response.sendError(HttpServletResponse.SC_FORBIDDEN);
 			return false;
 		}
 		request.setAttribute(Auth.USER_ID_ATTRIBUTE, session.id());
-		request.setAttribute(Auth.TYPE_ATTRIBUTE, session.type());
+		request.setAttribute(Auth.ROLE_ATTRIBUTE, session.role());
 		return true;
 	}
 

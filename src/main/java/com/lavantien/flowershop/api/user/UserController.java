@@ -16,9 +16,9 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
-	private UserRepository userRepository;
-	private UserService userService;
-	private PasswordService passwordService;
+	private final UserRepository userRepository;
+	private final UserService userService;
+	private final PasswordService passwordService;
 
 	public UserController(UserRepository userRepository, UserService userService, PasswordService passwordService) {
 		this.userRepository = userRepository;
@@ -26,13 +26,13 @@ public class UserController {
 		this.passwordService = passwordService;
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@GetMapping
 	public ResponseEntity<List<User>> getAll() {
 		return ResponseEntity.ok(userRepository.findAll());
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@PostMapping
 	public ResponseEntity<List<User>> createMany(@RequestBody List<User> users) {
 		for (User user : users) {
@@ -46,7 +46,7 @@ public class UserController {
 		return ResponseEntity.ok(userRepository.saveAll(users));
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@DeleteMapping
 	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
 		if (ids == null) {
@@ -76,7 +76,7 @@ public class UserController {
 			// so refuse instead of letting the unique index explode at runtime.
 			return ResponseEntity.status(HttpStatus.CONFLICT).build();
 		}
-		user.setType(User.USER_TYPE);
+		user.setRole(Role.USER);
 		hashPassword(user);
 		return ResponseEntity.ok(userRepository.save(user));
 	}
@@ -96,13 +96,13 @@ public class UserController {
 		managed.setAddress(user.getAddress());
 		managed.setAnswer(user.getAnswer());
 		if (Auth.isAdmin(request)) {
-			managed.setType(user.getType());
+			managed.setRole(user.getRole());
 			managed.setEnable(user.getEnable());
 		}
 		return ResponseEntity.ok(userRepository.save(managed));
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> delete(@PathVariable Long id) {
 		if (userRepository.findById(id).isEmpty()) {
@@ -183,7 +183,7 @@ public class UserController {
 	}
 
 	private static String userToken(User user, String secret) {
-		return Base64.getEncoder().encodeToString((user.getId() + "+" + user.getType() + "+" + secret).getBytes());
+		return Base64.getEncoder().encodeToString((user.getId() + "+" + user.getRole().name() + "+" + secret).getBytes());
 	}
 
 	private static TokenDto guestDto() {

@@ -3,14 +3,14 @@ package com.lavantien.flowershop.api.user;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
 public class User {
-	public static final String USER_TYPE = "USER";
-
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -25,7 +25,8 @@ public class User {
 	private String city;
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	private String answer;
-	private String type = USER_TYPE;
+	@Enumerated(EnumType.STRING)
+	private Role role = Role.USER;
 	private Boolean enable = true;
 
 	public User() {
@@ -54,7 +55,7 @@ public class User {
 			", address='" + address + '\'' +
 			", district='" + district + '\'' +
 			", city='" + city + '\'' +
-			", type='" + type + '\'' +
+			", role='" + role + '\'' +
 			", enable=" + enable +
 			'}';
 	}
@@ -123,12 +124,12 @@ public class User {
 		this.city = city;
 	}
 
-	public String getType() {
-		return type;
+	public Role getRole() {
+		return role;
 	}
 
-	public void setType(String type) {
-		this.type = type;
+	public void setRole(Role role) {
+		this.role = role;
 	}
 
 	public Boolean getEnable() {

@@ -1,6 +1,7 @@
 package com.lavantien.flowershop.api.security;
 
 import com.jayway.jsonpath.JsonPath;
+import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.User;
 import com.lavantien.flowershop.api.user.UserRepository;
 import com.lavantien.flowershop.service.PasswordService;
@@ -25,17 +26,17 @@ public final class AuthTestSupport {
 	private AuthTestSupport() {
 	}
 
-	public static User persona(long id, String type, String email) {
+	public static User persona(long id, Role role, String email) {
 		User user = new User("Demo Persona", PASSWORD_SERVICE.hash("1234qwer"), email, "0900000001",
 			"01 Demo Lane", "Binh Thanh", "Ho Chi Minh", "demo");
 		user.setId(id);
-		user.setType(type);
+		user.setRole(role);
 		return user;
 	}
 
-	public static String tokenOf(long id, String type) {
+	public static String tokenOf(long id, Role role) {
 		String secret = PRIMED_SECRETS.getOrDefault(id, "never-primed");
-		return Base64.getEncoder().encodeToString((id + "+" + type + "+" + secret).getBytes(StandardCharsets.UTF_8));
+		return Base64.getEncoder().encodeToString((id + "+" + role.name() + "+" + secret).getBytes(StandardCharsets.UTF_8));
 	}
 
 	public static void prime(UserRepository userRepository, UserService userService, User user) {

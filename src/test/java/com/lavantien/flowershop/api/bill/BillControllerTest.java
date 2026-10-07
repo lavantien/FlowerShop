@@ -1,6 +1,7 @@
 package com.lavantien.flowershop.api.bill;
 
 import com.lavantien.flowershop.api.security.TokenInterceptor;
+import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.UserRepository;
 import com.lavantien.flowershop.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,8 +45,8 @@ class BillControllerTest {
 		mockMvc = MockMvcBuilders.standaloneSetup(new BillController(billRepository))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
 			.build();
-		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
-		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
+		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
 	}
 
 	@Test
@@ -54,7 +55,7 @@ class BillControllerTest {
 		bill.setId(7L);
 		when(billRepository.findByUserId(4L)).thenReturn(List.of(bill));
 
-		mockMvc.perform(get("/api/bill/user/4").header("X-Auth-Token", tokenOf(4, "USER")))
+		mockMvc.perform(get("/api/bill/user/4").header("X-Auth-Token", tokenOf(4, Role.USER)))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].id").value(7))
 			.andExpect(jsonPath("$[0].userId").value(4));
@@ -64,7 +65,7 @@ class BillControllerTest {
 	void memberReadsAnEmptyListForOwnAccountWithoutBills() throws Exception {
 		when(billRepository.findByUserId(4L)).thenReturn(Collections.emptyList());
 
-		mockMvc.perform(get("/api/bill/user/4").header("X-Auth-Token", tokenOf(4, "USER")))
+		mockMvc.perform(get("/api/bill/user/4").header("X-Auth-Token", tokenOf(4, Role.USER)))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$").isArray())
 			.andExpect(jsonPath("$").isEmpty());
@@ -72,7 +73,7 @@ class BillControllerTest {
 
 	@Test
 	void memberCannotReadForeignBills() throws Exception {
-		mockMvc.perform(get("/api/bill/user/1").header("X-Auth-Token", tokenOf(4, "USER")))
+		mockMvc.perform(get("/api/bill/user/1").header("X-Auth-Token", tokenOf(4, Role.USER)))
 			.andExpect(status().isForbidden());
 	}
 
@@ -80,7 +81,7 @@ class BillControllerTest {
 	void adminReadsAnyUsersBills() throws Exception {
 		when(billRepository.findByUserId(4L)).thenReturn(Collections.emptyList());
 
-		mockMvc.perform(get("/api/bill/user/4").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(get("/api/bill/user/4").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk());
 	}
 
@@ -92,7 +93,7 @@ class BillControllerTest {
 
 	@Test
 	void memberCannotListEveryBill() throws Exception {
-		mockMvc.perform(get("/api/bill").header("X-Auth-Token", tokenOf(4, "USER")))
+		mockMvc.perform(get("/api/bill").header("X-Auth-Token", tokenOf(4, Role.USER)))
 			.andExpect(status().isForbidden());
 	}
 
@@ -100,7 +101,7 @@ class BillControllerTest {
 	void adminListsEveryBill() throws Exception {
 		when(billRepository.findAll()).thenReturn(List.of());
 
-		mockMvc.perform(get("/api/bill").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(get("/api/bill").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk());
 	}
 
@@ -108,7 +109,7 @@ class BillControllerTest {
 	void checkoutStampsTheCallerOntoEveryBill() throws Exception {
 		when(billRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(post("/api/bill").header("X-Auth-Token", tokenOf(4, "USER"))
+		mockMvc.perform(post("/api/bill").header("X-Auth-Token", tokenOf(4, Role.USER))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[{\"placementDate\":\"2026-10-07\",\"productId\":1,\"productQuantity\":2,\"price\":10.0,"
 					+ "\"userId\":999,\"status\":\"PENDING\",\"phone\":\"0900000004\"}]"))
@@ -136,7 +137,7 @@ class BillControllerTest {
 		bill.setDetailAddress("04 Demo Lane");
 		when(billRepository.findById(7L)).thenReturn(Optional.of(bill));
 
-		mockMvc.perform(get("/api/bill/7").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(get("/api/bill/7").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.id").value(7))
 			.andExpect(jsonPath("$.placementDate").value("2026-10-07"))
@@ -154,7 +155,7 @@ class BillControllerTest {
 	void missingBillAnswersBadRequest() throws Exception {
 		when(billRepository.findById(99L)).thenReturn(Optional.empty());
 
-		mockMvc.perform(get("/api/bill/99").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(get("/api/bill/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isBadRequest());
 	}
 
@@ -165,7 +166,7 @@ class BillControllerTest {
 		when(billRepository.findById(7L)).thenReturn(Optional.of(bill));
 		when(billRepository.save(any(Bill.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		mockMvc.perform(put("/api/bill/7").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(put("/api/bill/7").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"id\":7,\"placementDate\":\"2026-10-07\",\"productId\":1,\"productQuantity\":3,\"price\":15.0,"
 					+ "\"userId\":4,\"settlementDate\":\"2026-10-09\",\"status\":\"SETTLED\","
@@ -186,7 +187,7 @@ class BillControllerTest {
 	void updateAnswersBadRequestForAMissingBill() throws Exception {
 		when(billRepository.findById(99L)).thenReturn(Optional.empty());
 
-		mockMvc.perform(put("/api/bill/99").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(put("/api/bill/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"status\":\"SETTLED\"}"))
 			.andExpect(status().isBadRequest());
@@ -198,7 +199,7 @@ class BillControllerTest {
 		bill.setId(7L);
 		when(billRepository.findById(7L)).thenReturn(Optional.of(bill));
 
-		mockMvc.perform(delete("/api/bill/7").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/bill/7").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk());
 
 		verify(billRepository).deleteById(7L);
@@ -208,13 +209,13 @@ class BillControllerTest {
 	void deleteAnswersBadRequestForAMissingBill() throws Exception {
 		when(billRepository.findById(99L)).thenReturn(Optional.empty());
 
-		mockMvc.perform(delete("/api/bill/99").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/bill/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isBadRequest());
 	}
 
 	@Test
 	void deleteManyWithoutABodyClearsTheArchive() throws Exception {
-		mockMvc.perform(delete("/api/bill").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+		mockMvc.perform(delete("/api/bill").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isOk());
 
 		verify(billRepository).deleteAll();
@@ -226,7 +227,7 @@ class BillControllerTest {
 		bill.setId(7L);
 		when(billRepository.findAllById(List.of(7L))).thenReturn(List.of(bill));
 
-		mockMvc.perform(delete("/api/bill").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+		mockMvc.perform(delete("/api/bill").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[7]"))
 			.andExpect(status().isOk());

@@ -1,7 +1,7 @@
 package com.lavantien.flowershop.api.product;
 
-import com.lavantien.flowershop.api.security.Auth;
 import com.lavantien.flowershop.api.security.RequireRole;
+import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.service.ProductService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
@@ -13,8 +13,8 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/product")
 public class ProductController {
-	private ProductRepository productRepository;
-	private ProductService productService;
+	private final ProductRepository productRepository;
+	private final ProductService productService;
 
 	public ProductController(ProductRepository productRepository, ProductService productService) {
 		this.productRepository = productRepository;
@@ -26,7 +26,7 @@ public class ProductController {
 		return ResponseEntity.ok(productRepository.findAll());
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@PostMapping
 	public ResponseEntity<List<Product>> createMany(@RequestBody List<Product> products) {
 		try {
@@ -38,7 +38,7 @@ public class ProductController {
 		}
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@DeleteMapping
 	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
 		if (ids == null) {
@@ -58,13 +58,13 @@ public class ProductController {
 		return ResponseEntity.ok(product.get());
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@PostMapping("/create")
 	public ResponseEntity<Product> create(@RequestBody Product product) {
 		return ResponseEntity.ok(productRepository.save(product));
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@PutMapping("/{id}")
 	public ResponseEntity<Product> update(@PathVariable Long id, @RequestBody Product product) {
 		if (productRepository.findById(id).isEmpty()) {
@@ -73,7 +73,7 @@ public class ProductController {
 		return ResponseEntity.ok(productRepository.save(product));
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> delete(@PathVariable Long id) {
 		if (productRepository.findById(id).isEmpty()) {

@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.security;
 
+import com.lavantien.flowershop.api.user.Role;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.nio.charset.StandardCharsets;
@@ -7,15 +8,14 @@ import java.util.Base64;
 
 public final class Auth {
 	public static final String USER_ID_ATTRIBUTE = "authUserId";
-	public static final String TYPE_ATTRIBUTE = "authType";
-	public static final String ADMIN_TYPE = "ADMIN";
+	public static final String ROLE_ATTRIBUTE = "authRole";
 
 	private Auth() {
 	}
 
-	// id and type stay first and second so the frontend split('+') parsers keep
+	// id and role stay first and second so the frontend split('+') parsers keep
 	// working; the third segment is the unguessable per-login session secret.
-	public record Session(long id, String type, String secret) {}
+	public record Session(long id, Role role, String secret) {}
 
 	public static Session parseSession(String token) {
 		try {
@@ -26,7 +26,7 @@ public final class Auth {
 				throw new IllegalArgumentException("missing segments");
 			}
 			return new Session(Long.parseLong(decoded.substring(0, first)),
-				decoded.substring(first + 1, second), decoded.substring(second + 1));
+				Role.valueOf(decoded.substring(first + 1, second)), decoded.substring(second + 1));
 		} catch (RuntimeException malformed) {
 			throw new IllegalArgumentException("malformed token", malformed);
 		}
@@ -37,7 +37,7 @@ public final class Auth {
 	}
 
 	public static boolean isAdmin(HttpServletRequest request) {
-		return ADMIN_TYPE.equals(request.getAttribute(TYPE_ATTRIBUTE));
+		return Role.ADMIN.equals(request.getAttribute(ROLE_ATTRIBUTE));
 	}
 
 	public static boolean ownIdOrAdmin(Long id, HttpServletRequest request) {

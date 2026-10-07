@@ -1,4 +1,7 @@
 spring:
+  threads:
+    virtual:
+      enabled: true
   datasource:
     url: jdbc:mysql://${LOCAL_MYSQL_DB_HOST}:${LOCAL_MYSQL_DB_PORT}/flowershop
     username: ${LOCAL_MYSQL_DB_USERNAME}

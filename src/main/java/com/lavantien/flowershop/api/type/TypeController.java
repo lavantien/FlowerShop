@@ -1,7 +1,7 @@
 package com.lavantien.flowershop.api.type;
 
-import com.lavantien.flowershop.api.security.Auth;
 import com.lavantien.flowershop.api.security.RequireRole;
+import com.lavantien.flowershop.api.user.Role;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,7 +11,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/type")
 public class TypeController {
-	private TypeRepository typeRepository;
+	private final TypeRepository typeRepository;
 
 	public TypeController(TypeRepository typeRepository) {
 		this.typeRepository = typeRepository;
@@ -22,13 +22,13 @@ public class TypeController {
 		return ResponseEntity.ok(typeRepository.findAll());
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@PostMapping
 	public ResponseEntity<List<Type>> createMany(@RequestBody List<Type> categories) {
 		return ResponseEntity.ok(typeRepository.saveAll(categories));
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@DeleteMapping
 	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
 		if (ids == null) {
@@ -48,13 +48,13 @@ public class TypeController {
 		return ResponseEntity.ok(type.get());
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@PostMapping("/create")
 	public ResponseEntity<Type> create(@RequestBody Type type) {
 		return ResponseEntity.ok(typeRepository.save(type));
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@PutMapping("/{id}")
 	public ResponseEntity<Type> update(@PathVariable Long id, @RequestBody Type type) {
 		if (typeRepository.findById(id).isEmpty()) {
@@ -63,7 +63,7 @@ public class TypeController {
 		return ResponseEntity.ok(typeRepository.save(type));
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> delete(@PathVariable Long id) {
 		if (typeRepository.findById(id).isEmpty()) {

@@ -2,6 +2,7 @@ package com.lavantien.flowershop.api.bill;
 
 import com.lavantien.flowershop.api.security.Auth;
 import com.lavantien.flowershop.api.security.RequireRole;
+import com.lavantien.flowershop.api.user.Role;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,13 +14,13 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/bill")
 public class BillController {
-	private BillRepository billRepository;
+	private final BillRepository billRepository;
 
 	public BillController(BillRepository billRepository) {
 		this.billRepository = billRepository;
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@GetMapping
 	public ResponseEntity<List<Bill>> getAll() {
 		return ResponseEntity.ok(billRepository.findAll());
@@ -33,7 +34,7 @@ public class BillController {
 		return ResponseEntity.ok(billRepository.saveAll(bills));
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@DeleteMapping
 	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
 		if (ids == null) {
@@ -44,7 +45,7 @@ public class BillController {
 		return ResponseEntity.ok().build();
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@GetMapping("/{id}")
 	public ResponseEntity<Bill> getById(@PathVariable Long id) {
 		Optional<Bill> bill = billRepository.findById(id);
@@ -54,7 +55,7 @@ public class BillController {
 		return ResponseEntity.ok(bill.get());
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@PutMapping("/{id}")
 	public ResponseEntity<Bill> update(@PathVariable Long id, @RequestBody Bill bill) {
 		if (billRepository.findById(id).isEmpty()) {
@@ -63,7 +64,7 @@ public class BillController {
 		return ResponseEntity.ok(billRepository.save(bill));
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> delete(@PathVariable Long id) {
 		if (billRepository.findById(id).isEmpty()) {

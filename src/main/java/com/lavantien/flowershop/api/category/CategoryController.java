@@ -1,7 +1,7 @@
 package com.lavantien.flowershop.api.category;
 
-import com.lavantien.flowershop.api.security.Auth;
 import com.lavantien.flowershop.api.security.RequireRole;
+import com.lavantien.flowershop.api.user.Role;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,7 +11,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/category")
 public class CategoryController {
-	private CategoryRepository categoryRepository;
+	private final CategoryRepository categoryRepository;
 
 	public CategoryController(CategoryRepository categoryRepository) {
 		this.categoryRepository = categoryRepository;
@@ -22,13 +22,13 @@ public class CategoryController {
 		return ResponseEntity.ok(categoryRepository.findAll());
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@PostMapping
 	public ResponseEntity<List<Category>> createMany(@RequestBody List<Category> categories) {
 		return ResponseEntity.ok(categoryRepository.saveAll(categories));
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@DeleteMapping
 	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
 		if (ids == null) {
@@ -48,13 +48,13 @@ public class CategoryController {
 		return ResponseEntity.ok(category.get());
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@PostMapping("/create")
 	public ResponseEntity<Category> create(@RequestBody Category category) {
 		return ResponseEntity.ok(categoryRepository.save(category));
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@PutMapping("/{id}")
 	public ResponseEntity<Category> update(@PathVariable Long id, @RequestBody Category category) {
 		if (categoryRepository.findById(id).isEmpty()) {
@@ -63,7 +63,7 @@ public class CategoryController {
 		return ResponseEntity.ok(categoryRepository.save(category));
 	}
 
-	@RequireRole(Auth.ADMIN_TYPE)
+	@RequireRole(Role.ADMIN)
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> delete(@PathVariable Long id) {
 		if (categoryRepository.findById(id).isEmpty()) {
