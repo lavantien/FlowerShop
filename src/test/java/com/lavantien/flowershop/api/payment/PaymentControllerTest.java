@@ -4,6 +4,7 @@ import com.lavantien.flowershop.api.branch.Branch;
 import com.lavantien.flowershop.api.branch.BranchRepository;
 import com.lavantien.flowershop.api.branch.StockLevel;
 import com.lavantien.flowershop.api.branch.StockLevelRepository;
+import com.lavantien.flowershop.api.coupon.CouponRepository;
 import com.lavantien.flowershop.api.error.ApiExceptionHandler;
 import com.lavantien.flowershop.api.order.Order;
 import com.lavantien.flowershop.api.order.OrderItem;
@@ -12,6 +13,7 @@ import com.lavantien.flowershop.api.order.OrderRepository;
 import com.lavantien.flowershop.api.order.OrderStatus;
 import com.lavantien.flowershop.api.product.ProductRepository;
 import com.lavantien.flowershop.api.security.TokenInterceptor;
+import com.lavantien.flowershop.service.CouponService;
 import com.lavantien.flowershop.service.GeoService;
 import com.lavantien.flowershop.service.OrderService;
 import com.lavantien.flowershop.service.PaymentService;
@@ -65,7 +67,8 @@ class PaymentControllerTest {
 		paymentService = new PaymentService(PROPERTIES);
 		OrderService orderService = new OrderService(orderRepository, orderItemRepository,
 			mock(ProductRepository.class), branchRepository, stockLevelRepository, paymentSessionRepository,
-			paymentService, mock(GeoService.class));
+			paymentService, mock(GeoService.class), new CouponService(mock(CouponRepository.class)),
+			PROPERTIES);
 		mockMvc = MockMvcBuilders.standaloneSetup(new PaymentController(orderService))
 			.addInterceptors(new TokenInterceptor(mock(UserRepository.class), new UserService()))
 			.setControllerAdvice(new ApiExceptionHandler())

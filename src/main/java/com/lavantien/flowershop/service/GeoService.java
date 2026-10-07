@@ -10,7 +10,6 @@ import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,9 +102,7 @@ public class GeoService {
 	public long deliveryFee(double distanceKm) {
 		BigDecimal raw = BigDecimal.valueOf(delivery.baseFee())
 			.add(BigDecimal.valueOf(delivery.perKm()).multiply(BigDecimal.valueOf(distanceKm)));
-		BigDecimal step = BigDecimal.valueOf(delivery.roundTo());
-		return raw.min(BigDecimal.valueOf(delivery.maxFee()))
-			.divide(step, 0, RoundingMode.HALF_UP).multiply(step).longValueExact();
+		return delivery.round(raw.min(BigDecimal.valueOf(delivery.maxFee()))).longValueExact();
 	}
 
 	public Branch nearestBranch(List<Branch> branches, Point target) {

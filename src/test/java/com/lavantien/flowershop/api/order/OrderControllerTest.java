@@ -4,6 +4,9 @@ import com.lavantien.flowershop.api.branch.Branch;
 import com.lavantien.flowershop.api.branch.BranchRepository;
 import com.lavantien.flowershop.api.branch.StockLevel;
 import com.lavantien.flowershop.api.branch.StockLevelRepository;
+import com.lavantien.flowershop.api.coupon.Coupon;
+import com.lavantien.flowershop.api.coupon.CouponKind;
+import com.lavantien.flowershop.api.coupon.CouponRepository;
 import com.lavantien.flowershop.api.error.ApiExceptionHandler;
 import com.lavantien.flowershop.api.payment.PaymentSession;
 import com.lavantien.flowershop.api.payment.PaymentSessionRepository;
@@ -14,6 +17,7 @@ import com.lavantien.flowershop.api.security.TokenInterceptor;
 import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.UserRepository;
 import com.jayway.jsonpath.JsonPath;
+import com.lavantien.flowershop.service.CouponService;
 import com.lavantien.flowershop.service.GeoService;
 import com.lavantien.flowershop.service.OrderService;
 import com.lavantien.flowershop.service.PaymentService;
@@ -71,6 +75,7 @@ class OrderControllerTest {
 	private GeoService geoService;
 	private PaymentSessionRepository paymentSessionRepository;
 	private PaymentService paymentService;
+	private CouponRepository couponRepository;
 	private UserRepository userRepository;
 	private UserService userService;
 	private MockMvc mockMvc;
@@ -85,10 +90,12 @@ class OrderControllerTest {
 		geoService = mock(GeoService.class);
 		paymentSessionRepository = mock(PaymentSessionRepository.class);
 		paymentService = new PaymentService(PROPERTIES);
+		couponRepository = mock(CouponRepository.class);
 		userRepository = mock(UserRepository.class);
 		userService = new UserService();
 		OrderService orderService = new OrderService(orderRepository, orderItemRepository, productRepository,
-			branchRepository, stockLevelRepository, paymentSessionRepository, paymentService, geoService);
+			branchRepository, stockLevelRepository, paymentSessionRepository, paymentService, geoService,
+			new CouponService(couponRepository), PROPERTIES);
 		mockMvc = MockMvcBuilders.standaloneSetup(new OrderController(orderRepository, orderService))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
 			.setControllerAdvice(new ApiExceptionHandler())
@@ -263,9 +270,15 @@ class OrderControllerTest {
 		verify(stockLevelRepository, times(1)).decrementIfAvailable(anyLong(), eq(3));
 	}
 
+	private static Coupon coupon(String code, CouponKind kind, String value, boolean active) {
+		return new Coupon(code, kind, new BigDecimal(value), active, null);
+	}
+
 	@Test
-	void theCouponCodeIsStoredWhileTheDiscountStaysZeroUntilCouponsLand() throws Exception {
+	void checkoutAppliesAnActivePercentCouponOnTopOfTheFee() throws Exception {
 		stubHappyCheckout();
+		when(couponRepository.findByCode("WELCOME10"))
+			.thenReturn(Optional.of(coupon("WELCOME10", CouponKind.PERCENT, "10", true)));
 
 		mockMvc.perform(post("/api/order").header("X-Auth-Token", tokenOf(4, Role.USER))
 				.contentType(MediaType.APPLICATION_JSON)
@@ -282,8 +295,142 @@ class OrderControllerTest {
 					"""))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.order.couponCode").value("WELCOME10"))
-			.andExpect(jsonPath("$.order.discountAmount").value(0))
-			.andExpect(jsonPath("$.order.total").value(240000));
+			.andExpect(jsonPath("$.order.discountAmount").value(20000))
+			.andExpect(jsonPath("$.order.subtotal").value(200000))
+			.andExpect(jsonPath("$.order.total").value(220000));
+
+		ArgumentCaptor<PaymentSession> session = ArgumentCaptor.forClass(PaymentSession.class);
+		verify(paymentSessionRepository).save(session.capture());
+		assertEquals(0, BigDecimal.valueOf(220000).compareTo(session.getValue().getAmount()),
+			"the payment must charge the post-discount total");
+	}
+
+	@Test
+	void checkoutRoundsTheCouponDiscountToTheMoneyStep() throws Exception {
+		stubHappyCheckout();
+		when(productRepository.findAllById(any())).thenReturn(List.of(product(1, "Red Rose", 127778)));
+		when(stockLevelRepository.findByBranchIdAndProductId(3L, 1L))
+			.thenReturn(Optional.of(stockLevel(3, 1, 5)));
+		when(couponRepository.findByCode("ODD10"))
+			.thenReturn(Optional.of(coupon("ODD10", CouponKind.PERCENT, "10", true)));
+
+		// subtotal 255556, ceil of the tenth is 25556, HALF_UP to 1000 is 26000,
+		// so the total is 255556 - 26000 + 40000.
+		mockMvc.perform(post("/api/order").header("X-Auth-Token", tokenOf(4, Role.USER))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+						"items": [{"productId": 1, "quantity": 2}],
+						"phone": "0900000001",
+						"address": "01 Demo Lane",
+						"district": "Quận 1",
+						"city": "Hồ Chí Minh",
+						"branchId": 3,
+						"couponCode": "ODD10"
+					}
+					"""))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.order.discountAmount").value(26000))
+			.andExpect(jsonPath("$.order.total").value(269556));
+	}
+
+	@Test
+	void checkoutClampsAFixedCouponToTheSubtotal() throws Exception {
+		stubHappyCheckout();
+		when(couponRepository.findByCode("SHIP150K"))
+			.thenReturn(Optional.of(coupon("SHIP150K", CouponKind.FIXED, "150000", true)));
+
+		mockMvc.perform(post("/api/order").header("X-Auth-Token", tokenOf(4, Role.USER))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+						"items": [{"productId": 1, "quantity": 1}],
+						"phone": "0900000001",
+						"address": "01 Demo Lane",
+						"district": "Quận 1",
+						"city": "Hồ Chí Minh",
+						"branchId": 3,
+						"couponCode": "SHIP150K"
+					}
+					"""))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.order.discountAmount").value(100000))
+			.andExpect(jsonPath("$.order.total").value(40000));
+	}
+
+	@Test
+	void checkoutAnswers404ForAnUnknownCouponCode() throws Exception {
+		stubHappyCheckout();
+		when(couponRepository.findByCode("NOPE")).thenReturn(Optional.empty());
+
+		mockMvc.perform(post("/api/order").header("X-Auth-Token", tokenOf(4, Role.USER))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+						"items": [{"productId": 1, "quantity": 1}],
+						"phone": "0900000001",
+						"address": "01 Demo Lane",
+						"district": "Quận 1",
+						"city": "Hồ Chí Minh",
+						"branchId": 3,
+						"couponCode": "NOPE"
+					}
+					"""))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
+
+		verify(orderRepository, never()).save(any(Order.class));
+	}
+
+	@Test
+	void checkoutConflictsForAnInactiveCoupon() throws Exception {
+		stubHappyCheckout();
+		when(couponRepository.findByCode("EXPIRED5"))
+			.thenReturn(Optional.of(coupon("EXPIRED5", CouponKind.PERCENT, "5", false)));
+
+		mockMvc.perform(post("/api/order").header("X-Auth-Token", tokenOf(4, Role.USER))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+						"items": [{"productId": 1, "quantity": 1}],
+						"phone": "0900000001",
+						"address": "01 Demo Lane",
+						"district": "Quận 1",
+						"city": "Hồ Chí Minh",
+						"branchId": 3,
+						"couponCode": "EXPIRED5"
+					}
+					"""))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("COUPON_INACTIVE"));
+
+		verify(orderRepository, never()).save(any(Order.class));
+	}
+
+	@Test
+	void checkoutConflictsForAnExpiredCoupon() throws Exception {
+		stubHappyCheckout();
+		when(couponRepository.findByCode("OLD1")).thenReturn(Optional
+			.of(new Coupon("OLD1", CouponKind.PERCENT, new BigDecimal("5"), true,
+				Instant.parse("2020-01-01T00:00:00Z"))));
+
+		mockMvc.perform(post("/api/order").header("X-Auth-Token", tokenOf(4, Role.USER))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+						"items": [{"productId": 1, "quantity": 1}],
+						"phone": "0900000001",
+						"address": "01 Demo Lane",
+						"district": "Quận 1",
+						"city": "Hồ Chí Minh",
+						"branchId": 3,
+						"couponCode": "OLD1"
+					}
+					"""))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("COUPON_INACTIVE"));
+
+		verify(orderRepository, never()).save(any(Order.class));
 	}
 
 	@Test

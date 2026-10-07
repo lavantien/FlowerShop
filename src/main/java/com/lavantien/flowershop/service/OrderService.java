@@ -4,6 +4,7 @@ import com.lavantien.flowershop.api.branch.Branch;
 import com.lavantien.flowershop.api.branch.BranchRepository;
 import com.lavantien.flowershop.api.branch.StockLevel;
 import com.lavantien.flowershop.api.branch.StockLevelRepository;
+import com.lavantien.flowershop.api.coupon.Coupon;
 import com.lavantien.flowershop.api.error.ConflictException;
 import com.lavantien.flowershop.api.error.ForbiddenException;
 import com.lavantien.flowershop.api.error.NotFoundException;
@@ -50,11 +51,14 @@ public class OrderService {
 	private final PaymentSessionRepository paymentSessionRepository;
 	private final PaymentService paymentService;
 	private final GeoService geoService;
+	private final CouponService couponService;
+	private final ShopProperties properties;
 
 	public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
 		ProductRepository productRepository, BranchRepository branchRepository,
 		StockLevelRepository stockLevelRepository, PaymentSessionRepository paymentSessionRepository,
-		PaymentService paymentService, GeoService geoService) {
+		PaymentService paymentService, GeoService geoService, CouponService couponService,
+		ShopProperties properties) {
 		this.orderRepository = orderRepository;
 		this.orderItemRepository = orderItemRepository;
 		this.productRepository = productRepository;
@@ -63,6 +67,8 @@ public class OrderService {
 		this.paymentSessionRepository = paymentSessionRepository;
 		this.paymentService = paymentService;
 		this.geoService = geoService;
+		this.couponService = couponService;
+		this.properties = properties;
 	}
 
 	// One transaction prices every line from the database, snapshots name and
@@ -102,12 +108,17 @@ public class OrderService {
 			throw new ConflictException("OUT_OF_STOCK", "insufficient stock for: " + String.join(", ", failing));
 		}
 
-		// Coupons land in their own commit; for now the code is only stored
-		// and the discount stays zero.
+		// The coupon rules are exactly the validate endpoint's; the discount
+		// then lands on the money step every computed amount rounds to.
+		String couponCode = blankToNull(request.couponCode());
 		BigDecimal discountAmount = BigDecimal.ZERO;
+		if (couponCode != null) {
+			Coupon coupon = couponService.resolve(couponCode);
+			discountAmount = properties.delivery().round(coupon.discountOn(subtotal));
+		}
 		BigDecimal total = subtotal.subtract(discountAmount).add(deliveryFee);
 		Order order = new Order(userId, request.phone(), request.address(), request.district(), request.city(),
-			branch.getId(), distanceKm, deliveryFee, blankToNull(request.couponCode()), discountAmount,
+			branch.getId(), distanceKm, deliveryFee, couponCode, discountAmount,
 			subtotal, total);
 		Instant now = Instant.now();
 		order.setPlacedAt(now);
