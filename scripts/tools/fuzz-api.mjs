@@ -138,6 +138,34 @@ function json(response) {
 	return JSON.parse(response.fuzzBody);
 }
 
+// 2xx money contract: every money field is whole-dong VND with no decimal in
+// the JSON (JS number coercion would hide a ".0"), and the checkout identity
+// holds: line totals sum to the subtotal, total is subtotal minus discount
+// plus fee.
+function assertMoneyField(name, raw, field) {
+	if (new RegExp(`"${field}":\\s*-?\\d+\\.`).test(raw)) {
+		fail(name, `${field} carries decimals in the JSON`);
+	}
+}
+
+function assertCheckoutMoney(name, response, order) {
+	for (const field of ['subtotal', 'deliveryFee', 'discountAmount', 'total', 'unitPrice', 'lineTotal']) {
+		assertMoneyField(name, response.fuzzBody, field);
+	}
+	for (const field of ['subtotal', 'deliveryFee', 'discountAmount', 'total']) {
+		if (!Number.isInteger(order[field])) {
+			fail(name, `${field} is not whole-dong VND: ${order[field]}`);
+		}
+	}
+	if (order.total !== order.subtotal - order.discountAmount + order.deliveryFee) {
+		fail(name, `total ${order.total} != subtotal ${order.subtotal} - discount ${order.discountAmount} + fee ${order.deliveryFee}`);
+	}
+	const lines = (order.items ?? []).reduce((sum, item) => sum + item.lineTotal, 0);
+	if (lines !== order.subtotal) {
+		fail(name, `line totals sum ${lines} != subtotal ${order.subtotal}`);
+	}
+}
+
 const sig = (paymentId, orderId, amount) =>
 	createHmac('sha256', cfg.paymentSecret).update(`${paymentId}:${orderId}:${amount}`).digest('hex');
 
@@ -307,8 +335,15 @@ async function setup() {
 	facts.user1Password = member.password;
 	facts.buyerToken = await login(facts.user2, credential(2));
 	facts.editorToken = await login(facts.user3, credential(3));
-	const product = (await json(await call('setup-product', 'GET /api/product', 'GET', '/api/product',
-		{query: {page: 0, size: 1}, status: [200]}))).content[0];
+	const productPage = json(await call('setup-product', 'GET /api/product', 'GET', '/api/product',
+		{query: {page: 0, size: 1}, status: [200]}));
+	if (!Array.isArray(productPage.content) || productPage.content.length === 0) {
+		fail('setup-product', 'page content is not a non-empty array');
+	}
+	if (!Number.isInteger(productPage.totalElements)) {
+		fail('setup-product', `totalElements is not an integer: ${productPage.totalElements}`);
+	}
+	const product = productPage.content[0];
 	facts.productId = product.id;
 	facts.typeName = product.typeName;
 	facts.categoryName = product.categoryName;
@@ -328,8 +363,11 @@ const orderBody = (over = {}) => ({
 });
 
 async function checkout(name, token, body = orderBody()) {
-	return json(await call(name, 'POST /api/order', 'POST', '/api/order',
-		{token, body, status: [201], error: 'any'}));
+	const response = await call(name, 'POST /api/order', 'POST', '/api/order',
+		{token, body, status: [201], error: 'any'});
+	const payload = json(response);
+	assertCheckoutMoney(name, response, payload.order);
+	return payload;
 }
 
 // --- curated walks, one per contract section
@@ -437,6 +475,16 @@ async function catalogWalk() {
 	const created = await json(await call('product-create', 'POST /api/product/create', 'POST', '/api/product/create',
 		{token: t, body: {name: `Fuzz Bouquet ${cfg.seed}`, description: 'harness probe', imgUrl: 'https://x/y.png',
 			price: 100000, typeName: facts.typeName, categoryName: facts.categoryName}, status: [200], error: 'problem', codes: ['VALIDATION']}));
+	// A nonpositive price never enters the catalog (812e3bd): every template
+	// answers 400 VALIDATION with a field error naming price.
+	for (const [index, price] of corpus.nonPositivePrices.entries()) {
+		const response = await call(`product-create-price-${index}`, 'POST /api/product/create', 'POST', '/api/product/create',
+			{token: t, body: {name: `Fuzz Price ${cfg.seed} ${index}`, description: 'harness probe', imgUrl: 'https://x/y.png',
+				price, typeName: facts.typeName, categoryName: facts.categoryName}, status: [400], error: 'problem', codes: ['VALIDATION']});
+		if (!json(response)?.errors?.price) {
+			fail(`product-create-price-${index}`, `no field error on price: ${response.fuzzBody.slice(0, 120)}`);
+		}
+	}
 	await call('product-update', 'PUT /api/product/{id}', 'PUT', `/api/product/${created.id}`,
 		{token: t, body: {...created, price: 120000}, status: [200], error: 'problem', codes: ['NOT_FOUND']});
 	await call('product-update-unknown', 'PUT /api/product/{id}', 'PUT', '/api/product/99999999',
@@ -476,12 +524,43 @@ async function taxonomyWalk() {
 		{token: t, body: {name: categoryName}, status: [409], error: 'problem', codes: ['NAME_IN_USE']});
 	const categories = await json(await call('category-scan', 'GET /api/category', 'GET', '/api/category', {status: [200]}));
 	const created = categories.find((c) => c.name === categoryName);
-	// Run-tagged rename target: the taxonomy PUT with an id-less body inserts
-	// a fresh row under the new name instead of renaming the addressed one,
-	// so a fixed target name would collide on the second run. The inserted
-	// row outlives the run, so a same tag replay scores the 409 instead.
-	await call('category-update', 'PUT /api/category/{id}', 'PUT', `/api/category/${created.id}`,
-		{token: t, body: {name: `${categoryName}b-${runTag}`}, status: [200, 409], error: 'problem', codes: ['NOT_FOUND', 'NAME_IN_USE']});
+	// Crash healing: a run that died mid-cascade leaves probe products that
+	// would block the category delete through NAME_IN_USE, so they die first.
+	const orphans = await json(await call('category-cascade-orphans', 'GET /api/product', 'GET', '/api/product',
+		{query: {search: `Fuzz Cascade ${cfg.seed}`, size: 48}, status: [200]}));
+	for (const orphan of orphans.content) {
+		await call(`category-cascade-orphan-${orphan.id}`, 'DELETE /api/product/{id}', 'DELETE', `/api/product/${orphan.id}`,
+			{token: t, status: [204]});
+	}
+	// The rename cascade (9ae754a): a category products reference carries its
+	// product rows along, so the public catalog must show the new name and the
+	// old name must stop returning the product. The walk deletes the probe
+	// product afterwards so teardown can drop the category.
+	const cascadeProduct = await json(await call('category-cascade-product-create', 'POST /api/product/create', 'POST', '/api/product/create',
+		{token: t, body: {name: `Fuzz Cascade ${cfg.seed}`, description: 'rename cascade probe', imgUrl: 'https://x/y.png',
+			price: 100000, typeName: facts.typeName, categoryName}, status: [200], error: 'problem', codes: ['VALIDATION']}));
+	// Run-tagged rename target: teardown wipes the previous run's rows, so a
+	// same tag replay renames into free space and stays deterministic.
+	const renamedTo = `${categoryName}b-${runTag}`;
+	await call('category-cascade-rename', 'PUT /api/category/{id}', 'PUT', `/api/category/${created.id}`,
+		{token: t, body: {name: renamedTo}, status: [200], error: 'problem', codes: ['NOT_FOUND', 'NAME_IN_USE']});
+	const cascadedView = await json(await call('category-cascade-product-view', 'GET /api/product/{id}', 'GET', `/api/product/${cascadeProduct.id}`,
+		{status: [200]}));
+	if (cascadedView.categoryName !== renamedTo) {
+		fail('category-cascade-product-view', `product categoryName ${cascadedView.categoryName} did not follow the rename to ${renamedTo}`);
+	}
+	const oldFilter = await json(await call('category-cascade-old-filter', 'GET /api/product', 'GET', '/api/product',
+		{query: {category: categoryName, size: 48}, status: [200]}));
+	if (oldFilter.content.some((p) => p.id === cascadeProduct.id)) {
+		fail('category-cascade-old-filter', `the old name ${categoryName} still returns the cascaded product`);
+	}
+	const newFilter = await json(await call('category-cascade-new-filter', 'GET /api/product', 'GET', '/api/product',
+		{query: {category: renamedTo, size: 48}, status: [200]}));
+	if (!newFilter.content.some((p) => p.id === cascadeProduct.id)) {
+		fail('category-cascade-new-filter', `the renamed category ${renamedTo} does not return the cascaded product`);
+	}
+	await call('category-cascade-product-delete', 'DELETE /api/product/{id}', 'DELETE', `/api/product/${cascadeProduct.id}`,
+		{token: t, status: [204]});
 	await call('category-update-unknown', 'PUT /api/category/{id}', 'PUT', '/api/category/99999999',
 		{token: t, body: {name: 'Ghost Cat'}, status: [404], error: 'problem', codes: ['NOT_FOUND']});
 	await call('category-delete', 'DELETE /api/category/{id}', 'DELETE', `/api/category/${created.id}`,
@@ -497,6 +576,17 @@ async function taxonomyWalk() {
 		{token: t, body: {name: `${typeName}b-${runTag}`, categoryName: facts.categoryName}, status: [200, 409], error: 'problem', codes: ['NOT_FOUND', 'NAME_IN_USE']});
 	await call('type-delete', 'DELETE /api/type/{id}', 'DELETE', `/api/type/${createdType.id}`,
 		{token: t, status: [204]});
+	// Root fix for fuzz residue: every taxonomy row this walk owns dies here
+	// through the admin API, including the phantom rows pre-teardown runs
+	// inserted, so the database stays clean across reruns and the run-tagged
+	// renames above always land in free space.
+	for (const [kind, prefix] of [['category', `Fuzz Cat ${cfg.seed}`], ['type', `Fuzz Type ${cfg.seed}`]]) {
+		const rows = await json(await call(`taxonomy-teardown-scan-${kind}`, `GET /api/${kind}`, 'GET', `/api/${kind}`, {status: [200]}));
+		for (const row of rows.filter((candidate) => candidate.name.startsWith(prefix))) {
+			await call(`taxonomy-teardown-${kind}-${row.id}`, `DELETE /api/${kind}/{id}`, 'DELETE', `/api/${kind}/${row.id}`,
+				{token: t, status: [204]});
+		}
+	}
 }
 
 async function branchWalk() {
@@ -505,8 +595,44 @@ async function branchWalk() {
 	const created = await json(await call('branch-create', 'POST /api/branch', 'POST', '/api/branch',
 		{token: t, body: {name: `Fuzz Branch ${cfg.seed}`, address: '3 Test St', district: 'Bình Thạnh',
 			city: 'Hồ Chí Minh', lat: 10.78, lng: 106.7, active: false}, status: [200], error: 'problem', codes: ['VALIDATION']}));
-	await call('branch-update', 'PUT /api/branch/{id}', 'PUT', `/api/branch/${created.id}`,
-		{token: t, body: {...created, address: '4 Test St'}, status: [200], error: 'problem', codes: ['NOT_FOUND']});
+	// Coordinates are required and bounded (34ee4c4): a create without them or
+	// off the globe answers 400 VALIDATION with a field error on the offender.
+	const coordinateless = [
+		{name: `Fuzz Lost A ${cfg.seed}`, address: '3 Test St', district: 'Bình Thạnh', city: 'Hồ Chí Minh', lng: 106.7},
+		{name: `Fuzz Lost B ${cfg.seed}`, address: '3 Test St', district: 'Bình Thạnh', city: 'Hồ Chí Minh', lat: 10.78},
+	];
+	for (const [index, body] of coordinateless.entries()) {
+		const response = await call(`branch-create-missing-coordinates-${index}`, 'POST /api/branch', 'POST', '/api/branch',
+			{token: t, body, status: [400], error: 'problem', codes: ['VALIDATION']});
+		const missing = body.lat === undefined ? 'lat' : 'lng';
+		if (!json(response)?.errors?.[missing]) {
+			fail(`branch-create-missing-coordinates-${index}`, `no field error on ${missing}: ${response.fuzzBody.slice(0, 120)}`);
+		}
+	}
+	for (const [index, {lat, lng}] of corpus.offGlobeCoordinates.entries()) {
+		const response = await call(`branch-create-off-globe-${index}`, 'POST /api/branch', 'POST', '/api/branch',
+			{token: t, body: {name: `Fuzz Orbit ${cfg.seed} ${index}`, address: '3 Test St', district: 'Bình Thạnh',
+				city: 'Hồ Chí Minh', lat, lng}, status: [400], error: 'problem', codes: ['VALIDATION']});
+		const offender = Math.abs(lat) > 90 ? 'lat' : 'lng';
+		if (!json(response)?.errors?.[offender]) {
+			fail(`branch-create-off-globe-${index}`, `no field error on ${offender}: ${response.fuzzBody.slice(0, 120)}`);
+		}
+	}
+	const updated = await json(await call('branch-update', 'PUT /api/branch/{id}', 'PUT', `/api/branch/${created.id}`,
+		{token: t, body: {...created, address: '4 Test St'}, status: [200], error: 'problem', codes: ['NOT_FOUND']}));
+	if (updated.lat !== created.lat || updated.lng !== created.lng) {
+		fail('branch-update', `coordinates drifted on update: ${created.lat},${created.lng} -> ${updated.lat},${updated.lng}`);
+	}
+	// A maintenance PUT that omits coordinates answers 400 naming them, so the
+	// stored pair on this very real branch can never be wiped (34ee4c4).
+	{
+		const response = await call('branch-update-omitted-coordinates', 'PUT /api/branch/{id}', 'PUT', `/api/branch/${created.id}`,
+			{token: t, body: {name: 'Fuzz Renamed Hub'}, status: [400], error: 'problem', codes: ['VALIDATION']});
+		const parsed = json(response);
+		if (!parsed?.errors?.lat || !parsed?.errors?.lng) {
+			fail('branch-update-omitted-coordinates', `expected field errors on lat and lng: ${response.fuzzBody.slice(0, 120)}`);
+		}
+	}
 	// Body validation runs before the existence check: a body without the
 	// required coordinates scores 400 VALIDATION, a valid body on an unknown
 	// id scores the 404.
@@ -561,8 +687,12 @@ async function orderAndPaymentWalk() {
 	// Payment matrix against the live PENDING session from the couponed checkout.
 	const payment = couponed.payment;
 	const good = sig(payment.id, couponed.order.id, couponed.order.total);
-	await call('payment-get', 'GET /api/payment/{id}', 'GET', `/api/payment/${payment.id}`,
+	const paymentView = await call('payment-get', 'GET /api/payment/{id}', 'GET', `/api/payment/${payment.id}`,
 		{query: {sig: good}, status: [200]});
+	assertMoneyField('payment-get', paymentView.fuzzBody, 'amount');
+	if (json(paymentView)?.amount !== couponed.order.total) {
+		fail('payment-get', `amount ${json(paymentView)?.amount} != the walked order total ${couponed.order.total}`);
+	}
 	await call('payment-get-bitflip-sig', 'GET /api/payment/{id}', 'GET', `/api/payment/${payment.id}`,
 		{query: {sig: bitFlip(good)}, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
 	await call('payment-get-truncated-sig', 'GET /api/payment/{id}', 'GET', `/api/payment/${payment.id}`,
@@ -838,13 +968,18 @@ function writeReport(jarName, durationMs) {
 	lines.push('Invariants asserted on every response: status inside the documented set for the endpoint,');
 	lines.push('and every error body, application and framework alike (deserialization, method-not-allowed,');
 	lines.push('unknown paths, traversal), is problem+json carrying a code from the contract list, and never');
-	lines.push('a 5xx, hang, or run-budget breach. Status unions appear where persistent');
+	lines.push('a 5xx, hang, or run-budget breach. 2xx bodies carry their contract too: checkout money is');
+	lines.push('whole-dong VND with no decimal in the JSON and holds the identity total = subtotal - discount');
+	lines.push('+ fee with line totals summing to the subtotal, the payment view amount equals the walked order');
+	lines.push('total, and the product page answers a content array with an integer totalElements. The taxonomy');
+	lines.push('walk pins the rename cascade: a category products reference carries its rows to the new name,');
+	lines.push('and the walk tears its own taxonomy rows down through the admin API so no residue survives the');
+	lines.push('run. Status unions appear where persistent');
 	lines.push('state can legitimately flip a case between two documented outcomes, for instance the register');
 	lines.push('template across tagged reruns (201 versus EMAIL_IN_USE 409) or a variant that may validate or');
 	lines.push('score a business 404 or 409 depending on which field the seeded mutation strikes. Replaying a');
 	lines.push('completed run with FUZZ_RUN_TAG is green end to end: every credential derives from the tag, so');
-	lines.push('setup login falls back to the rotated password and the taxonomy rename scores NAME_IN_USE');
-	lines.push('against the previous run residue instead of failing.');
+	lines.push('setup login falls back to the rotated password and the taxonomy walk finds clean rows');
 	lines.push('');
 	lines.push('| endpoint | requests | statuses |');
 	lines.push('| --- | --- | --- |');

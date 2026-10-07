@@ -36,6 +36,8 @@
 	"emails": ["", "not-an-email", "a@b", "admin@flowershop.example", "user@", "@x.y", "é@ü.y", "a b@c.d"],
 	"tokenPlaintexts": ["1+USER+secret", "x+y+z", "999999+ADMIN+hijack", "1+USER", ""],
 	"sigs": ["", "zz", "deadbeefdeadbeef", "0000000000000000000000000000000000000000000000000000000000000000", "A", "sig", "%20"],
+	"nonPositivePrices": [0, -100000],
+	"offGlobeCoordinates": [{"lat": 90.5, "lng": 106.7}, {"lat": 10.78, "lng": -180.5}],
 	"enums": ["SUPERUSER", "user", "BANANA", "", "-", "0", "PENDING ", "PAID,SHIPPED"],
 	"sortValues": ["name-asc", "name-desc", "price-asc", "price-desc", "banana", "", "-name-asc", "NAME-ASC", "id; DROP TABLE product"],
 	"pages": [0, 1, 7, 999999, -1, -2147483648, 2147483647],
