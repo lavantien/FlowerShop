@@ -17,11 +17,10 @@ The Maven wrapper (`mvnw`) is included and `make` targets wrap every build and r
 3. Start the database with `make db-up`, then run the first 2 lines in file `db/run.sql` to create a database (schema) name `flowershop` in the MySQL Server.
 4. Launch Spring Boot `FlowershopApplication` (or `make run` to start it, `make backend-test` for the test suite). The tables will be create if run the first time.
 5. Run the rest in file `db/run.sql` to fill default data for our application.
-6. In `Postman`, call `POST` at `http://localhost:8080/api/test` with the `JSON body` copied from `db/mock-test.json`.
-7. In `Postman`, call `POST` at `http://localhost:8080/api/product` with the `JSON body` copied from `db/product.json`.
-8. Run `make frontend-install` to install the `frontend` dependencies.
-9. Run `make frontend-serve` to start the dev server at `http://localhost:4200`, proxying `/api` requests to `:8080`.
-10. Open browser at `http://localhost:4200` to access our application.
+6. In `Postman`, log in as the demo admin (`admin@flowershop.example` / `1234qwer`, `POST` at `http://localhost:8080/api/user/login`), then call `POST` at `http://localhost:8080/api/product` with the `JSON body` copied from `db/product.json` and the returned token in the `X-Auth-Token` header.
+7. Run `make frontend-install` to install the `frontend` dependencies.
+8. Run `make frontend-serve` to start the dev server at `http://localhost:4200`, proxying `/api` requests to `:8080`.
+9. Open browser at `http://localhost:4200` to access our application.
 
 #### Production environment setup instruction:
 1. Production environment needs only `JDK 27` and `MySQL Server 8.4 (LTS)` installed. Then setup `database` and `application.properties` properly as in `Development Environment`.
