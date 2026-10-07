@@ -169,6 +169,30 @@ class UserControllerTest {
 	}
 
 	@Test
+	void createManyRefusesTheBatchWhenAnyEmailIsAlreadyInUse() throws Exception {
+		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		when(userRepository.findByEmail("member@flowershop.example"))
+			.thenReturn(persona(4, "USER", "member@flowershop.example"));
+
+		mockMvc.perform(post("/api/user").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("[{\"name\":\"Clone\",\"email\":\"member@flowershop.example\",\"password\":\"1234qwer\","
+					+ "\"answer\":\"demo\"},{\"name\":\"Fresh\",\"email\":\"fresh@flowershop.example\","
+					+ "\"password\":\"1234qwer\",\"answer\":\"demo\"}]"))
+			.andExpect(status().isConflict());
+	}
+
+	@Test
+	void createWithANullEmailSavesBecauseNothingIsInUse() throws Exception {
+		when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		mockMvc.perform(post("/api/user/create").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"NoEmail\",\"password\":\"1234qwer\",\"answer\":\"demo\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.name").value("NoEmail"));
+	}
+
+	@Test
 	void resetPasswordToleratesASeededRowWithoutAnAnswer() throws Exception {
 		User user = persona(2, "ADMIN", "editor@flowershop.example");
 		user.setAnswer(null);

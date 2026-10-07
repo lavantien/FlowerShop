@@ -26,4 +26,9 @@ class PasswordServiceTest {
 	void hashSaltsSoTwoHashesOfTheSamePasswordDiffer() {
 		assertNotEquals(passwordService.hash("1234qwer"), passwordService.hash("1234qwer"));
 	}
+
+	@Test
+	void burnDummyComparisonToleratesANullPassword() {
+		passwordService.burnDummyComparison(null);
+	}
 }

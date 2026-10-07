@@ -115,7 +115,14 @@ public class UserController {
 	@PostMapping(value = "/login", consumes = "text/plain")
 	public ResponseEntity<TokenDto> doLogin(@RequestBody String info) {
 		TokenDto tokenDto = guestDto();
-		String decodedInfo = decodeBase64(info);
+		// A required String body is never null: Spring answers 400 for absent
+		// bodies, so only the decode itself can fail.
+		String decodedInfo;
+		try {
+			decodedInfo = new String(Base64.getDecoder().decode(info));
+		} catch (IllegalArgumentException malformed) {
+			decodedInfo = null;
+		}
 		int index = decodedInfo == null ? -1 : decodedInfo.indexOf("j0z");
 		if (index >= 0) {
 			String email = decodedInfo.substring(0, index);
@@ -185,17 +192,6 @@ public class UserController {
 
 	private static String guessToken() {
 		return Base64.getEncoder().encodeToString("0+GUESS".getBytes());
-	}
-
-	private static String decodeBase64(String raw) {
-		if (raw == null) {
-			return null;
-		}
-		try {
-			return new String(Base64.getDecoder().decode(raw));
-		} catch (IllegalArgumentException e) {
-			return null;
-		}
 	}
 }
 
