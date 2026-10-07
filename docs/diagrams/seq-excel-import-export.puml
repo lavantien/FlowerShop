@@ -1,0 +1,40 @@
+@startuml seq-excel-import-export
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Admin" as admin
+participant "ProductsComponent\nadmin/products" as productsUi
+participant "excel.ts" as excel
+participant "CatalogService (FE)" as catalogFe
+participant "ProductController\n/api/product" as productC
+participant "ProductService\nupsertAll" as productS
+participant "ProductRepository" as productR
+
+group import [xlsx to bulk upsert]
+	admin -> productsUi : choose an .xlsx file
+	productsUi -> excel : readExcel(file)
+	alt not the xlsx mime type
+		excel --> productsUi : error toast not-excel
+	else readable workbook
+		excel -> excel : FileReader.readAsArrayBuffer\nXLSX.read, sheet_to_json with\nEXPORT_COLUMNS header
+		note right : the human header row\narrives as data, slice(1)\ndrops it, imports\nstart at row 2
+		excel --> productsUi : ProductInput[] or\nwrong-format toast
+		productsUi -> catalogFe : bulkUpsert(rows)
+		catalogFe -> productC : POST /api/product\n[{productInput}]
+		productC -> productS : upsertAll(products)
+		note right : an input carrying id\nupdates that row, no id\ninserts, so the same file\nround-trips with the export
+		productS -> productR : findAllById, merge, save
+		productR --> productS : persisted rows
+		productC --> productsUi : 200 [{productView}]
+	end
+end
+
+group export [grid to xlsx]
+	admin -> productsUi : press export
+	productsUi -> catalogFe : all()
+	catalogFe --> productsUi : ProductView[] rows
+	productsUi -> excel : writeExportWorkbook(rows, lang)
+	excel -> excel : json_to_sheet with EXPORT_COLUMNS,\nsheet named by language,\nXLSX.writeFile with the\nbuildExportFilename timestamp
+	excel --> admin : downloaded .xlsx
+end
+@enduml

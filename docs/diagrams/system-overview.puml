@@ -1,0 +1,34 @@
+@startuml system-overview
+skinparam monochrome true
+skinparam shadowing false
+left to right direction
+
+node "Browser" as browser {
+	component "Angular SPA\nfrontend/src/app" as spa
+}
+
+node "Host machine" as host {
+	component "Spring Boot jar\nsrc/main/java (Java 27)" as backend
+	component "docker compose\ndocker-compose.yml" as compose
+}
+
+node "flowershop-mysql\ncontainer" as mysql {
+	database "MySQL 9.7.2\ndatabase flowershop" as db
+ storage "volume\nflowershop-mysql-data" as volume
+}
+
+cloud "GitHub Actions\n.github/workflows/ci.yml" as ci {
+	component "backend job\nmake backend-test" as ciBackend
+	component "frontend job\nlint, test-coverage, build" as ciFrontend
+	component "audit job\nmake audit" as ciAudit
+}
+
+spa --> backend : JSON over /api\nX-Auth-Token header
+backend --> db : JPA, ddl-auto update
+compose --> mysql : up -d, healthcheck
+volume .. db : persists
+ciBackend --> backend : mvnw verify on push and PR
+ciBackend .. mysql : service container
+ciFrontend .. spa : npm ci, lint, vitest, build
+ciAudit .. spa : npm audit, 0 vulnerabilities
+@enduml

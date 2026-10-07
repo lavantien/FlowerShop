@@ -1,0 +1,45 @@
+@startuml seq-fulfillment
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Admin" as admin
+participant "AdminOrdersComponent\nadmin/orders" as ordersUi
+participant "OrderService (FE)" as orderFe
+participant "OrderController\nPOST /api/order/{id}/status" as orderC
+participant "OrderService (BE)\nchangeStatus @Transactional" as orderBe
+participant "OrderStatus\ncanTransitionTo" as status
+participant "PaymentSessionRepository" as paymentR
+participant "OrderRepository" as orderR
+participant "StockLevelRepository" as stockR
+
+admin -> ordersUi : filter by status, pick\nthe next transition
+ordersUi -> orderFe : setStatus(id, next)
+orderFe -> orderC : POST /api/order/{id}/status\n{"status": "SHIPPED"}
+orderC -> orderBe : changeStatus(orderId, next)
+orderBe -> paymentR : lockByOrderId\nserializes against confirms
+orderBe -> orderR : lockById(orderId)
+orderBe -> status : canTransitionTo(next)
+alt arc not in the enum table
+	orderBe --> orderC : 409 ILLEGAL_TRANSITION
+else PENDING to PAID by hand
+	orderBe --> orderC : 409, payment confirm is\nthe only door to PAID
+else PAID to SHIPPED
+	orderBe -> orderR : transitionTo(SHIPPED, now)\nshippedAt set, stock untouched
+	orderBe --> orderC : 200 {order}
+else SHIPPED to COMPLETED
+	orderBe -> orderR : transitionTo(COMPLETED, now)\ncompletedAt set
+	orderBe --> orderC : 200 {order}
+else to CANCELLED
+	orderBe -> stockR : increment per item,\nstock restored
+	orderBe -> orderR : transitionTo(CANCELLED, now)
+	orderBe --> orderC : 200 {order}
+end
+orderC --> orderFe : response
+orderFe --> ordersUi : new status badge
+note over status, stockR
+	Legal arcs: PENDING to PAID (payment only)
+	or CANCELLED, PAID to SHIPPED or
+	CANCELLED, SHIPPED to COMPLETED.
+	COMPLETED and CANCELLED are terminal.
+end note
+@enduml

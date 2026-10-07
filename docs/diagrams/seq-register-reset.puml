@@ -1,0 +1,47 @@
+@startuml seq-register-reset
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Visitor" as visitor
+participant "AuthModalComponent\nlogin, register, forgot forms" as modal
+participant "AuthService" as authSvc
+participant "SessionService" as session
+participant "UserController\n/api/user" as userC
+participant "UserRepository" as userR
+participant "PasswordService" as passwordS
+participant "UserService\nsession secrets" as userSvc
+
+group register [POST /api/user/create]
+	visitor -> modal : submit register form
+	modal -> authSvc : register(input)
+	authSvc -> userC : {"name", "email", "password",\n"phone", "address", "district",\n"city", "answer"}
+	userC -> userR : findByEmail(email)
+	alt email taken
+		userC --> authSvc : 409 EMAIL_IN_USE
+	else free
+		userC -> passwordS : hash(password)
+		userC -> userR : save, role forced USER
+		userC --> authSvc : 201 {user}
+		authSvc --> modal : user created, switch to login
+	end
+end
+
+group reset password [POST /api/user/resetPassword]
+	visitor -> modal : submit forgot form
+	modal -> authSvc : resetPassword(input)
+	authSvc -> userC : {"email", "answer", "newPassword"}
+	userC -> userR : findByEmail(email)
+	alt email unknown, no stored\nanswer, or answer mismatch
+		note right : the three failures are\nindistinguishable by design
+		userC --> authSvc : 401
+	else answer matches
+		userC -> passwordS : hash(newPassword)
+		userC -> userR : save
+		userC -> userSvc : login(id) new secret
+		userSvc --> userC : secret
+		userC --> authSvc : 200 {"token", "user"}
+		authSvc -> session : login(token, user)
+		session --> visitor : logged in without a second step
+	end
+end
+@enduml

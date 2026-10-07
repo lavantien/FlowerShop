@@ -1,0 +1,58 @@
+@startuml seq-coupon-lifecycle
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Admin" as admin
+actor "Member" as member
+participant "AdminCouponsComponent\nadmin/coupons" as couponUi
+participant "CouponService (FE)" as couponFe
+participant "CartComponent\ncoupon preview" as cart
+participant "CouponController\n/api/coupon" as couponC
+participant "CouponService (BE)" as couponBe
+participant "CouponRepository" as couponR
+participant "Coupon.discountOn" as formula
+
+group create [POST /api/coupon, ADMIN]
+	admin -> couponUi : new coupon\nWELCOME10 PERCENT 10
+	couponUi -> couponFe : create(input)
+	couponFe -> couponC : {code, kind, value,\nactive, expiresAt}
+	couponC -> couponR : code unique
+	alt duplicate code
+		couponC --> couponFe : 409
+	else unique
+		couponC -> couponR : save
+		couponC --> couponFe : 200 {coupon}
+	end
+end
+
+group edit and retire [PUT, DELETE /api/coupon/{id}]
+	admin -> couponUi : flip active off\n(EXPIRED5 in seeds) or delete
+	couponUi -> couponC : PUT {"active": false}\nor DELETE
+	couponC --> couponUi : 200 {coupon} / 204
+end
+
+group member preview [POST /api/coupon/validate, USER]
+	member -> cart : type code into the checkout form
+	cart -> couponFe : validate(code, subtotal)
+	couponFe -> couponC : {"code", "subtotal"}
+	couponC -> couponBe : resolve(code)
+	alt unknown code
+		couponBe --> couponC : 404
+	else inactive or expired
+		couponBe --> couponC : 409 COUPON_INACTIVE
+	else live coupon
+		couponC -> formula : discountOn(subtotal)
+		note right : PERCENT: min(ceil(subtotal *\nvalue / 100), subtotal)\nFIXED: min(value, subtotal)
+		formula --> couponC : discount
+		couponC --> cart : 200 {code, kind, value,\ndiscountAmount}
+	end
+end
+
+note over formula, cart
+	The checkout transaction applies the same
+	Coupon.discountOn, rounds the result to
+	1000, and clamps again after rounding.
+	Display shows the preview, the server
+	recomputes the binding number.
+end note
+@enduml

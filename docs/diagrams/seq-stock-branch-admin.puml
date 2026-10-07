@@ -1,0 +1,61 @@
+@startuml seq-stock-branch-admin
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Admin" as admin
+participant "AdminBranchesComponent\nbranches + stock editor" as branchUi
+participant "BranchService (FE)" as branchFe
+participant "BranchController\n/api/branch" as branchC
+participant "BranchRepository" as branchR
+participant "StockLevelRepository" as stockR
+participant "ProductRepository" as productR
+
+group branch CRUD
+	admin -> branchUi : create or edit\n(name, address, district, city,\nlat, lng, active)
+	branchUi -> branchFe : create(input) / update(id, input)
+	branchFe -> branchC : POST /api/branch\nor PUT /api/branch/{id}
+	branchC -> branchR : save
+	branchC --> branchUi : 200 {branch} / 404
+end
+
+group delete refuses held stock [DELETE /api/branch/{id}]
+	admin -> branchUi : delete a branch
+	branchUi -> branchFe : remove(id)
+	branchFe -> branchC : DELETE /api/branch/{id}
+	branchC -> branchR : findById
+	alt unknown id
+		branchC --> branchUi : 404
+	else found
+		branchC -> stockR : existsByBranchId
+		alt stock rows exist
+			branchC --> branchUi : 409 STOCK_ROWS_EXIST
+		else clean
+			branchC -> branchR : delete
+			branchC --> branchUi : 204
+		end
+	end
+end
+
+group per-branch stock editor [GET, PUT /api/branch/{id}/stock]
+	admin -> branchUi : open the stock editor\nfor one branch
+	branchUi -> branchFe : stock(branchId)
+	branchFe -> branchC : GET /api/branch/{id}/stock
+	branchC -> productR : every product
+	branchC -> stockR : findByBranchId
+	branchC --> branchUi : [{productId, quantity}]\nabsent rows report 0
+	admin -> branchUi : set an absolute quantity
+	branchUi -> branchFe : setStock(branchId, {productId, quantity})
+	branchFe -> branchC : PUT /api/branch/{id}/stock
+	branchC -> branchR : findById (404)
+	branchC -> productR : findById (404)
+	branchC -> stockR : upsert, floor 0
+	branchC --> branchUi : 200 {productId, quantity}
+end
+
+note over branchUi, stockR
+	Stock admin never writes orders: the
+	editor moves absolute shelf counts,
+	checkout's conditional decrement is the
+	only path that removes stock on a sale.
+end note
+@enduml

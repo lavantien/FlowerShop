@@ -1,0 +1,44 @@
+@startuml seq-payment-cancel
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Member" as member
+participant "PayComponent\n/pay/:paymentId" as pay
+participant "PaymentService (FE)" as paymentFe
+participant "PaymentController\n/api/payment" as paymentC
+participant "OrderService (BE)\ncancelPayment @Transactional" as orderBe
+participant "PaymentSessionRepository" as paymentR
+participant "PaymentService (BE)\nconstant-time sig check" as paymentBe
+participant "OrderRepository" as orderR
+participant "StockLevelRepository" as stockR
+participant "OrderItemRepository" as itemR
+
+member -> pay : press Cancel on the\ngateway page
+pay -> paymentFe : cancel(paymentId, sig)
+paymentFe -> paymentC : POST /api/payment/{id}/cancel?sig=
+paymentC -> orderBe : cancelPayment(paymentId, sig)
+orderBe -> paymentR : lockById(paymentId)
+alt unknown id
+	orderBe --> paymentC : 404
+end
+orderBe -> paymentBe : matches(session, sig)
+alt forged, truncated, or cross-session sig
+	orderBe --> paymentC : 401, nothing touched
+end
+orderBe -> orderR : lockById(orderId)
+alt session CANCELLED already
+	orderBe --> paymentC : 200 {orderId, CANCELLED},\nidempotent no-op
+else session CONFIRMED already
+	orderBe --> paymentC : 409 PAYMENT_CONFIRMED
+else session PENDING
+	orderBe -> orderBe : session.cancel(now),\norder PENDING to CANCELLED
+	loop each order item
+		orderBe -> itemR : findByOrderId
+		orderBe -> stockR : increment(rowId, quantity)\nor recreate a deleted row
+	end
+	orderBe --> paymentC : 200 {orderId, status: CANCELLED}
+end
+paymentC --> paymentFe : response
+paymentFe -> pay : navigate(["/info"])
+pay --> member : order history shows the\ncancelled order, stock restored
+@enduml

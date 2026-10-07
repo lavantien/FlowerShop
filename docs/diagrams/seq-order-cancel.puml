@@ -1,0 +1,39 @@
+@startuml seq-order-cancel
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Member" as member
+participant "OrdersComponent\ninfo/orders" as orders
+participant "OrderService (FE)" as orderFe
+participant "OrderController\nPOST /api/order/{id}/cancel" as orderC
+participant "OrderService (BE)\ncancel @Transactional" as orderBe
+participant "PaymentSessionRepository" as paymentR
+participant "OrderRepository" as orderR
+participant "StockLevelRepository" as stockR
+
+member -> orders : press cancel on a\nPENDING order card
+orders -> orderFe : cancel(id)
+orderFe -> orderC : POST /api/order/{id}/cancel
+orderC -> orderBe : cancel(orderId, actingUserId, admin)
+orderBe -> paymentR : lockByOrderId(orderId)
+orderBe -> orderR : lockById(orderId)
+alt not the owner and not admin
+	orderBe --> orderC : 403
+else order missing
+	orderBe --> orderC : 404
+end
+orderBe -> orderBe : canTransitionTo(CANCELLED)\nowner: PENDING only\nadmin: any non-terminal arc
+alt illegal for the current status
+	orderBe --> orderC : 409 ILLEGAL_TRANSITION
+else legal
+	orderBe -> orderBe : order.transitionTo(CANCELLED, now)\nsets cancelledAt
+	orderBe -> orderBe : payment.cancel(now)\nwhen the session is still PENDING
+	loop each order item
+		orderBe -> stockR : increment(rowId, quantity)\natomic restore, no read-modify-write
+	end
+	orderBe --> orderC : 200 {order} with items
+end
+orderC --> orderFe : response
+orderFe --> orders : refreshed status badge
+orders --> member : stock back on the shelf,\nsession dead for a retry
+@enduml

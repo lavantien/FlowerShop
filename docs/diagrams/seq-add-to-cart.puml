@@ -1,0 +1,35 @@
+@startuml seq-add-to-cart
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Shopper" as shopper
+participant "StoreComponent" as store
+participant "ProductModalComponent\nstock badge, quantity picker" as modal
+participant "CartService\ncore/cart.service" as cartSvc
+participant "localStorage" as storage
+participant "authGuard" as guard
+
+shopper -> store : open product card
+store -> modal : ngx-bootstrap modal\nwith ProductView
+modal --> shopper : stock badge (summed stock),\nquantity picker, wishlist heart
+shopper -> modal : pick quantity, add to cart
+modal -> cartSvc : add({id, name, price, quantity})
+cartSvc -> cartSvc : merge duplicate lines\ninto the lines signal
+cartSvc -> storage : JSON.stringify(lines)
+note right : the cart survives refresh:\nevery mutation persists\nand restore() revalidates\non construction
+cartSvc --> store : computed count and total\nupdate the navbar badge
+
+shopper -> guard : navigate /cart
+guard -> guard : session token present?
+alt guest
+	guard --> shopper : login modal opens,\nrouting blocked
+else member
+	guard --> shopper : cart page renders\nthe same persisted lines
+end
+note over guard, storage
+	The server never sees the cart: it is a
+	browser-side draft. Prices, stock, and
+	discounts are recomputed from the
+	database inside the checkout transaction.
+end note
+@enduml

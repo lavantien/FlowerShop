@@ -1,0 +1,56 @@
+@startuml seq-user-admin
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Admin" as admin
+participant "AdminUsersComponent\nadmin/users" as usersUi
+participant "AccountService (FE)" as accountFe
+participant "UserController\n/api/user" as userC
+participant "UserRepository" as userR
+participant "OrderRepository" as orderR
+
+group list [GET /api/user, ADMIN]
+	admin -> usersUi : open the users screen
+	usersUi -> accountFe : list()
+	accountFe -> userC : GET /api/user
+	userC -> userR : findAll
+	userR --> userC : every account
+	userC --> usersUi : 200 [{user}]\npassword and answer never serialize
+end
+
+group update [PUT /api/user/{id}, ADMIN]
+	admin -> usersUi : edit role or enable
+	usersUi -> accountFe : update(id, input)
+	accountFe -> userC : {"name", "phone", "role", "enable"}
+	userC -> userR : findById
+	alt unknown id
+		userC --> usersUi : 404
+	else found
+		userC -> userR : save
+		userC --> usersUi : 200 {user}
+	end
+end
+
+group disable, the preferred path
+	admin -> usersUi : flip enable off
+	note right : TokenInterceptor refuses the\nsession on the next call:\nthe disabled account is\nlocked out with no deletion
+end
+
+group delete [DELETE /api/user/{id}, ADMIN]
+	admin -> usersUi : delete an account
+	usersUi -> accountFe : remove(id)
+	accountFe -> userC : DELETE /api/user/{id}
+	userC -> userR : findById
+	alt unknown id
+		userC --> usersUi : 404
+	else found
+		userC -> orderR : orders reference the user?
+		alt any order exists
+			userC --> usersUi : 409 HAS_ORDERS
+		else no orders
+			userC -> userR : delete
+			userC --> usersUi : 204
+		end
+	end
+end
+@enduml

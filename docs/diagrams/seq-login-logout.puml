@@ -1,0 +1,47 @@
+@startuml seq-login-logout
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Member" as member
+participant "AuthModalComponent\nshared/auth-modal" as modal
+participant "AuthService\ncore/auth.service" as authSvc
+participant "SessionService\ncore/session.service" as session
+participant "globalHttpInterceptor" as interceptor
+participant "AuthController\n/api/auth" as authC
+participant "UserRepository" as userR
+participant "PasswordService" as passwordS
+participant "UserService\nsession secrets" as userSvc
+
+member -> modal : submit login form
+modal -> authSvc : login(email, password)
+authSvc -> interceptor : POST /api/auth/login
+note right : public rule, no\ntoken required
+interceptor -> authC : {"email", "password"}
+authC -> userR : findByEmail(email)
+alt unknown or disabled account
+	authC -> passwordS : burnDummyComparison(password)
+	authC --> interceptor : 401 problem+json
+else live account
+	authC -> passwordS : matches(password, hash)
+	authC -> userSvc : login(id) rotates secret
+	userSvc --> authC : session secret
+	authC --> interceptor : 200 {"token", "user"}
+end
+interceptor --> authSvc : response
+authSvc -> session : login(token, user)
+session -> session : signals + localStorage
+session --> modal : session live
+modal --> member : store opens
+
+member -> modal : navbar logout
+modal -> authSvc : logout()
+authSvc -> interceptor : POST /api/auth/logout\nX-Auth-Token
+interceptor -> authC : header
+note right : TokenInterceptor already\nvalidated the session
+authC -> userSvc : logout(id, secret)
+userSvc --> authC : secret removed
+authC --> interceptor : 204 no content
+authSvc -> session : logout()
+session -> session : signals cleared,\nlocalStorage removed
+session --> member : back to guest
+@enduml

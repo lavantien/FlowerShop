@@ -1,0 +1,68 @@
+@startuml seq-checkout-confirm
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Member" as member
+participant "CartComponent\ncheckout form" as cart
+participant "CouponService (FE)" as couponFe
+participant "OrderService (FE)" as orderFe
+participant "OrderController\nPOST /api/order" as orderC
+participant "OrderService (BE)\n@Transactional checkout" as orderBe
+participant "GeoService" as geo
+participant "StockLevelRepository" as stockR
+participant "CouponService (BE)" as couponBe
+participant "OrderRepository\n+ OrderItemRepository" as orderR
+participant "PaymentService (BE)\nsign, redirectUrl" as paymentSvc
+participant "PayComponent\n/pay/:paymentId" as pay
+participant "PaymentController\n/api/payment" as paymentC
+
+member -> cart : fill phone, address,\ndistrict, city, coupon code
+cart -> couponFe : validate(code, subtotal)
+couponFe --> cart : 200 {kind, value, discountAmount}
+member -> cart : place order
+cart -> orderFe : place(items, address, branchId?)
+orderFe -> orderC : POST /api/order
+orderC -> orderBe : checkout(userId, request)
+
+group one transaction
+	orderBe -> orderBe : merge duplicate item quantities
+	orderBe -> orderR : findAllById (404 unknown product)
+	orderBe -> geo : resolve(district, city)\ndistrict, city, default fallback
+	orderBe -> geo : nearestBranch(active branches)\nor the chosen branchId (404)
+	orderBe -> geo : distanceKm, deliveryFee\nmin(base + perKm*km, maxFee),\nrounded to 1000
+	orderBe -> orderBe : price every line from the\ndatabase, snapshot name and price
+	loop each line
+		orderBe -> stockR : decrementIfAvailable(rowId, n)\nquantity >= n conditional update
+		alt affected rows = 0
+			orderBe --> orderC : 409 OUT_OF_STOCK,\nrollback, failing items named
+		end
+	end
+	orderBe -> couponBe : resolve(couponCode)
+	alt inactive or expired
+		orderBe --> orderC : 409 COUPON_INACTIVE, rollback
+	else live coupon
+		orderBe -> orderBe : discount = round(discountOn)\nclamped to subtotal
+	end
+	orderBe -> orderR : save order PENDING, placedAt\nsave item snapshots
+	orderBe -> paymentSvc : sign(session)\nHMAC-SHA256(secret,\npaymentId:orderId:amount)
+	orderBe -> orderR : save payment_session PENDING
+end
+
+orderC --> orderFe : 201 {order,\npayment {id, redirectUrl}}
+orderFe -> pay : router.navigateByUrl\n("/pay/uuid?sig=hex")
+pay -> paymentC : GET /api/payment/{id}?sig=
+paymentC --> pay : 200 {amount, status, summary}\nafter constant-time sig verify
+member -> pay : press Pay
+pay -> paymentC : POST /api/payment/{id}/confirm?sig=
+paymentC -> orderBe : confirmPayment @Transactional:\nlockById, verify sig
+alt replay of a confirmed payment
+	orderBe --> paymentC : 200 unchanged, no-op
+else cancelled payment
+	orderBe --> paymentC : 409 PAYMENT_CANCELLED
+else pending session
+	orderBe -> orderBe : session CONFIRMED, confirmedAt,\norder paidAt, PENDING to PAID
+	orderBe --> paymentC : 200 {orderId, CONFIRMED}
+end
+paymentC --> pay : outcome
+pay --> member : router.navigate(["/info"])\norder history shows PAID
+@enduml

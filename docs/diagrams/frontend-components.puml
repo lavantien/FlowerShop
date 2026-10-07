@@ -1,0 +1,121 @@
+@startuml frontend-components
+skinparam monochrome true
+skinparam shadowing false
+left to right direction
+
+package "shell" {
+	[AppComponent\nnavbar, toasts, modal host] as app
+	[app.config.ts\nzoneless providers] as config
+}
+
+package "routes (app.routes.ts)" {
+	[StoreComponent /shop] as store
+	[CartComponent /cart\nauthGuard] as cart
+	[ContactComponent /contact] as contact
+	[PayComponent /pay/:paymentId] as pay
+	[InfoComponent /info\nprofile, orders, wishlist] as info
+	[AdminComponent /admin\nproducts, orders, users,\ntaxonomy, coupons,\nbranches, dashboard] as admin
+	[NotFoundComponent /**] as notFound
+}
+
+package "store subtree" {
+	[ProductModalComponent\nstock badge, quantity,\nwishlist heart] as modal
+}
+
+package "core" {
+	[SessionService\ntoken and user signals,\nlocalStorage] as session
+	[AuthService\nlogin, register, reset] as auth
+	[CartService\nlines signal, localStorage] as cartService
+	[ToastService + ToastComponent] as toast
+	[authGuard, adminGuard] as guards
+	[globalHttpInterceptor\nheader attach, 401 modal] as interceptor
+	[PageTitleStrategy] as titles
+}
+
+package "services (typed API layer)" {
+	[api.ts path hub] as api
+	[CatalogService] as catalog
+	[AccountService] as account
+	[OrderService] as order
+	[PaymentService] as payment
+	[CouponService] as couponSvc
+	[WishlistService] as wishlistSvc
+	[BranchService] as branchSvc
+	[TaxonomyService] as taxonomy
+	[ReportService] as reportSvc
+}
+
+package "shared" {
+	[AuthModalComponent\nlogin, register, forgot] as authModal
+	[GeoOptionsService\ndistricts, cities] as geoOptions
+}
+
+package "admin helpers" {
+	[excel.ts\nxlsx import and export] as excel
+}
+
+app --> config : bootstraps
+app --> store
+app --> cart
+app --> contact
+app --> pay
+app --> info
+app --> admin
+app --> notFound
+app --> authModal : login requested
+app --> toast
+
+config ..> interceptor : provideHttpClient
+config ..> titles : provideRouter
+
+store --> modal
+modal --> cartService : add
+modal --> wishlistSvc : toggle heart
+store --> catalog
+store --> taxonomy
+store --> wishlistSvc
+store --> cartService
+store --> session
+
+cart --> cartService
+cart --> couponSvc : validate preview
+cart --> order : place
+cart --> geoOptions
+
+pay --> payment
+pay --> session
+
+info --> account : profile, password
+info --> order : history, cancel
+info --> wishlistSvc
+info --> geoOptions
+
+admin --> catalog
+admin --> taxonomy
+admin --> order : transitions
+admin --> account : user admin
+admin --> couponSvc
+admin --> branchSvc : branches and stock
+admin --> reportSvc
+admin --> excel : products import, export
+
+authModal --> auth
+authModal --> geoOptions
+auth --> session : login, logout
+
+cart ..> guards
+info ..> guards
+admin ..> guards
+interceptor ..> session : reads token
+interceptor ..> toast : 401 toast
+
+catalog ..> api
+account ..> api
+order ..> api
+payment ..> api
+couponSvc ..> api
+wishlistSvc ..> api
+branchSvc ..> api
+taxonomy ..> api
+reportSvc ..> api
+@enduml

@@ -23,7 +23,7 @@ export LOCAL_MYSQL_DB_USERNAME := $(DB_USER)
 export LOCAL_MYSQL_DB_PASSWORD := $(DB_PASS)
 
 .DEFAULT_GOAL := help
-.PHONY: help env db-up db-down db-nuke db-seed db-reset db-hash seeds frontend-install frontend-build frontend-lint frontend-test test-coverage frontend-serve backend-test build package run screenshots audit memguard fuzz mutate mutate-front clean
+.PHONY: help env db-up db-down db-nuke db-seed db-reset db-hash seeds frontend-install frontend-build frontend-lint frontend-test test-coverage frontend-serve backend-test build package run screenshots audit memguard fuzz mutate mutate-front diagrams clean
 
 # Set SKIP_DB_UP=1 when MySQL already runs elsewhere (CI service container);
 # every target below then skips its db-up prerequisite.
@@ -117,6 +117,24 @@ mutate: $(if $(SKIP_DB_UP),,db-up) ## run the source-level mutation harness, wri
 
 mutate-front: ## run the frontend source-level mutation harness, write docs/qa/mutation-front-report.md
 	@node scripts/tools/mutate-front.mjs
+
+# Pinned PlantUML for the diagram renders; the jar stays in gitignored .tools/
+# and the digest pins the download, with the observed checksum logged beside it.
+PLANTUML_VERSION ?= 1.2026.8
+PLANTUML_SHA256 ?= 5e1ecfa8ecd32c90b03bbf3b1eb6f020943f98ab0fcf4032be31a0002ee2c462
+PLANTUML_JAR := .tools/plantuml-$(PLANTUML_VERSION).jar
+PLANTUML_URL := https://github.com/plantuml/plantuml/releases/download/v$(PLANTUML_VERSION)/plantuml-$(PLANTUML_VERSION).jar
+
+$(PLANTUML_JAR):
+	@mkdir -p .tools
+	@curl -fsSL -o $@.part "$(PLANTUML_URL)"
+	@echo "$(PLANTUML_SHA256)  $@.part" | sha256sum -c - >/dev/null || { rm -f $@.part; echo "checksum mismatch on $(notdir $@)"; exit 1; }
+	@mv $@.part $@
+	@sha256sum $@ | tee $@.sha256
+
+diagrams: $(PLANTUML_JAR) ## render every docs/diagrams/*.puml to PNG (Smetana layout, no graphviz)
+	@"$(JAVA_BIN)" -jar $(PLANTUML_JAR) -Playout=smetana -tpng docs/diagrams/*.puml
+	@echo "rendered $$(ls docs/diagrams/*.png | wc -l) PNGs"
 
 clean: ## maven clean and drop node_modules
 	@$(MVNW) $(MVN_ARGS) clean

@@ -1,0 +1,107 @@
+@startuml backend-components
+skinparam monochrome true
+skinparam shadowing false
+left to right direction
+
+package "api (controllers, security, error)" {
+	[AuthController] as authC
+	[UserController] as userC
+	[ProductController] as productC
+	[CategoryController] as categoryC
+	[TypeController] as typeC
+	[BranchController] as branchC
+	[OrderController] as orderC
+	[PaymentController] as paymentC
+	[CouponController] as couponC
+	[WishlistController] as wishlistC
+	[ReportController] as reportC
+	[TokenInterceptor\nPUBLIC_RULES, RequireRole] as interceptor
+	[WebConfig\nSPA catch-all forward] as webConfig
+	[ApiExceptionHandler\nproblem+json] as advice
+}
+
+package "service" {
+	[UserService\nsession secrets] as userS
+	[PasswordService\nbcrypt burn] as passwordS
+	[ProductService] as productS
+	[OrderService\ncheckout transaction] as orderS
+	[PaymentService\nHMAC-SHA256 sig] as paymentS
+	[CouponService] as couponS
+	[GeoService\nvn-geo.json, haversine] as geoS
+	[ReportService] as reportS
+	[ShopProperties\nshop.delivery, shop.payment] as props
+}
+
+package "repositories (Spring Data JPA)" {
+	[UserRepository] as userR
+	[ProductRepository] as productR
+	[CategoryRepository] as categoryR
+	[TypeRepository] as typeR
+	[BranchRepository] as branchR
+	[StockLevelRepository\ndecrementIfAvailable] as stockR
+	[OrderRepository] as orderR
+	[OrderItemRepository] as orderItemR
+	[CouponRepository] as couponR
+	[WishlistItemRepository] as wishlistR
+	[PaymentSessionRepository] as paymentR
+}
+
+database "MySQL 9.7.2" as db
+
+webConfig .. interceptor : registers on /api/**
+note bottom of advice
+	problem+json for every controller:
+	400 VALIDATION, 401, 403, 404, 409 business codes
+end note
+authC --> userS : login, logout
+authC --> passwordS : matches, burnDummyComparison
+userC --> userS : logoutAll on password change
+userC --> passwordS : encode
+userC --> userR
+userC --> orderR : delete guard, HAS_ORDERS
+productC --> productS : upsertAll
+productC --> productR
+productC --> stockR : sumQuantityByProductId
+categoryC --> categoryR
+typeC --> typeR
+branchC --> branchR
+branchC --> stockR
+branchC --> productR
+orderC --> orderS
+orderC --> orderR
+paymentC --> orderS : paymentView, confirm, cancel
+couponC --> couponS : resolve
+couponC --> couponR
+wishlistC --> wishlistR
+wishlistC --> productR
+wishlistC --> stockR
+reportC --> reportS
+orderS --> productR
+orderS --> branchR
+orderS --> stockR
+orderS --> orderR
+orderS --> orderItemR
+orderS --> paymentR
+orderS --> paymentS : redirectUrl, matches
+orderS --> geoS : resolve, distanceKm, nearestBranch
+orderS --> couponS : resolve
+orderS --> props : delivery rounding
+paymentS --> props : payment.secret
+geoS --> props : delivery fee caps
+productS --> productR
+reportS --> orderR
+reportS --> orderItemR
+userR --> db
+productR --> db
+categoryR --> db
+typeR --> db
+branchR --> db
+stockR --> db
+orderR --> db
+orderItemR --> db
+couponR --> db
+wishlistR --> db
+paymentR --> db
+interceptor --> userR : findById, role, enable
+interceptor ..> userS : hasSession
+@enduml

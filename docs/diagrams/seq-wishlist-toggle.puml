@@ -1,0 +1,43 @@
+@startuml seq-wishlist-toggle
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Member" as member
+participant "ProductModalComponent\nwishlist heart" as modal
+participant "WishlistComponent\ninfo/wishlist grid" as grid
+participant "WishlistService (FE)" as wishFe
+participant "WishlistController\n/api/wishlist" as wishC
+participant "WishlistItemRepository" as wishR
+participant "ProductRepository" as productR
+participant "StockLevelRepository" as stockR
+
+member -> modal : press the heart\non a product
+modal -> wishFe : toggle(productId)
+wishFe -> wishC : POST /api/wishlist/me/{productId}
+wishC -> productR : findById(productId)
+alt unknown product
+	wishC --> wishFe : 404
+else product exists
+	wishC -> wishR : findByUserIdAndProductId
+	alt pair exists
+		wishC -> wishR : delete(item)
+		wishC --> wishFe : 200 {"added": false}
+	else pair absent
+		wishC -> wishR : save(new WishlistItem)\ncreatedAt stamped here
+		wishC --> wishFe : 200 {"added": true}
+	end
+end
+wishFe --> modal : heart state flips
+
+member -> grid : open /info/wishlist
+grid -> wishFe : list()
+wishFe -> wishC : GET /api/wishlist/me
+wishC -> wishR : findByUserIdOrderByCreatedAtDescIdDesc
+loop each row
+	wishC -> productR : findById
+	wishC -> stockR : sumQuantityByProductId
+end
+note right : rows that outlived their\nproduct are dropped, the\nunique pair makes the row\nidentity
+wishC --> grid : [{product, createdAt} newest first]
+grid --> member : wishlist grid with stock badges
+@enduml

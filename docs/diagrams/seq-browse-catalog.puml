@@ -1,0 +1,30 @@
+@startuml seq-browse-catalog
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Shopper" as shopper
+participant "StoreComponent\npaging, filters, sort signals" as store
+participant "TaxonomyService" as taxonomySvc
+participant "CatalogService" as catalogSvc
+participant "ProductController\nGET /api/product" as productC
+participant "ProductRepository\nJPA Specification" as productR
+participant "StockLevelRepository" as stockR
+
+shopper -> store : load /shop
+store -> taxonomySvc : GET /api/category, GET /api/type
+taxonomySvc --> store : filter options
+store -> catalogSvc : list(search, category, type,\nsort, page, size)
+catalogSvc -> productC : GET /api/product?search=&category=\n&type=&sort=&page=&size=
+note right : public rule: GET product\nskips the token check
+productC -> productC : sort whitelist, size clamped 1..48
+productC -> productR : findAll(Specification, pageable)
+note right : name substring, exact\ncategory and type names,\nsort name-asc default
+productR --> productC : page of products
+loop each product on the page
+	productC -> stockR : sumQuantityByProductId(id)
+	stockR --> productC : summed stock, 0 when absent
+end
+productC --> catalogSvc : 200 PageDto {content, totalElements,\ntotalPages, page, size}
+catalogSvc --> store : ProductView page with stock badge
+store --> shopper : paged grid, computed totals drive the pager
+@enduml

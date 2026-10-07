@@ -1,0 +1,135 @@
+@startuml data-model
+skinparam monochrome true
+skinparam shadowing false
+skinparam linetype ortho
+left to right direction
+
+entity "user" as user {
+	* id : BIGINT IDENTITY
+	--
+	name
+	* email : VARCHAR **unique**
+	password (write-only)
+	answer (write-only)
+	phone, address, district, city
+	role : USER | ADMIN
+	enable : BOOL
+}
+
+entity "category" as category {
+	* id : BIGINT IDENTITY
+	--
+	* name : VARCHAR **UK_category_name**
+}
+
+entity "type" as type {
+	* id : BIGINT IDENTITY
+	--
+	* name : VARCHAR **UK_type_name**
+	categoryName
+}
+
+entity "product" as product {
+	* id : BIGINT IDENTITY
+	--
+	name
+	description : VARCHAR(2000)
+	imgUrl : VARCHAR(2000)
+	price : DECIMAL(12,0)
+	typeName
+	categoryName
+}
+
+entity "branch" as branch {
+	* id : BIGINT IDENTITY
+	--
+	name, address, district, city
+	lat, lng : DOUBLE
+	active : BOOL
+}
+
+entity "stock_level" as stock {
+	* id : BIGINT IDENTITY
+	--
+	branchId
+	productId
+	quantity : INT
+	__
+	**UNIQUE (branchId, productId)**
+}
+
+entity "orders" as orders {
+	* id : BIGINT IDENTITY
+	--
+	userId
+	status : PENDING | PAID | SHIPPED\n| COMPLETED | CANCELLED
+	placedAt, paidAt, shippedAt,\ncompletedAt, cancelledAt : INSTANT
+	phone, address, district, city
+	branchId
+	distanceKm : DOUBLE
+	deliveryFee, discountAmount,\nsubtotal, total : DECIMAL(12,0)
+	couponCode
+}
+
+entity "order_item" as item {
+	* id : BIGINT IDENTITY
+	--
+	orderId
+	productId
+	productName **snapshot**
+	unitPrice **snapshot** DECIMAL(12,0)
+	quantity : INT
+	lineTotal DECIMAL(12,0)
+}
+
+entity "coupon" as coupon {
+	* id : BIGINT IDENTITY
+	--
+	* code : VARCHAR **unique**
+	kind : PERCENT | FIXED
+	value : DECIMAL(12,0)
+	active : BOOL
+	expiresAt : INSTANT nullable
+}
+
+entity "wishlist_item" as wishlist {
+	* id : BIGINT IDENTITY
+	--
+	userId
+	productId
+	createdAt : INSTANT
+	__
+	**UNIQUE (userId, productId)**
+}
+
+entity "payment_session" as payment {
+	* id : VARCHAR **UUID**
+	--
+	orderId **unique**
+	amount : DECIMAL(12,0)
+	status : PENDING | CONFIRMED | CANCELLED
+	createdAt, confirmedAt : INSTANT
+}
+
+user ..> orders : userId = user.id
+branch ..> orders : branchId = branch.id
+orders ..> item : orderId = orders.id
+product ..> item : productId = product.id
+stock ..> branch : branchId = branch.id
+stock ..> product : productId = product.id
+category ..> product : name = categoryName
+type ..> product : name = typeName
+category ..> type : name = categoryName
+coupon ..> orders : code = couponCode
+user ..> wishlist : userId = user.id
+product ..> wishlist : productId = product.id
+orders ..> payment : one live session, orderId unique
+
+note as coupling
+	No foreign keys exist: every join is a
+	name or id string coupling guarded by
+	service logic and unique constraints.
+	stock_level is the sole stock source;
+	the product view sums every branch row.
+end note
+@enduml

@@ -1,0 +1,38 @@
+@startuml seq-dashboard-report
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Admin" as admin
+participant "DashboardComponent\nadmin/dashboard\ntiles and CSS bars" as dashUi
+participant "ReportService (FE)" as reportFe
+participant "ReportController\nGET /api/report/sales" as reportC
+participant "ReportService (BE)\n@Transactional read-only" as reportBe
+participant "OrderRepository" as orderR
+participant "OrderItemRepository" as itemR
+participant "ShopProperties\nrounding" as props
+
+admin -> dashUi : open the dashboard,\npick a date range
+dashUi -> reportFe : sales(from, to)
+reportFe -> reportC : GET /api/report/sales?from=&to=
+note right : ADMIN role, default\nwindow the last 30 days
+reportC -> reportBe : sales(from, to)
+reportBe -> reportBe : from and to become\nUTC instant bounds, to+1 day
+reportBe -> orderR : findByPlacedAtGreaterThanEqual\nAndPlacedAtLessThan
+orderR --> reportBe : orders in the window
+loop each order
+	reportBe -> reportBe : countsByStatus for every status
+end
+loop each PAID, SHIPPED, or COMPLETED order
+	reportBe -> reportBe : revenueByStatus, running total,\nrevenueByDay by UTC day
+end
+reportBe -> props : round(avg order, HALF_UP to 1000)
+reportBe -> itemR : findByOrderIdIn(revenue orders)
+loop each order item
+	reportBe -> reportBe : merge by productId, quantity\nand revenue, name snapshot wins
+end
+reportBe -> reportBe : top 10 by quantity
+reportBe --> reportC : SalesReport
+reportC --> reportFe : 200 {totals, revenueByStatus,\ncountsByStatus, revenueByDay,\ntopProducts}
+reportFe --> dashUi : report signals
+dashUi --> admin : stat tiles plus CSS bars,\nno chart library, zero new deps
+@enduml
