@@ -98,7 +98,7 @@ async function backendCoveragePercent() {
 	if (missed + covered === 0) {
 		throw new Error(`no instruction counts found in ${backendCsv}`);
 	}
-	return Math.floor((100 * covered) / (missed + covered));
+	return (100 * covered) / (missed + covered);
 }
 
 async function frontendCoveragePercent() {
@@ -107,14 +107,21 @@ async function frontendCoveragePercent() {
 	if (typeof pct !== 'number') {
 		throw new Error(`no total.lines.pct in ${frontendSummary}`);
 	}
-	return Math.floor(pct);
+	return pct;
+}
+
+// Floor to 2 decimals so a 89.996 percent reality never displays as 90, then
+// trim trailing zeros: 100, 99.4, and 99.24 all render naturally.
+function formatPercent(raw) {
+	const floored = Math.floor(raw * 100) / 100;
+	return `${floored.toFixed(2).replace(/\.?0+$/, '')}%`;
 }
 
 function coverageBadge(label, percent) {
 	if (percent === null) {
 		return badge(label, 'unknown', '#9f9f9f');
 	}
-	return badge(label, `${percent}%`, coverageColor(percent));
+	return badge(label, formatPercent(percent), coverageColor(Math.floor(percent)));
 }
 
 await mkdir(outDir, {recursive: true});
