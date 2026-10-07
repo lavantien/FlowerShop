@@ -1,0 +1,38 @@
+<div class="wishlist-wrapper container-fluid">
+	@if (entries().length !== 0) {
+		<div class="row">
+			@for (entry of entries(); track entry.product.id) {
+				<div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 card-group mb-2 px-1">
+					<div class="card">
+						<div class="card-header bg-light text-dark"><b>{{entry.product.name}}</b></div>
+						<div class="card-body">
+							<img [alt]="entry.product.name" [src]="entry.product.imgUrl" class="card-img-top">
+						</div>
+						<div class="card-footer bg-light text-dark">
+							<span class="float-start price">
+								{{entry.product.price | currency:'VND':'symbol':'1.0-0':lang()}}
+							</span>
+							<span class="float-end">
+								<button (click)="onToggle(entry.product.id)"
+								        class="btn btn-link heart text-danger" data-test="wishlist-heart"
+								        placement="bottom" tooltip="{{'SHOP.WISHLIST' | translate}}" type="button">
+									<fa-icon [icon]="faHeart"></fa-icon>
+								</button>
+								<button (click)="addToCart(entry.product.id)" [disabled]="entry.product.stock < 1"
+								        class="btn btn-dark" data-test="wishlist-add"
+								        placement="bottom" tooltip="{{'SHOP.ADD_TO_CART' | translate}}" type="button">
+									<fa-icon [icon]="faCartPlus"></fa-icon>
+								</button>
+							</span>
+						</div>
+					</div>
+				</div>
+			}
+		</div>
+	}
+	@if (entries().length === 0) {
+		<div class="text-center empty-wishlist">
+			<i>{{'INFO.NO_WISHLIST' | translate}}</i>
+		</div>
+	}
+</div>

@@ -1,0 +1,82 @@
+<div class="orders-wrapper">
+	@for (order of orders(); track order.id) {
+		<div class="card mb-3" data-test="order-card">
+			<div class="card-header d-flex justify-content-between align-items-center">
+				<span>
+					<b>{{'INFO.ORDER' | translate}} #{{order.id}}</b>
+					- {{order.placedAt | date:'MMM d, y, HH:mm':undefined:lang()}}
+				</span>
+				<span [class]="statusBadge(order.status)" data-test="order-status">
+					{{'INFO.STATUS_' + order.status | translate}}
+				</span>
+			</div>
+			<div class="card-body">
+				<div class="row">
+					<div class="col-xl-7 col-lg-7 col-md-6 col-sm-12 col-12">
+						<ul class="list-unstyled mb-2">
+							@for (item of order.items; track item.id) {
+								<li>
+									{{item.quantity}} x {{item.productName}}
+									<span class="float-end">{{item.lineTotal | currency:'VND':'symbol':'1.0-0':lang()}}</span>
+								</li>
+							}
+						</ul>
+						<div class="text-muted small">
+							{{'INFO.DELIVERY_TO' | translate}}: {{order.address}}, {{order.district}}, {{order.city}}
+						</div>
+						<div class="text-muted small">
+							{{'INFO.BRANCH' | translate}}: {{order.branchName}} ({{order.distanceKm}} km)
+						</div>
+					</div>
+					<div class="col-xl-5 col-lg-5 col-md-6 col-sm-12 col-12">
+						<div class="order-totals">
+							<div>
+								<span>{{'CART.SUBTOTAL' | translate}}</span>
+								<span>{{order.subtotal | currency:'VND':'symbol':'1.0-0':lang()}}</span>
+							</div>
+							@if (order.discountAmount > 0) {
+								<div class="text-success">
+									<span>{{'CART.DISCOUNT' | translate}}</span>
+									<span>-{{order.discountAmount | currency:'VND':'symbol':'1.0-0':lang()}}</span>
+								</div>
+							}
+							<div>
+								<span>{{'INFO.DELIVERY_FEE' | translate}}</span>
+								<span>{{order.deliveryFee | currency:'VND':'symbol':'1.0-0':lang()}}</span>
+							</div>
+							<div class="total">
+								<span>{{'INFO.TOTAL' | translate}}</span>
+								<span>{{order.total | currency:'VND':'symbol':'1.0-0':lang()}}</span>
+							</div>
+						</div>
+						@if (canCancel(order)) {
+							<button (click)="onCancel(order)" [disabled]="cancelling() !== null"
+							        class="btn btn-outline-danger btn-sm" data-test="order-cancel" type="button">
+								{{'INFO.CANCEL_ORDER' | translate}}
+							</button>
+						}
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+	@if (orders().length === 0) {
+		<div class="text-center empty-orders">
+			<i>{{'INFO.NO_ORDERS' | translate}}</i>
+		</div>
+	}
+	@if (totalPages() > 1) {
+		<div class="text-center">
+			<pagination (pageChanged)="onPageChanged($event)"
+			            [boundaryLinks]="true"
+			            [itemsPerPage]="size"
+			            [maxSize]="maxSize"
+			            [pageBtnClass]="'btn-outline-dark'"
+			            [totalItems]="totalElements()"
+			            class="orders-pagination" firstText="&laquo;" lastText="&raquo;" nextText="&rsaquo;"
+			            previousText="&lsaquo;">
+			</pagination>
+			<div class="range-label" data-test="orders-range">{{rangeLabel()}}</div>
+		</div>
+	}
+</div>

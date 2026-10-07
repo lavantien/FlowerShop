@@ -1,0 +1,86 @@
+<div class="row">
+	<div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
+		<div class="card">
+			<div class="card-header bg-light text-dark"><b>{{'INFO.PROFILE' | translate}}</b></div>
+			<div class="card-body">
+				<form (ngSubmit)="onSaveProfile()" [formGroup]="profileForm">
+					<div class="mb-3">
+						<label class="form-label" for="inputEmailP"><b>{{'MAIN.EMAIL' | translate}}</b></label>
+						<input [value]="email()" class="form-control" disabled id="inputEmailP" type="email">
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="inputNameP"><b>{{'MAIN.NAME' | translate}}</b></label>
+						<input class="form-control" data-test="profile-name" formControlName="name" id="inputNameP"
+						       type="text">
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="inputPhoneP"><b>{{'MAIN.PHONE' | translate}}</b></label>
+						<input class="form-control" data-test="profile-phone" formControlName="phone" id="inputPhoneP"
+						       type="tel">
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="inputAddressP"><b>{{'MAIN.ADDRESS' | translate}}</b></label>
+						<input class="form-control" data-test="profile-address" formControlName="address"
+						       id="inputAddressP" type="text">
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="inputCityP"><b>{{'MAIN.CITY' | translate}}</b></label>
+						<select (change)="onCityChange()" class="form-control" data-test="profile-city"
+						        formControlName="city" id="inputCityP">
+							@for (city of geo.cities(); track city.name) {
+								<option [value]="city.name">{{city.name}}</option>
+							}
+						</select>
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="inputDistrictP"><b>{{'MAIN.DISTRICT' | translate}}</b></label>
+						<select class="form-control" data-test="profile-district" formControlName="district"
+						        id="inputDistrictP">
+							@for (district of geo.districts(); track district.name) {
+								@if (district.cityName === profileForm.controls.city.value) {
+									<option [value]="district.name">{{district.name}}</option>
+								}
+							}
+						</select>
+					</div>
+					@if (profileFailed()) {
+						<div class="text-danger mb-2" data-test="profile-invalid">{{'INFO.PROFILE_FAILED' | translate}}</div>
+					}
+					<button [disabled]="savingProfile()" class="btn btn-dark" data-test="profile-save" type="submit">
+						{{'INFO.SAVE_PROFILE' | translate}}
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+	<div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
+		<div class="card">
+			<div class="card-header bg-light text-dark"><b>{{'INFO.CHANGE_PASSWORD' | translate}}</b></div>
+			<div class="card-body">
+				<form (ngSubmit)="onChangePassword()" [formGroup]="passwordForm">
+					<div class="mb-3">
+						<label class="form-label" for="inputCurrentPassword"><b>{{'INFO.CURRENT_PASSWORD' | translate}}</b></label>
+						<input class="form-control" data-test="profile-current-password"
+						       formControlName="currentPassword" id="inputCurrentPassword" type="password">
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="inputNewPassword"><b>{{'MAIN.NEW_PASSWORD' | translate}}</b></label>
+						<input class="form-control" data-test="profile-new-password" formControlName="newPassword"
+						       id="inputNewPassword" type="password">
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="inputReNewPassword"><b>{{'MAIN.RE_NEW_PASSWORD' | translate}}</b></label>
+						<input class="form-control" data-test="profile-re-new-password" formControlName="reNewPassword"
+						       id="inputReNewPassword" type="password">
+					</div>
+					@if (passwordFailed()) {
+						<div class="text-danger mb-2" data-test="password-invalid">{{'INFO.PASSWORD_FAILED' | translate}}</div>
+					}
+					<button [disabled]="changingPassword()" class="btn btn-dark" data-test="profile-password" type="submit">
+						{{'INFO.CHANGE_PASSWORD' | translate}}
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>

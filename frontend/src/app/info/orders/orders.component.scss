@@ -1,0 +1,21 @@
+.orders-wrapper {
+	.empty-orders {
+		padding: 2rem 0;
+	}
+
+	.order-totals {
+		div {
+			display: flex;
+			justify-content: space-between;
+		}
+
+		.total {
+			font-weight: 700;
+		}
+	}
+
+	.range-label {
+		font-size: 0.85rem;
+		color: #6c757d;
+	}
+}

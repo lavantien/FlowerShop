@@ -1,72 +1,20 @@
 <div class="info-wrapper container-fluid">
-	<div class="row">
-		<div class="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
-			<div class="mb-3 row">
-				<label class="col-sm-4 col-form-label" for="inputNameI"><b>{{'MAIN.NAME' | translate}}</b></label>
-				<div class="col-sm-8">
-					<input [ngModel]="user().name" class="form-control" id="inputNameI" type="text" disabled>
-				</div>
-			</div>
-			<div class="mb-3 row">
-				<label class="col-sm-4 col-form-label" for="inputEmailI"><b>{{'MAIN.EMAIL' | translate}}</b></label>
-				<div class="col-sm-8">
-					<input [ngModel]="user().email" class="form-control" id="inputEmailI" type="email" disabled>
-				</div>
-			</div>
-			<div class="mb-3 row">
-				<label class="col-sm-4 col-form-label" for="inputPhoneI"><b>{{'MAIN.PHONE' | translate}}</b></label>
-				<div class="col-sm-8">
-					<input [ngModel]="user().phone" class="form-control" id="inputPhoneI" type="text" disabled>
-				</div>
-			</div>
-			<div class="mb-3 row">
-				<label class="col-sm-4 col-form-label" for="inputAddressI"><b>{{'MAIN.ADDRESS' | translate}}</b></label>
-				<div class="col-sm-8">
-					<input [ngModel]="user().address" class="form-control" id="inputAddressI" type="text" disabled>
-				</div>
-			</div>
-		</div>
-		<div class="col-xl-8 col-lg-8 col-md-8 col-sm-12 col-12">
-			<table class="table table-bordered table-striped table-sm table-hover text-center">
-				<thead>
-				<tr>
-					<th scope="col">#</th>
-					<th scope="col">{{'ADMIN.NAME' | translate}}</th>
-					<th scope="col">{{'ADMIN.CATEGORY' | translate}}</th>
-					<th scope="col">{{'ADMIN.TYPE' | translate}}</th>
-					<th scope="col">{{'ADMIN.PRICE' | translate}}</th>
-					<th scope="col">{{'ADMIN.QUANTITY_CART' | translate}}</th>
-					<th scope="col">{{'ADMIN.TOTAL_PRICE' | translate}}</th>
-					<th scope="col">{{'ADMIN.ORDER_DATE' | translate}}</th>
-				</tr>
-				</thead>
-				<tbody>
-				@for (product of billsRender(); track $index; let i = $index) {
-					<tr>
-						<th scope="row">{{i + 1}}</th>
-						<td>{{product.name}}</td>
-						<td>{{'DATA.' + product.categoryName | translate}}</td>
-						<td>{{'DATA.' + product.typeName | translate}}</td>
-						<td>{{product.price.toLocaleString(translate.currentLang() ?? 'en')}}</td>
-						<td>{{countOfIndividualProduct()[i]}}</td>
-						<td>{{totalPriceOfIndividualProduct()[i].toLocaleString(translate.currentLang() ?? 'en')}}</td>
-						<td>{{settlementDate()[i]}}</td>
-					</tr>
-				}
-				@if (billsRender().length !== 0) {
-					<tr>
-						<td colspan="6"><b>{{'ADMIN.TOTAL_PRICE' | translate}}</b></td>
-						<td><b>{{totalPriceOfAddedProduct().toLocaleString(translate.currentLang() ?? 'en')}}</b></td>
-						<td></td>
-					</tr>
-				}
-				@if (billsRender().length === 0) {
-					<tr>
-						<td colspan="8"><i>{{'ADMIN.NO_PRODUCT_FOUND' | translate}}</i></td>
-					</tr>
-				}
-				</tbody>
-			</table>
-		</div>
-	</div>
+	<ul class="nav nav-tabs mb-3">
+		<li class="nav-item">
+			<a class="nav-link" data-test="info-tab-orders" routerLink="orders" routerLinkActive="active">
+				{{'INFO.ORDERS' | translate}}
+			</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" data-test="info-tab-profile" routerLink="profile" routerLinkActive="active">
+				{{'INFO.PROFILE' | translate}}
+			</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" data-test="info-tab-wishlist" routerLink="wishlist" routerLinkActive="active">
+				{{'INFO.WISHLIST' | translate}}
+			</a>
+		</li>
+	</ul>
+	<router-outlet/>
 </div>

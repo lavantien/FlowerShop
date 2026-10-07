@@ -11,6 +11,9 @@ import {ContactComponent} from './contact/contact.component';
 import {PayComponent} from './pay/pay.component';
 import {AdminComponent} from './admin/admin.component';
 import {InfoComponent} from './info/info.component';
+import {ProfileComponent} from './info/profile/profile.component';
+import {OrdersComponent} from './info/orders/orders.component';
+import {WishlistComponent} from './info/wishlist/wishlist.component';
 import {SummaryComponent} from './summary/summary.component';
 import {NotFoundComponent} from './not-found/not-found.component';
 
@@ -49,6 +52,15 @@ describe('app routes', () => {
 
 	it('falls back to the wildcard not found route', () => {
 		expect(routes[routes.length - 1].path).toBe('**');
+	});
+
+	it('splits the info surface into profile, orders, and wishlist children', async () => {
+		const byPath = new Map(routes.map(route => [route.path, route]));
+		const info = byPath.get('info');
+		expect(info?.children?.length).toBe(4);
+		expect(info?.children?.[0]).toEqual({path: '', pathMatch: 'full', redirectTo: 'orders'});
+		const loaded = await Promise.all(info!.children!.slice(1).map(child => child.loadComponent!()));
+		expect(loaded).toEqual([ProfileComponent, OrdersComponent, WishlistComponent]);
 	});
 });
 

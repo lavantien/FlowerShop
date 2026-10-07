@@ -39,7 +39,25 @@ export const routes: Routes = [
 		path: 'info',
 		title: 'Info',
 		canActivate: [authGuard],
-		loadComponent: () => import('./info/info.component').then(m => m.InfoComponent)
+		loadComponent: () => import('./info/info.component').then(m => m.InfoComponent),
+		children: [
+			{path: '', pathMatch: 'full', redirectTo: 'orders'},
+			{
+				path: 'profile',
+				title: 'Profile',
+				loadComponent: () => import('./info/profile/profile.component').then(m => m.ProfileComponent)
+			},
+			{
+				path: 'orders',
+				title: 'Orders',
+				loadComponent: () => import('./info/orders/orders.component').then(m => m.OrdersComponent)
+			},
+			{
+				path: 'wishlist',
+				title: 'Wishlist',
+				loadComponent: () => import('./info/wishlist/wishlist.component').then(m => m.WishlistComponent)
+			}
+		]
 	},
 	{
 		path: 'summary',
