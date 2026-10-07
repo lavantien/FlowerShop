@@ -8,6 +8,8 @@ import jakarta.persistence.Id;
 
 @Entity
 public class User {
+	public static final String USER_TYPE = "USER";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -20,7 +22,7 @@ public class User {
 	private String district;
 	private String city;
 	private String answer;
-	private String type = "USER";
+	private String type = USER_TYPE;
 	private Boolean enable = true;
 
 	public User() {

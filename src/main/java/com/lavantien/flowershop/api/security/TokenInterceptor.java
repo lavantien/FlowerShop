@@ -26,7 +26,7 @@ public class TokenInterceptor implements HandlerInterceptor {
 		new PublicRule(HttpMethod.GET, "/api/type"),
 		new PublicRule(HttpMethod.GET, "/api/type/*"),
 		new PublicRule(HttpMethod.POST, "/api/user/login"),
-		new PublicRule(HttpMethod.POST, "/api/user"),
+		new PublicRule(HttpMethod.POST, "/api/user/create"),
 		new PublicRule(HttpMethod.POST, "/api/user/logout"),
 		new PublicRule(HttpMethod.POST, "/api/user/resetPassword"));
 
@@ -62,8 +62,13 @@ public class TokenInterceptor implements HandlerInterceptor {
 			response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
 			return false;
 		}
-		request.setAttribute("authUserId", id);
-		request.setAttribute("authType", type);
+		RequireRole requiredRole = ((HandlerMethod) handler).getMethodAnnotation(RequireRole.class);
+		if (requiredRole != null && !requiredRole.value().equals(type)) {
+			response.sendError(HttpServletResponse.SC_FORBIDDEN);
+			return false;
+		}
+		request.setAttribute(Auth.USER_ID_ATTRIBUTE, id);
+		request.setAttribute(Auth.TYPE_ATTRIBUTE, type);
 		return true;
 	}
 

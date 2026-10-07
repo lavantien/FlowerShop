@@ -99,6 +99,15 @@ async function stopServer(server) {
 	});
 }
 
+async function loginToken({email, password}) {
+	const response = await fetchJson(`${CONFIG.baseUrl}/api/user/login`, {
+		method: 'POST',
+		headers: {'Content-Type': 'text/plain'},
+		body: btoa(email + 'j0z' + password)
+	});
+	return response.token;
+}
+
 async function seedData() {
 	const categories = await fetchJson(`${CONFIG.baseUrl}/api/category`);
 	if (!Array.isArray(categories) || categories.length === 0) {
@@ -109,14 +118,16 @@ async function seedData() {
 		const payload = await readFile(path.join(REPO_ROOT, 'db/product.json'), 'utf8');
 		await fetchJson(`${CONFIG.baseUrl}/api/product`, {
 			method: 'POST',
-			headers: {'Content-Type': 'application/json'},
+			headers: {'Content-Type': 'application/json', 'X-Auth-Token': await loginToken(CONFIG.admin)},
 			body: payload
 		});
 		console.log('[seed] products imported from db/product.json');
 	}
 	// Bills drive the summary and account pages; placed through the real checkout below.
-	// The endpoint answers 400 for a user with no bills (pre-existing behavior).
-	const billsResponse = await fetch(`${CONFIG.baseUrl}/api/bill/user/${CONFIG.member.userId}`);
+	// The endpoint answers 200 with an empty list for a user with no bills.
+	const billsResponse = await fetch(`${CONFIG.baseUrl}/api/bill/user/${CONFIG.member.userId}`, {
+		headers: {'X-Auth-Token': await loginToken(CONFIG.member)}
+	});
 	const memberBills = billsResponse.ok ? await billsResponse.json() : [];
 	return memberBills.length === 0;
 }

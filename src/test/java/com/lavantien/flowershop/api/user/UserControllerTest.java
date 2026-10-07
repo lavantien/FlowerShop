@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.user;
 
+import com.lavantien.flowershop.api.security.TokenInterceptor;
 import com.lavantien.flowershop.service.MailService;
 import com.lavantien.flowershop.service.PasswordService;
 import com.lavantien.flowershop.service.UserService;
@@ -12,7 +13,12 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Optional;
 
+import static com.lavantien.flowershop.api.security.AuthTestSupport.persona;
+import static com.lavantien.flowershop.api.security.AuthTestSupport.prime;
+import static com.lavantien.flowershop.api.security.AuthTestSupport.tokenOf;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -20,6 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -35,23 +42,13 @@ class UserControllerTest {
 		userService = new UserService();
 		passwordService = new PasswordService();
 		mockMvc = MockMvcBuilders.standaloneSetup(
-			new UserController(userRepository, mock(MailService.class), userService, passwordService)).build();
-	}
-
-	private User persona(Long id, String type, String email, String answer) {
-		User user = new User("Demo Persona", passwordService.hash("1234qwer"), email, "0900000001",
-			"01 Demo Lane", "Binh Thanh", "Ho Chi Minh", answer);
-		user.setId(id);
-		user.setType(type);
-		return user;
+			new UserController(userRepository, mock(MailService.class), userService, passwordService))
+			.addInterceptors(new TokenInterceptor(userRepository, userService))
+			.build();
 	}
 
 	private static String loginBody(String email, String password) {
 		return Base64.getEncoder().encodeToString((email + "j0z" + password).getBytes(StandardCharsets.UTF_8));
-	}
-
-	private static String tokenOf(long id, String type) {
-		return Base64.getEncoder().encodeToString((id + "+" + type).getBytes(StandardCharsets.UTF_8));
 	}
 
 	private static final String GUESS_TOKEN = Base64.getEncoder()
@@ -59,7 +56,7 @@ class UserControllerTest {
 
 	@Test
 	void loginSucceedsAgainstABcryptStoredPassword() throws Exception {
-		User user = persona(1L, "ADMIN", "admin@flowershop.example", "demo");
+		User user = persona(1, "ADMIN", "admin@flowershop.example");
 		when(userRepository.findByEmail("admin@flowershop.example")).thenReturn(user);
 
 		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
@@ -73,14 +70,14 @@ class UserControllerTest {
 
 	@Test
 	void loginRejectsAWrongPassword() throws Exception {
-		User user = persona(4L, "USER", "member@flowershop.example", "demo");
+		User user = persona(4, "USER", "member@flowershop.example");
 		when(userRepository.findByEmail("member@flowershop.example")).thenReturn(user);
 
 		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
 				.content(loginBody("member@flowershop.example", "wrong")))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-		assertTrue(userService.loggedInIds.isEmpty());
+		assertFalse(userService.loggedInIds.contains(4L));
 	}
 
 	@Test
@@ -96,7 +93,7 @@ class UserControllerTest {
 
 	@Test
 	void resetPasswordStoresABcryptHashAndLogsTheUserIn() throws Exception {
-		User user = persona(4L, "USER", "member@flowershop.example", "demo");
+		User user = persona(4, "USER", "member@flowershop.example");
 		when(userRepository.findByEmail("member@flowershop.example")).thenReturn(user);
 		when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -114,7 +111,8 @@ class UserControllerTest {
 
 	@Test
 	void resetPasswordToleratesASeededRowWithoutAnAnswer() throws Exception {
-		User user = persona(2L, "ADMIN", "editor@flowershop.example", null);
+		User user = persona(2, "ADMIN", "editor@flowershop.example");
+		user.setAnswer(null);
 		when(userRepository.findByEmail("editor@flowershop.example")).thenReturn(user);
 
 		mockMvc.perform(post("/api/user/resetPassword").contentType(MediaType.APPLICATION_JSON)
@@ -124,13 +122,67 @@ class UserControllerTest {
 	}
 
 	@Test
-	void userResponsesDoNotShipThePassword() throws Exception {
-		when(userRepository.findById(4L)).thenReturn(java.util.Optional.of(persona(4L, "USER",
-			"member@flowershop.example", "demo")));
+	void memberReadsOwnAccountWithoutThePasswordField() throws Exception {
+		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
 
-		mockMvc.perform(get("/api/user/4"))
+		mockMvc.perform(get("/api/user/4").header("X-Auth-Token", tokenOf(4, "USER")))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.password").doesNotExist())
 			.andExpect(jsonPath("$.email").value("member@flowershop.example"));
+	}
+
+	@Test
+	void memberCannotReadAForeignAccount() throws Exception {
+		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+
+		mockMvc.perform(get("/api/user/1").header("X-Auth-Token", tokenOf(4, "USER")))
+			.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void nonAdminPutCannotEscalateTypeOrDropEnable() throws Exception {
+		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+		when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		mockMvc.perform(put("/api/user/4").header("X-Auth-Token", tokenOf(4, "USER"))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Renamed\",\"phone\":\"0900000004\",\"address\":\"04 Demo Lane\","
+					+ "\"answer\":\"demo\",\"type\":\"ADMIN\",\"enable\":false,\"password\":\"hacked\"}"))
+			.andExpect(status().isOk());
+
+		ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+		verify(userRepository).save(saved.capture());
+		assertTrue(saved.getValue().getType().equals("USER"), "type must stay USER for a non-admin caller");
+		assertTrue(Boolean.TRUE.equals(saved.getValue().getEnable()), "enable must stay true for a non-admin caller");
+		assertTrue(passwordService.matches("1234qwer", saved.getValue().getPassword()),
+			"password must never be writable through PUT");
+		assertTrue("Renamed".equals(saved.getValue().getName()), "owner fields still copy through");
+	}
+
+	@Test
+	void adminPutCanManageTypeAndEnable() throws Exception {
+		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		when(userRepository.findById(4L)).thenReturn(Optional.of(persona(4, "USER", "member@flowershop.example")));
+		when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		mockMvc.perform(put("/api/user/4").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Renamed\",\"type\":\"ADMIN\",\"enable\":false}"))
+			.andExpect(status().isOk());
+
+		ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+		verify(userRepository).save(saved.capture());
+		assertTrue(saved.getValue().getType().equals("ADMIN"));
+		assertTrue(Boolean.FALSE.equals(saved.getValue().getEnable()));
+	}
+
+	@Test
+	void nonAdminPutOnAForeignAccountIsForbidden() throws Exception {
+		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+
+		mockMvc.perform(put("/api/user/1").header("X-Auth-Token", tokenOf(4, "USER"))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Hijacked\"}"))
+			.andExpect(status().isForbidden());
 	}
 }

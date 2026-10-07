@@ -1,12 +1,11 @@
 package com.lavantien.flowershop.api.security;
 
-import com.lavantien.flowershop.api.user.User;
 import com.lavantien.flowershop.api.user.UserRepository;
-import com.lavantien.flowershop.service.PasswordService;
 import com.lavantien.flowershop.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -14,10 +13,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.Optional;
-
+import static com.lavantien.flowershop.api.security.AuthTestSupport.persona;
+import static com.lavantien.flowershop.api.security.AuthTestSupport.prime;
+import static com.lavantien.flowershop.api.security.AuthTestSupport.tokenOf;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -30,10 +28,6 @@ class TokenInterceptorTest {
 	private UserService userService;
 	private MockMvc mockMvc;
 
-	private static String tokenOf(String raw) {
-		return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
-	}
-
 	@BeforeEach
 	void setUp() {
 		userRepository = mock(UserRepository.class);
@@ -43,22 +37,11 @@ class TokenInterceptorTest {
 			.build();
 	}
 
-	private User persona(long id, String type, boolean enable) {
-		PasswordService passwordService = new PasswordService();
-		User user = new User("Demo Persona", passwordService.hash("1234qwer"), "demo@flowershop.example",
-			"0900000001", "01 Demo Lane", "Binh Thanh", "Ho Chi Minh", "demo");
-		user.setId(id);
-		user.setType(type);
-		user.setEnable(enable);
-		return user;
-	}
-
 	@Test
 	void acceptedTokenReachesTheHandlerWithAuthAttributes() throws Exception {
-		when(userRepository.findById(4L)).thenReturn(Optional.of(persona(4, "USER", true)));
-		userService.loggedInIds.add(4L);
+		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
 
-		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOf("4+USER")))
+		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOf(4, "USER")))
 			.andExpect(status().isOk())
 			.andExpect(content().string("4:USER"));
 	}
@@ -68,8 +51,7 @@ class TokenInterceptorTest {
 		mockMvc.perform(get("/api/product"))
 			.andExpect(status().isOk())
 			.andExpect(content().string("public"));
-		mockMvc.perform(post("/api/user/login").contentType(org.springframework.http.MediaType.TEXT_PLAIN)
-				.content(tokenOf("member@flowershop.examplej0z12345678")))
+		mockMvc.perform(post("/api/user/create").contentType(MediaType.APPLICATION_JSON).content("{}"))
 			.andExpect(status().isOk())
 			.andExpect(content().string("public"));
 	}
@@ -84,44 +66,69 @@ class TokenInterceptorTest {
 	void garbageTokensAreRejected() throws Exception {
 		mockMvc.perform(get("/api/probe").header("X-Auth-Token", "not base64 !!!"))
 			.andExpect(status().isUnauthorized());
-		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOf("no separator")))
+		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOfRaw("no separator")))
 			.andExpect(status().isUnauthorized());
-		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOf("notANumber+USER")))
+		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOfRaw("notANumber+USER")))
 			.andExpect(status().isUnauthorized());
 	}
 
 	@Test
 	void validFormatButUnknownIdIsRejected() throws Exception {
-		when(userRepository.findById(99L)).thenReturn(Optional.empty());
+		when(userRepository.findById(99L)).thenReturn(java.util.Optional.empty());
 
-		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOf("99+USER")))
+		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOf(99, "USER")))
+			.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void forgedAdminTokenWithoutADatabaseRowBounces() throws Exception {
+		when(userRepository.findById(1L)).thenReturn(java.util.Optional.empty());
+
+		mockMvc.perform(get("/api/bill").header("X-Auth-Token", tokenOfRaw("1+ADMIN")))
 			.andExpect(status().isUnauthorized());
 	}
 
 	@Test
 	void loggedOutIdIsRejected() throws Exception {
-		when(userRepository.findById(4L)).thenReturn(Optional.of(persona(4, "USER", true)));
+		when(userRepository.findById(4L)).thenReturn(java.util.Optional.of(persona(4, "USER",
+			"member@flowershop.example")));
 
-		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOf("4+USER")))
+		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOf(4, "USER")))
 			.andExpect(status().isUnauthorized());
 	}
 
 	@Test
 	void typeMismatchAgainstTheDatabaseIsRejected() throws Exception {
-		when(userRepository.findById(4L)).thenReturn(Optional.of(persona(4, "USER", true)));
-		userService.loggedInIds.add(4L);
+		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
 
-		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOf("4+ADMIN")))
+		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOf(4, "ADMIN")))
 			.andExpect(status().isUnauthorized());
 	}
 
 	@Test
 	void disabledAccountIsRejected() throws Exception {
-		when(userRepository.findById(4L)).thenReturn(Optional.of(persona(4, "USER", false)));
-		userService.loggedInIds.add(4L);
+		var disabled = persona(4, "USER", "member@flowershop.example");
+		disabled.setEnable(false);
+		prime(userRepository, userService, disabled);
 
-		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOf("4+USER")))
+		mockMvc.perform(get("/api/probe").header("X-Auth-Token", tokenOf(4, "USER")))
 			.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void requireRoleAllowsTheAdminAndRejectsTheMember() throws Exception {
+		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+
+		mockMvc.perform(get("/api/probe/admin").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+			.andExpect(status().isOk())
+			.andExpect(content().string("admin only"));
+		mockMvc.perform(get("/api/probe/admin").header("X-Auth-Token", tokenOf(4, "USER")))
+			.andExpect(status().isForbidden());
+	}
+
+	private static String tokenOfRaw(String raw) {
+		return java.util.Base64.getEncoder().encodeToString(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 	}
 
 	@RestController
@@ -131,14 +138,25 @@ class TokenInterceptorTest {
 			return ResponseEntity.ok("public");
 		}
 
-		@PostMapping("/api/user/login")
-		public ResponseEntity<String> login() {
+		@PostMapping("/api/user/create")
+		public ResponseEntity<String> create() {
 			return ResponseEntity.ok("public");
+		}
+
+		@GetMapping("/api/bill")
+		public ResponseEntity<String> bills() {
+			return ResponseEntity.ok("bills");
 		}
 
 		@GetMapping("/api/probe")
 		public ResponseEntity<String> probe(HttpServletRequest request) {
 			return ResponseEntity.ok(request.getAttribute("authUserId") + ":" + request.getAttribute("authType"));
+		}
+
+		@RequireRole("ADMIN")
+		@GetMapping("/api/probe/admin")
+		public ResponseEntity<String> adminProbe() {
+			return ResponseEntity.ok("admin only");
 		}
 	}
 }
