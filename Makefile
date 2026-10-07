@@ -23,7 +23,7 @@ export LOCAL_MYSQL_DB_USERNAME := $(DB_USER)
 export LOCAL_MYSQL_DB_PASSWORD := $(DB_PASS)
 
 .DEFAULT_GOAL := help
-.PHONY: help env db-up db-down db-nuke db-seed db-reset db-hash seeds frontend-install frontend-build frontend-lint frontend-test test-coverage frontend-serve backend-test build package run screenshots audit memguard fuzz mutate clean
+.PHONY: help env db-up db-down db-nuke db-seed db-reset db-hash seeds frontend-install frontend-build frontend-lint frontend-test test-coverage frontend-serve backend-test build package run screenshots audit memguard fuzz mutate mutate-front clean
 
 # Set SKIP_DB_UP=1 when MySQL already runs elsewhere (CI service container);
 # every target below then skips its db-up prerequisite.
@@ -114,6 +114,9 @@ fuzz: $(if $(SKIP_DB_UP),,db-up) ## run the API fuzz harness against the package
 
 mutate: $(if $(SKIP_DB_UP),,db-up) ## run the source-level mutation harness, write docs/qa/mutation-report.md
 	@node scripts/tools/mutate.mjs
+
+mutate-front: ## run the frontend source-level mutation harness, write docs/qa/mutation-front-report.md
+	@node scripts/tools/mutate-front.mjs
 
 clean: ## maven clean and drop node_modules
 	@$(MVNW) $(MVN_ARGS) clean

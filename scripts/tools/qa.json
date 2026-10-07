@@ -25,5 +25,12 @@
 		"perMutantTimeoutMs": 420000,
 		"mavenArgs": ["-Dfrontend.skip=true", "-Djacoco.skip=true", "-DfailIfNoTests=false"],
 		"mavenOpts": "-Xmx512m -XX:+UseSerialGC -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m -XX:-UsePerfData"
+	},
+	"mutate-front": {
+		"mapPath": "scripts/tools/mutation-front-map.json",
+		"reportPath": "docs/qa/mutation-front-report.md",
+		"logPath": ".tools/mutate-front-run.log",
+		"perMutantTimeoutMs": 240000,
+		"frontendDir": "frontend"
 	}
 }

@@ -18,15 +18,17 @@ export interface CartLine {
 
 const STORAGE_KEY = 'cart';
 
+// Number.isFinite over typeof number: corrupt json like 1e999 parses to
+// Infinity, a number by typeof, and would masquerade as a cart line.
 function isCartItem(value: unknown): value is CartItem {
 	if (typeof value !== 'object' || value === null) {
 		return false;
 	}
 	const candidate = value as Record<string, unknown>;
-	return typeof candidate['id'] === 'number'
+	return Number.isFinite(candidate['id'])
 		&& typeof candidate['name'] === 'string'
 		&& typeof candidate['imgUrl'] === 'string'
-		&& typeof candidate['price'] === 'number'
+		&& Number.isFinite(candidate['price'])
 		&& typeof candidate['categoryName'] === 'string'
 		&& typeof candidate['typeName'] === 'string';
 }
@@ -36,7 +38,8 @@ function isCartLine(value: unknown): value is CartLine {
 		return false;
 	}
 	const candidate = value as Record<string, unknown>;
-	return isCartItem(candidate['product']) && typeof candidate['quantity'] === 'number' && candidate['quantity'] >= 1;
+	const quantity = candidate['quantity'];
+	return isCartItem(candidate['product']) && typeof quantity === 'number' && Number.isFinite(quantity) && quantity >= 1;
 }
 
 function restore(): CartLine[] {
@@ -84,9 +87,10 @@ export class CartService {
 		this.linesSignal.update(lines => lines.filter(line => line.product.id !== productId));
 	}
 
-	// a non positive quantity drops the line, mirroring the minus button in the cart table
+	// a non positive or non finite quantity drops the line, mirroring the
+	// minus button in the cart table; the isFinite arm also catches NaN
 	changeQuantity(productId: number, quantity: number): void {
-		if (quantity < 1) {
+		if (!Number.isFinite(quantity) || quantity < 1) {
 			this.remove(productId);
 			return;
 		}

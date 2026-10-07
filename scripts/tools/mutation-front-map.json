@@ -1,0 +1,166 @@
+{
+	"reportNotes": [
+		"First and only full run at e1478cf over the curated 90-mutant set: 90 killed, 0 survivors, no post-run map changes. The three culled equivalents were removed by analysis before the run, each with its reason attached to the lineOpExcludes entry. Seven flips die as compile kills where the operator also breaks TypeScript narrowing inside the same expression."
+	],
+	"targets": [
+		{
+			"name": "SessionService",
+			"file": "frontend/src/app/core/session.service.ts",
+			"tests": ["src/app/core/session.service.spec.ts", "src/app/core/session.fuzz.spec.ts"],
+			"lineOpExcludes": [
+				{
+					"line": 14,
+					"ops": ["OR_TO_AND"],
+					"reason": "every input class reaches the same logout fallback, null through the catch, non objects through the falling predicate"
+				}
+			],
+			"explicit": [
+				{
+					"line": 7,
+					"from": "'token'",
+					"to": "'tokenX'",
+					"op": "STORAGE_KEY",
+					"note": "token storage key drift"
+				},
+				{
+					"line": 8,
+					"from": "'user'",
+					"to": "'userX'",
+					"op": "STORAGE_KEY",
+					"note": "user storage key drift"
+				}
+			]
+		},
+		{
+			"name": "CartService",
+			"file": "frontend/src/app/core/cart.service.ts",
+			"tests": ["src/app/core/cart.service.spec.ts", "src/app/core/cart.fuzz.spec.ts"],
+			"lineOpExcludes": [
+				{
+					"line": 52,
+					"ops": ["NOT_DROP"],
+					"reason": "a non array parsed value then calls .filter inside the same try that already returns an empty cart"
+				}
+			],
+			"explicit": [
+				{
+					"line": 19,
+					"from": "'cart'",
+					"to": "'cartX'",
+					"op": "STORAGE_KEY",
+					"note": "cart storage key drift"
+				}
+			]
+		},
+		{
+			"name": "ToastService",
+			"file": "frontend/src/app/core/toast.service.ts",
+			"tests": ["src/app/core/toast.service.spec.ts"],
+			"lineOpExcludes": [
+				{
+					"line": 15,
+					"ops": ["LIT_0_TO_1"],
+					"reason": "the counter only feeds toast identity, uniqueness is origin independent"
+				}
+			]
+		},
+		{
+			"name": "globalHttpInterceptor",
+			"file": "frontend/src/app/core/global-http-interceptor.ts",
+			"tests": ["src/app/core/global-http-interceptor.spec.ts", "src/app/core/global-http-interceptor.fuzz.spec.ts"]
+		},
+		{
+			"name": "PageTitleStrategy",
+			"file": "frontend/src/app/core/page-title.strategy.ts",
+			"tests": ["src/app/core/page-title.strategy.spec.ts"]
+		},
+		{
+			"name": "authGuard",
+			"file": "frontend/src/app/core/auth.guard.ts",
+			"tests": ["src/app/core/guards.spec.ts"],
+			"explicit": [
+				{
+					"line": 8,
+					"from": "? true :",
+					"to": "? false :",
+					"op": "GUARD_POLARITY",
+					"note": "member guard lets nobody through"
+				}
+			]
+		},
+		{
+			"name": "adminGuard",
+			"file": "frontend/src/app/core/admin.guard.ts",
+			"tests": ["src/app/core/guards.spec.ts"],
+			"explicit": [
+				{
+					"line": 8,
+					"from": "? true :",
+					"to": "? false :",
+					"op": "GUARD_POLARITY",
+					"note": "admin guard lets nobody through"
+				}
+			]
+		},
+		{
+			"name": "definedParams",
+			"file": "frontend/src/app/services/params.ts",
+			"tests": ["src/app/services/catalog.service.spec.ts", "src/app/services/order.service.spec.ts", "src/app/services/report.service.spec.ts"]
+		},
+		{
+			"name": "CatalogService",
+			"file": "frontend/src/app/services/catalog.service.ts",
+			"tests": ["src/app/services/catalog.service.spec.ts"]
+		},
+		{
+			"name": "AuthService",
+			"file": "frontend/src/app/core/auth.service.ts",
+			"tests": ["src/app/core/auth.service.spec.ts"]
+		},
+		{
+			"name": "ApiPaths",
+			"file": "frontend/src/app/services/api.ts",
+			"tests": ["src/app/services/catalog.service.spec.ts"]
+		},
+		{
+			"name": "AccountService",
+			"file": "frontend/src/app/services/account.service.ts",
+			"tests": ["src/app/services/account.service.spec.ts"]
+		},
+		{
+			"name": "BranchService",
+			"file": "frontend/src/app/services/branch.service.ts",
+			"tests": ["src/app/services/branch.service.spec.ts"]
+		},
+		{
+			"name": "CouponService",
+			"file": "frontend/src/app/services/coupon.service.ts",
+			"tests": ["src/app/services/coupon.service.spec.ts"]
+		},
+		{
+			"name": "OrderService",
+			"file": "frontend/src/app/services/order.service.ts",
+			"tests": ["src/app/services/order.service.spec.ts"]
+		},
+		{
+			"name": "PaymentService",
+			"file": "frontend/src/app/services/payment.service.ts",
+			"tests": ["src/app/services/payment.service.spec.ts"]
+		},
+		{
+			"name": "ReportService",
+			"file": "frontend/src/app/services/report.service.ts",
+			"tests": ["src/app/services/report.service.spec.ts"]
+		},
+		{
+			"name": "TaxonomyService",
+			"file": "frontend/src/app/services/taxonomy.service.ts",
+			"tests": ["src/app/services/taxonomy.service.spec.ts"]
+		},
+		{
+			"name": "WishlistService",
+			"file": "frontend/src/app/services/wishlist.service.ts",
+			"tests": ["src/app/services/wishlist.service.spec.ts"]
+		}
+	]
+}
