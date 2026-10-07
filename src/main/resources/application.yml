@@ -9,3 +9,13 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+
+shop:
+  delivery:
+    base-fee: 20000
+    per-km: 5000
+    max-fee: 200000
+    round-to: 1000
+  payment:
+    secret: ${FLOWERSHOP_PAYMENT_SECRET:dev-only-secret}
+    base-url: /pay

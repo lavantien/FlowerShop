@@ -1,0 +1,41 @@
+{
+	"default": {"lat": 10.7769, "lng": 106.7009},
+	"cities": [
+		{"name": "Hồ Chí Minh", "lat": 10.7769, "lng": 106.7009},
+		{"name": "Hà Nội", "lat": 21.0285, "lng": 105.8542},
+		{"name": "Đà Nẵng", "lat": 16.0544, "lng": 108.2022},
+		{"name": "Cần Thơ", "lat": 10.0450, "lng": 105.7460},
+		{"name": "Hải Phòng", "lat": 20.8650, "lng": 106.6840},
+		{"name": "Other", "lat": 10.7769, "lng": 106.7009}
+	],
+	"districts": [
+		{"name": "Bình Thạnh", "cityName": "Hồ Chí Minh", "lat": 10.7980, "lng": 106.7105},
+		{"name": "Gò Vấp", "cityName": "Hồ Chí Minh", "lat": 10.8490, "lng": 106.6580},
+		{"name": "Phú Nhuận", "cityName": "Hồ Chí Minh", "lat": 10.8050, "lng": 106.6650},
+		{"name": "Thủ Đức", "cityName": "Hồ Chí Minh", "lat": 10.8430, "lng": 106.7560},
+		{"name": "Tân Bình", "cityName": "Hồ Chí Minh", "lat": 10.8020, "lng": 106.6500},
+		{"name": "Tân Phú", "cityName": "Hồ Chí Minh", "lat": 10.7880, "lng": 106.6280},
+		{"name": "Bình Tân", "cityName": "Hồ Chí Minh", "lat": 10.7650, "lng": 106.6250},
+		{"name": "1", "cityName": "Hồ Chí Minh", "lat": 10.7750, "lng": 106.7035},
+		{"name": "2", "cityName": "Hồ Chí Minh", "lat": 10.7960, "lng": 106.7520},
+		{"name": "3", "cityName": "Hồ Chí Minh", "lat": 10.7675, "lng": 106.6850},
+		{"name": "4", "cityName": "Hồ Chí Minh", "lat": 10.7600, "lng": 106.7070},
+		{"name": "5", "cityName": "Hồ Chí Minh", "lat": 10.7520, "lng": 106.6680},
+		{"name": "6", "cityName": "Hồ Chí Minh", "lat": 10.7450, "lng": 106.6400},
+		{"name": "7", "cityName": "Hồ Chí Minh", "lat": 10.7330, "lng": 106.7210},
+		{"name": "8", "cityName": "Hồ Chí Minh", "lat": 10.7300, "lng": 106.6350},
+		{"name": "9", "cityName": "Hồ Chí Minh", "lat": 10.8330, "lng": 106.7850},
+		{"name": "10", "cityName": "Hồ Chí Minh", "lat": 10.7625, "lng": 106.6690},
+		{"name": "11", "cityName": "Hồ Chí Minh", "lat": 10.7560, "lng": 106.6400},
+		{"name": "12", "cityName": "Hồ Chí Minh", "lat": 10.8430, "lng": 106.6300},
+		{"name": "Ninh Kiều", "cityName": "Cần Thơ", "lat": 10.0450, "lng": 105.7360},
+		{"name": "Thốt Nốt", "cityName": "Cần Thơ", "lat": 10.2580, "lng": 105.5320},
+		{"name": "Hải Châu", "cityName": "Đà Nẵng", "lat": 16.0610, "lng": 108.2190},
+		{"name": "Thanh Khê", "cityName": "Đà Nẵng", "lat": 16.0500, "lng": 108.1830},
+		{"name": "Hoàn Kiếm", "cityName": "Hà Nội", "lat": 21.0280, "lng": 105.8520},
+		{"name": "Ba Đình", "cityName": "Hà Nội", "lat": 21.0330, "lng": 105.8250},
+		{"name": "Đồ Sơn", "cityName": "Hải Phòng", "lat": 20.7140, "lng": 106.7760},
+		{"name": "Dương Kinh", "cityName": "Hải Phòng", "lat": 20.7480, "lng": 106.6600},
+		{"name": "Other", "cityName": "Other", "lat": 10.7769, "lng": 106.7009}
+	]
+}
