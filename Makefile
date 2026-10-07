@@ -68,13 +68,15 @@ db-hash: ## print bcrypt hashes for DB_HASH_PASSWORDS (defaults: seed passwords)
 frontend-install: ## clean install of the frontend lockfile (npm ci)
 	@$(NPM) ci --prefix $(FRONTEND)
 
-# Fresh-clone guard for the frontend gates: node_modules exists and matches the
-# lockfile, or npm ci runs once before the gate. Without it a missing install
-# makes every spec run exit nonzero, which a mutation sweep would count as kills.
-FRONTEND_NODE_MODULES := $(FRONTEND)/node_modules
+# Fresh-clone guard for the frontend gates: the stamp inside node_modules ties
+# the install to the lockfile, dies with any reinstall, and otherwise keeps the
+# prerequisite a no-op. Without it a missing install makes every spec run exit
+# nonzero, which a mutation sweep would count as kills.
+FRONTEND_INSTALL_STAMP := $(FRONTEND)/node_modules/.install-stamp
 
-$(FRONTEND_NODE_MODULES): $(FRONTEND)/package-lock.json
+$(FRONTEND_INSTALL_STAMP): $(FRONTEND)/package-lock.json
 	@$(NPM) ci --prefix $(FRONTEND)
+	@touch $@
 
 frontend-build: ## production build of the Angular app into src/main/resources/public
 	@$(NPM) run build --prefix $(FRONTEND)
@@ -123,7 +125,7 @@ fuzz: $(if $(SKIP_DB_UP),,db-up) ## run the API fuzz harness against the package
 mutate: $(if $(SKIP_DB_UP),,db-up) ## run the source-level mutation harness, write docs/qa/mutation-report.md
 	@node scripts/tools/mutate.mjs
 
-mutate-front: $(FRONTEND_NODE_MODULES) ## run the frontend source-level mutation harness, write docs/qa/mutation-front-report.md
+mutate-front: $(FRONTEND_INSTALL_STAMP) ## run the frontend source-level mutation harness, write docs/qa/mutation-front-report.md
 	@node scripts/tools/mutate-front.mjs
 
 # Pinned PlantUML for the diagram renders; the jar stays in gitignored .tools/
