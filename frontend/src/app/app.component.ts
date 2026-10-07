@@ -303,16 +303,13 @@ export class AppComponent implements OnInit, OnDestroy {
 			return;
 		}
 		this.wrongForgot = false;
-		this.forgotPasswordForm.answer = btoa(this.forgotPasswordForm.answer);
-		this.forgotPasswordForm.password = btoa(this.forgotPasswordForm.password);
-		this.forgotPasswordForm.rePassword = btoa(this.forgotPasswordForm.rePassword);
 		this.http.post<TokenDto>('/api/user/resetPassword', this.forgotPasswordForm).subscribe((rs) => {
 			if (atob(rs.token) === '0+GUESS') {
 				alert(this.translate_RESET_PASSWORD_FAILED());
 			} else {
 				alert(this.translate_RESET_PASSWORD_SUCCESSFUL());
 				this.loginForm.email = this.forgotPasswordForm.email;
-				this.loginForm.password = atob(this.forgotPasswordForm.password);
+				this.loginForm.password = this.forgotPasswordForm.password;
 				this.onLogin();
 			}
 		}, error => {
