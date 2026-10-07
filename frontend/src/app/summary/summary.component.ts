@@ -3,6 +3,7 @@ import {HttpClient} from '@angular/common/http';
 import {Router} from '@angular/router';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {DataTranslateService} from '../_services/data-translate.service';
+import {TokenService} from '../_services/token.service';
 import {Product} from '../_models/product';
 import {Bill} from '../_models/bill';
 
@@ -28,12 +29,12 @@ export class SummaryComponent implements OnInit {
 	private readonly http = inject(HttpClient);
 	private readonly router = inject(Router);
 	private readonly dataTranslateService = inject(DataTranslateService);
+	private readonly tokenService = inject(TokenService);
 	readonly translate = inject(TranslateService);
 
 	ngOnInit() {
-		const token = localStorage.getItem('token');
-		this.isLoggedIn = token !== null && atob(token) !== '0+GUESS';
-		this.isAdmin = token !== null && atob(token).substring(atob(token).indexOf('+') + 1) === 'ADMIN';
+		this.isLoggedIn = this.tokenService.isLoggedIn();
+		this.isAdmin = this.tokenService.isAdmin();
 		if (!this.isLoggedIn) {
 			this.router.navigate(['/shop']);
 		}
