@@ -8,7 +8,16 @@ const GUEST_TOKEN = '0+GUESS';
 export class TokenService {
 	private decode(): string {
 		const token = localStorage.getItem('token');
-		return token === null ? '' : atob(token);
+		if (token === null) {
+			return '';
+		}
+		try {
+			return atob(token);
+		} catch {
+			// Tampered or legacy junk in storage must read as guest, not crash
+			// ngOnInit and take the whole app down.
+			return '';
+		}
 	}
 
 	userId(): number {
