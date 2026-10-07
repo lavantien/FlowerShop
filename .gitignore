@@ -4,6 +4,7 @@ src/main/resources/public/
 frontend/node/
 /node_modules/
 scripts/screenshots/node_modules/
+.tools/
 
 ### STS ###
 .apt_generated

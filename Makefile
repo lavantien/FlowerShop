@@ -22,7 +22,7 @@ export LOCAL_MYSQL_DB_USERNAME := $(DB_USER)
 export LOCAL_MYSQL_DB_PASSWORD := $(DB_PASS)
 
 .DEFAULT_GOAL := help
-.PHONY: help env db-up db-down db-nuke db-seed db-hash frontend-install frontend-build frontend-lint frontend-test test-coverage frontend-serve backend-test build package run screenshots audit clean
+.PHONY: help env db-up db-down db-nuke db-seed db-hash frontend-install frontend-build frontend-lint frontend-test test-coverage frontend-serve backend-test build package run screenshots audit memguard clean
 
 # Set SKIP_DB_UP=1 when MySQL already runs elsewhere (CI service container);
 # every target below then skips its db-up prerequisite.
@@ -94,6 +94,9 @@ audit: ## npm audit, prod and dev, 0 vulnerabilities or fail
 	@$(NPM) audit --omit=dev --prefix $(FRONTEND)
 	@$(NPM) audit --prefix $(FRONTEND)
 	@$(NPM) audit --prefix scripts/screenshots
+
+memguard: ## enforce the 4 GB aggregated project-process cap, kill the largest offender on breach
+	@pwsh.exe -NoProfile -File scripts/tools/memguard.ps1
 
 clean: ## maven clean and drop node_modules
 	@$(MVNW) $(MVN_ARGS) clean
