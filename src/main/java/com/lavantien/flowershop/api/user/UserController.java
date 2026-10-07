@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Base64;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -36,6 +35,11 @@ public class UserController {
 	@RequireRole(Auth.ADMIN_TYPE)
 	@PostMapping
 	public ResponseEntity<List<User>> createMany(@RequestBody List<User> users) {
+		for (User user : users) {
+			if (emailInUse(user.getEmail())) {
+				return ResponseEntity.status(HttpStatus.CONFLICT).build();
+			}
+		}
 		for (User user : users) {
 			hashPassword(user);
 		}
@@ -67,6 +71,11 @@ public class UserController {
 
 	@PostMapping("/create")
 	public ResponseEntity<User> create(@RequestBody User user) {
+		if (emailInUse(user.getEmail())) {
+			// A duplicate row would break findByEmail for that address forever,
+			// so refuse instead of letting the unique index explode at runtime.
+			return ResponseEntity.status(HttpStatus.CONFLICT).build();
+		}
 		user.setType(User.USER_TYPE);
 		hashPassword(user);
 		return ResponseEntity.ok(userRepository.save(user));
@@ -113,8 +122,7 @@ public class UserController {
 			String password = decodedInfo.substring(index + 3);
 			User foundUser = userRepository.findByEmail(email);
 			if (foundUser != null && passwordService.matches(password, foundUser.getPassword())) {
-				markLoggedIn(foundUser);
-				tokenDto.setToken(userToken(foundUser));
+				tokenDto.setToken(userToken(foundUser, startSession(foundUser)));
 				tokenDto.setPhone(foundUser.getPhone());
 				tokenDto.setDetailAddress(foundUser.getAddress() + ", " + foundUser.getDistrict() + ", " + foundUser.getCity());
 			}
@@ -124,9 +132,11 @@ public class UserController {
 
 	@PostMapping("/logout")
 	public ResponseEntity<TokenDto> doLogout(@RequestBody TokenDto tokenDto) {
-		Long id = parseUserId(decodeBase64(tokenDto.getToken()));
-		if (id != null) {
-			userService.loggedInIds.remove(id);
+		try {
+			Auth.Session session = Auth.parseSession(tokenDto.getToken());
+			userService.logout(session.id(), session.secret());
+		} catch (RuntimeException malformed) {
+			// garbage or secret-less tokens must not end anybody's session
 		}
 		return ResponseEntity.ok(guestDto());
 	}
@@ -134,15 +144,18 @@ public class UserController {
 	@PostMapping("/resetPassword")
 	public ResponseEntity<TokenDto> doResetPassword(@RequestBody ForgotDto forgotDto) {
 		User foundUser = userRepository.findByEmail(forgotDto.getEmail());
+		// A null or blank stored answer must never match: equals(null, null)
+		// would hand the account to anyone who simply omits the field.
 		boolean answerMatches = foundUser != null && forgotDto.getPassword() != null
-			&& Objects.equals(foundUser.getAnswer(), forgotDto.getAnswer());
+			&& foundUser.getAnswer() != null && !foundUser.getAnswer().isBlank()
+			&& foundUser.getAnswer().equals(forgotDto.getAnswer());
 		if (!answerMatches) {
 			return ResponseEntity.ok(guestDto());
 		}
 		foundUser.setPassword(passwordService.hash(forgotDto.getPassword()));
 		userRepository.save(foundUser);
-		markLoggedIn(foundUser);
-		return ResponseEntity.ok(new TokenDto(userToken(foundUser), foundUser.getPhone(), foundUser.getAddress() + ", " + foundUser.getDistrict() + ", " + foundUser.getCity()));
+		return ResponseEntity.ok(new TokenDto(userToken(foundUser, startSession(foundUser)), foundUser.getPhone(),
+			foundUser.getAddress() + ", " + foundUser.getDistrict() + ", " + foundUser.getCity()));
 	}
 
 	private void hashPassword(User user) {
@@ -151,14 +164,16 @@ public class UserController {
 		}
 	}
 
-	private void markLoggedIn(User user) {
-		if (!userService.loggedInIds.contains(user.getId())) {
-			userService.loggedInIds.add(user.getId());
-		}
+	private String startSession(User user) {
+		return userService.login(user.getId());
 	}
 
-	private static String userToken(User user) {
-		return Base64.getEncoder().encodeToString((user.getId() + "+" + user.getType()).getBytes());
+	private boolean emailInUse(String email) {
+		return email != null && userRepository.findByEmail(email) != null;
+	}
+
+	private static String userToken(User user, String secret) {
+		return Base64.getEncoder().encodeToString((user.getId() + "+" + user.getType() + "+" + secret).getBytes());
 	}
 
 	private static TokenDto guestDto() {
@@ -176,18 +191,6 @@ public class UserController {
 		try {
 			return new String(Base64.getDecoder().decode(raw));
 		} catch (IllegalArgumentException e) {
-			return null;
-		}
-	}
-
-	private static Long parseUserId(String decoded) {
-		int index = decoded == null ? -1 : decoded.indexOf("+");
-		if (index <= 0) {
-			return null;
-		}
-		try {
-			return Long.parseLong(decoded.substring(0, index));
-		} catch (NumberFormatException e) {
 			return null;
 		}
 	}

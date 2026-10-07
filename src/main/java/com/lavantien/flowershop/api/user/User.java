@@ -1,6 +1,7 @@
 package com.lavantien.flowershop.api.user;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,6 +17,7 @@ public class User {
 	private String name;
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	private String password;
+	@Column(unique = true)
 	private String email;
 	private String phone;
 	private String address;
