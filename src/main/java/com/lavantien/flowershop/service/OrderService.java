@@ -294,8 +294,15 @@ public class OrderService {
 
 	private Branch resolveBranch(CheckoutRequest request, GeoService.Point target) {
 		if (request.branchId() != null) {
-			return branchRepository.findById(request.branchId())
+			Branch branch = branchRepository.findById(request.branchId())
 				.orElseThrow(() -> new NotFoundException("no branch with id " + request.branchId()));
+			// An inactive or coordinate-less branch cannot fulfill anything;
+			// both would either strand the order or die on the distance math.
+			if (!Boolean.TRUE.equals(branch.getActive()) || branch.getLat() == null || branch.getLng() == null) {
+				throw new NotFoundException("no active branch with id " + request.branchId()
+					+ " and coordinates to fulfill the order");
+			}
+			return branch;
 		}
 		Branch nearest = geoService.nearestBranch(branchRepository.findAll(), target);
 		if (nearest == null) {

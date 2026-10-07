@@ -6,6 +6,8 @@ import com.lavantien.flowershop.api.product.ProductRepository;
 import com.lavantien.flowershop.api.security.RequireRole;
 import com.lavantien.flowershop.api.user.Role;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -21,10 +23,13 @@ import java.util.Map;
 @RequestMapping("/api/branch")
 public class BranchController {
 	// The Size ceilings mirror the 255-wide columns so a wide string fails
-	// validation instead of blowing up at the database.
+	// validation instead of blowing up at the database. Coordinates are
+	// required and bounded: every branch must be resolvable on the map, and a
+	// maintenance body that omitted them would wipe the stored pair.
 	public record BranchInput(@NotBlank @Size(max = 255) String name, @Size(max = 255) String address,
 		@Size(max = 255) String district, @Size(max = 255) String city,
-		Double lat, Double lng, Boolean active) {
+		@NotNull @DecimalMin("-90.0") @DecimalMax("90.0") Double lat,
+		@NotNull @DecimalMin("-180.0") @DecimalMax("180.0") Double lng, Boolean active) {
 
 		Branch toBranch() {
 			Branch branch = new Branch();

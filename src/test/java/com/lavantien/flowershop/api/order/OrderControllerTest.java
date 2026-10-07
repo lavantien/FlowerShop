@@ -61,6 +61,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -504,6 +505,59 @@ class OrderControllerTest {
 					"""))
 			.andExpect(status().isNotFound())
 			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
+	}
+
+	@Test
+	void checkoutRefusesAnExplicitlyInactiveBranch() throws Exception {
+		stubHappyCheckout();
+		Branch inactive = branch(3, "Binh Thanh Hub");
+		inactive.setActive(false);
+		when(branchRepository.findById(3L)).thenReturn(Optional.of(inactive));
+
+		mockMvc.perform(post("/api/order").header("X-Auth-Token", tokenOf(4, Role.USER))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+						"items": [{"productId": 1, "quantity": 1}],
+						"phone": "0900000001",
+						"address": "01 Demo Lane",
+						"district": "Quận 1",
+						"city": "Hồ Chí Minh",
+						"branchId": 3
+					}
+					"""))
+			.andExpect(status().isNotFound())
+			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"))
+			.andExpect(jsonPath("$.detail").value(containsString("no active branch")));
+
+		verify(orderRepository, never()).save(any(Order.class));
+	}
+
+	@Test
+	void checkoutRefusesALegacyCoordinateLessBranchInsteadOfA500() throws Exception {
+		stubHappyCheckout();
+		Branch legacy = branch(3, "Binh Thanh Hub");
+		legacy.setLat(null);
+		when(branchRepository.findById(3L)).thenReturn(Optional.of(legacy));
+
+		mockMvc.perform(post("/api/order").header("X-Auth-Token", tokenOf(4, Role.USER))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+						"items": [{"productId": 1, "quantity": 1}],
+						"phone": "0900000001",
+						"address": "01 Demo Lane",
+						"district": "Quận 1",
+						"city": "Hồ Chí Minh",
+						"branchId": 3
+					}
+					"""))
+			.andExpect(status().isNotFound())
+			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
+
+		verify(orderRepository, never()).save(any(Order.class));
 	}
 
 	@Test

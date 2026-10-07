@@ -131,9 +131,39 @@ class BranchControllerTest {
 
 		mockMvc.perform(post("/api/branch").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"name\":\"Closed Hub\",\"active\":false}"))
+				.content("{\"name\":\"Closed Hub\",\"lat\":10.7980,\"lng\":106.7105,\"active\":false}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.active").value(false));
+	}
+
+	@Test
+	void createRejectsABodyWithoutCoordinates() throws Exception {
+		mockMvc.perform(post("/api/branch").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Lost Hub\",\"address\":\"01 Nowhere\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("VALIDATION"))
+			.andExpect(jsonPath("$.errors.lat").value("must not be null"))
+			.andExpect(jsonPath("$.errors.lng").value("must not be null"));
+
+		verify(branchRepository, never()).save(any(Branch.class));
+	}
+
+	@Test
+	void createRejectsCoordinatesOutsideTheGlobe() throws Exception {
+		mockMvc.perform(post("/api/branch").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Orbit Hub\",\"lat\":90.5,\"lng\":106.7105}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors.lat").value("must be less than or equal to 90.0"));
+
+		mockMvc.perform(post("/api/branch").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Orbit Hub\",\"lat\":10.7980,\"lng\":-180.5}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors.lng").value("must be greater than or equal to -180.0"));
+
+		verify(branchRepository, never()).save(any(Branch.class));
 	}
 
 	@Test
@@ -165,7 +195,7 @@ class BranchControllerTest {
 
 		mockMvc.perform(put("/api/branch/3").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"name\":\"Renamed Hub\"}"))
+				.content("{\"name\":\"Renamed Hub\",\"lat\":10.7990,\"lng\":106.7115}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.name").value("Renamed Hub"));
 
@@ -175,12 +205,28 @@ class BranchControllerTest {
 	}
 
 	@Test
+	void updateRejectsABodyThatOmitsCoordinatesInsteadOfWipingThem() throws Exception {
+		when(branchRepository.findById(3L)).thenReturn(Optional.of(binhThanh()));
+
+		mockMvc.perform(put("/api/branch/3").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Renamed Hub\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("VALIDATION"))
+			.andExpect(jsonPath("$.errors.lat").value("must not be null"))
+			.andExpect(jsonPath("$.errors.lng").value("must not be null"));
+
+		ArgumentCaptor<Branch> saved = ArgumentCaptor.forClass(Branch.class);
+		verify(branchRepository, never()).save(saved.capture());
+	}
+
+	@Test
 	void updateAnswers404ForAMissingBranch() throws Exception {
 		when(branchRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(put("/api/branch/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"name\":\"Ghost Hub\"}"))
+				.content("{\"name\":\"Ghost Hub\",\"lat\":10.7980,\"lng\":106.7105}"))
 			.andExpect(status().isNotFound())
 			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
 	}
