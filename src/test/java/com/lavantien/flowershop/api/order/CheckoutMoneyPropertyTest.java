@@ -155,16 +155,16 @@ class CheckoutMoneyPropertyTest {
 			long fee = order.getDeliveryFee().longValueExact();
 			long discount = order.getDiscountAmount().longValueExact();
 			long expectedDiscount = couponCode == null ? 0
-				: coupon.getKind() == CouponKind.PERCENT
+				: Math.min(coupon.getKind() == CouponKind.PERCENT
 					? toStep(Math.min((subtotal * percent + 99) / 100, subtotal))
-					: toStep(Math.min(fixed, subtotal));
+					: toStep(Math.min(fixed, subtotal)), subtotal);
 
 			assertTrue(fee >= 20000 && fee <= 200000, "fee " + fee + " left the canonical band");
 			assertEquals(0, fee % 1000, "fee " + fee + " is not a whole step");
 			assertEquals(expectedDiscount, discount, "discount drift at subtotal " + subtotal);
-			// discountOn clamps at the subtotal before the step rounding, which
-			// may then overshoot it by at most half a step.
-			assertTrue(discount >= 0 && discount <= subtotal + 500,
+			// The checkout clamps the step-rounded discount back to the
+			// subtotal, so the strict bound always holds.
+			assertTrue(discount >= 0 && discount <= subtotal,
 				"discount " + discount + " broke its bounds against subtotal " + subtotal);
 			assertEquals(subtotal - discount + fee, order.getTotal().longValueExact(),
 				"total is not subtotal minus discount plus fee");

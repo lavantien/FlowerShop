@@ -109,12 +109,14 @@ public class OrderService {
 		}
 
 		// The coupon rules are exactly the validate endpoint's; the discount
-		// then lands on the money step every computed amount rounds to.
+		// then lands on the money step every computed amount rounds to, clamped
+		// again after rounding so a sub-step subtotal never pays a step-rounded
+		// discount larger than itself.
 		String couponCode = blankToNull(request.couponCode());
 		BigDecimal discountAmount = BigDecimal.ZERO;
 		if (couponCode != null) {
 			Coupon coupon = couponService.resolve(couponCode);
-			discountAmount = properties.delivery().round(coupon.discountOn(subtotal));
+			discountAmount = properties.delivery().round(coupon.discountOn(subtotal)).min(subtotal);
 		}
 		BigDecimal total = subtotal.subtract(discountAmount).add(deliveryFee);
 		Order order = new Order(userId, request.phone(), request.address(), request.district(), request.city(),
