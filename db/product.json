@@ -3,790 +3,711 @@
 		"id": 1,
 		"categoryName": "FLOWERS",
 		"description": "With its feminine feel and European charm, this alluring glass cube is the perfect Mother's Day surprise! It's carefully hand-decorated and filled with a fresh bouquet of daisies and roses.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMThNNDAwQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1QxOE00MDBDL1RlbGVmbG9yYSdzV2lsZGZsb3dlckluRmxpZ2h0Qm91cXVldFBN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T18M400C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T18M400C/Teleflora'sWildflowerInFlightBouquetPM",
 		"name": "Wildflower In Flight Bouquet",
-		"price": 59.99,
-		"typeName": "ROSES",
-		"quantity": 10
+		"price": 1380000,
+		"typeName": "ROSES"
 	},
 	{
 		"id": 2,
 		"categoryName": "FLOWERS",
 		"description": "The shimmering, iridescent aqua blue glass of this stunning cylinder vase is the perfect partner for a fresh, fabulous bouquet of lavender roses, alstroemeria and tulips!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTlFMzAwQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1QxOUUzMDBDL1RlbGVmbG9yYSdzQXJ0R2xhc3NHYXJkZW5Cb3VxdWV0UE0=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T19E300C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T19E300C/Teleflora'sArtGlassGardenBouquetPM",
 		"name": "Art Glass Garden Bouquet",
-		"price": 69.99,
-		"typeName": "ROSES",
-		"quantity": 10
+		"price": 1610000,
+		"typeName": "ROSES"
 	},
 	{
 		"id": 3,
 		"categoryName": "FLOWERS",
 		"description": "A truly breathtaking tribute to your love, this romantic arrangement bursts with a dozen and a half red and white roses, nestled among delicate greens.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUUlMxMC0xQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RSUzEwLTFDL1lvdXJzVHJ1bHlCb3VxdWV0UE0=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TRS10-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TRS10-1C/YoursTrulyBouquetPM",
 		"name": "Yours Truly Bouquet",
-		"price": 154.99,
-		"typeName": "ROSES",
-		"quantity": 10
+		"price": 3565000,
+		"typeName": "ROSES"
 	},
 	{
 		"id": 4,
 		"categoryName": "FLOWERS",
 		"description": "Just fabulous! From its perky pink cube and perfect pink roses, to its textural greens and dramatic pink lilies, this chic bouquet is flora at its finest!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUTFIwOS0xQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RMUjA5LTFDL1RlbGVmbG9yYSdzRmFidWxvdXNGbG9yYUJvdXF1ZXRQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TLR09-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TLR09-1C/Teleflora'sFabulousFloraBouquetPM",
 		"name": "Fabulous Flora Bouquet",
-		"price": 69.99,
-		"typeName": "ROSES",
-		"quantity": 10
+		"price": 1610000,
+		"typeName": "ROSES"
 	},
 	{
 		"id": 5,
 		"categoryName": "FLOWERS",
 		"description": "Timeless and touching, this serenely beautiful bouquet of peach and white blooms is perfectly presented in a classic mercury glass hurricane. Two gifts in one, it later transforms into a shimmering candleholder.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUTFIwOC0xQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RMUjA4LTFDL1RlbGVmbG9yYSdzRW5kbGVzc0xvdmVsaWVzQm91cXVldFBN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TLR08-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TLR08-1C/Teleflora'sEndlessLoveliesBouquetPM",
 		"name": "Endless Lovelies Bouquet",
-		"price": 79.99,
-		"typeName": "ROSES",
-		"quantity": 10
+		"price": 1840000,
+		"typeName": "ROSES"
 	},
 	{
 		"id": 6,
 		"categoryName": "FLOWERS",
 		"description": "A punch of sunset-inspired color, this bold, beautiful blend of hot pink roses and orange lilies in a classic glass vase will brighten any day!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpURVY1Ni0yQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RFVjU2LTJDL1B1bmNoT2ZDb2xvckJvdXF1ZXRQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TEV56-2C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TEV56-2C/PunchOfColorBouquetPM",
 		"name": "Punch Of Color Bouquet",
-		"price": 99.99,
-		"typeName": "ROSES",
-		"quantity": 10
+		"price": 2300000,
+		"typeName": "ROSES"
 	},
 	{
 		"id": 7,
 		"categoryName": "FLOWERS",
 		"description": "Send that special someone on a trip to paradise, no plane tickets required! This magical mix of luxurious pink, yellow and green blooms bursts with color, texture and personality. It's a tropical treat they'll never forget!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUU0QwMS0xQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RTRDAxLTFDL1ByZXR0eVBhcmFkaXNlQm91cXVldFBN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TSD01-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TSD01-1C/PrettyParadiseBouquetPM",
 		"name": "Pretty Paradise Bouquet",
-		"price": 254.99,
-		"typeName": "ROSES",
-		"quantity": 10
+		"price": 5865000,
+		"typeName": "ROSES"
 	},
 	{
 		"id": 8,
 		"categoryName": "FLOWERS",
 		"description": "Pure joy! Two dozen wondrous white roses take center stage in this chic bouquet, delivered with stylish greens in a classic urn vase.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUUlMxMS0xQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RSUzExLTFDL0pveU9mUm9zZXNCb3VxdWV0UE0=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TRS11-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TRS11-1C/JoyOfRosesBouquetPM",
 		"name": "Joy Of Roses Bouquet",
-		"price": 124.99,
-		"typeName": "ROSES",
-		"quantity": 10
+		"price": 2875000,
+		"typeName": "ROSES"
 	},
 	{
 		"id": 9,
 		"categoryName": "FLOWERS",
 		"description": "Luxuriate in the natural, intoxicating beauty of this chic arrangement. Inspired by a wild garden, this composition of whisper-peach roses, white lilies and moody purple hydrangea is beautifully presented in a modern ceramic planter.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpURVY1Ni04QyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RFVjU2LThDL0ludG94aWNhdGluZ0JlYXV0eUJvdXF1ZXRQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TEV56-8C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TEV56-8C/IntoxicatingBeautyBouquetPM",
 		"name": "Intoxicating Beauty Bouquet",
-		"price": 274.99,
-		"typeName": "ROSES",
-		"quantity": 10
+		"price": 6325000,
+		"typeName": "ROSES"
 	},
 	{
 		"id": 10,
 		"categoryName": "FLOWERS",
 		"description": "Elegant and emotional, this touching arrangement of rich red roses with delicate greens surrounds a peaceful porcelain angel sculpture keepsake.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMjgwLTJDLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDI4MC0yQy9Gb3JldmVyT3VyQW5nZWxCb3VxdWV0YnlUZWxlZmxvcmFQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T280-2C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T280-2C/ForeverOurAngelBouquetbyTelefloraPM",
 		"name": "Forever Our Angel Bouquet by Teleflora",
-		"price": 129.99,
-		"typeName": "ROSES",
-		"quantity": 10
+		"price": 2990000,
+		"typeName": "ROSES"
 	},
 	{
 		"id": 11,
 		"categoryName": "FLOWERS",
 		"description": "Bold and beautiful! This gorgeous jewel-toned arrangement is a stunning statement of devotion, wrapped with leaves for a stylish, modern touch.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpURVY1NS00QyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RFVjU1LTRDL1RlbGVmbG9yYSdzVml2aWRMb3ZlQm91cXVldFBN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TEV55-4C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TEV55-4C/Teleflora'sVividLoveBouquetPM",
 		"name": "Vivid Love Bouquet",
-		"price": 59.99,
-		"typeName": "CARNATIONS",
-		"quantity": 10
+		"price": 1380000,
+		"typeName": "CARNATIONS"
 	},
 	{
 		"id": 12,
 		"categoryName": "FLOWERS",
 		"description": "Artistry, indeed. Looking more like modern sculpture than a floral arrangement, this striking bouquet surprises with delicate purple orchids, mini bamboo and a colorful mix of blooms - sure to improve any room's feng shui.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUODEtMUMscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UODEtMUMvWmVuQXJ0aXN0cnlQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T81-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T81-1C/ZenArtistryPM",
 		"name": "Zen Artistry",
-		"price": 69.99,
-		"typeName": "CARNATIONS",
-		"quantity": 10
+		"price": 1610000,
+		"typeName": "CARNATIONS"
 	},
 	{
 		"id": 13,
 		"categoryName": "FLOWERS",
 		"description": "Beep, beep! Say \"Happy Birthday,\" \"Happy Father's Day,\" or \"Keep on Truckin'!\" to your favorite car buff with this whimsical bouquet, arranged in a reusable keepsake that will look great on his desk for years to come.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMjUtMUMscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UMjUtMUMvVGVsZWZsb3JhJ3MnNDhGb3JkUGlja3VwQm91cXVldFBN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T25-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T25-1C/Teleflora's'48FordPickupBouquetPM",
 		"name": "'48 Ford Pickup Bouquet",
-		"price": 74.99,
-		"typeName": "CARNATIONS",
-		"quantity": 10
+		"price": 1725000,
+		"typeName": "CARNATIONS"
 	},
 	{
 		"id": 14,
 		"categoryName": "FLOWERS",
 		"description": "Make a wish! Instead of a calorie-packed cake, send the birthday star a birthday cake of flowers. This unique arrangement features happy shades of pink, purple and white. And no birthday cake's complete without candles!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTYtM0MscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UMTYtM0MvWW91clNwZWNpYWxEYXlQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T16-3C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T16-3C/YourSpecialDayPM",
 		"name": "Your Special Day",
-		"price": 84.99,
-		"typeName": "CARNATIONS",
-		"quantity": 10
+		"price": 1955000,
+		"typeName": "CARNATIONS"
 	},
 	{
 		"id": 15,
 		"categoryName": "FLOWERS",
 		"description": "Send someone this soulful floral gift and there'll be no mistaking that you're giving them your heart! A heart made entirely of red roses is nestled in a cloud of baby's breath and ferns and presented in a tall red vase adorned with a pretty ribbon.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTFaMTAyQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1QxMVoxMDJDL0hlYXJ0YW5kU291bFBN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T11Z102C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T11Z102C/HeartandSoulPM",
 		"name": "Heart and Soul",
-		"price": 99.99,
-		"typeName": "CARNATIONS",
-		"quantity": 10
+		"price": 2300000,
+		"typeName": "CARNATIONS"
 	},
 	{
 		"id": 16,
 		"categoryName": "FLOWERS",
 		"description": "Brighten any day with blushing blooms, cheerfully presented in a turquoise glass vase they'll enjoy for years to come!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUU1AwMS0xQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RTUDAxLTFDL1RlbGVmbG9yYSdzUHJldHR5QW5kUG9zaEJvdXF1ZXRQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TSP01-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TSP01-1C/Teleflora'sPrettyAndPoshBouquetPM",
 		"name": "Pretty And Posh Bouquet",
-		"price": 79.99,
-		"typeName": "LILIES",
-		"quantity": 10
+		"price": 1840000,
+		"typeName": "LILIES"
 	},
 	{
 		"id": 17,
 		"categoryName": "FLOWERS",
 		"description": "As hopeful as the bright horizon ahead, this glorious white bouquet of hydrangea, roses, lilies and snapdragons is a peaceful tribute to a truly beloved.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMjgxLTRDLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDI4MS00Qy9UZWxlZmxvcmEnc1RydWVIb3Jpem9uQm91cXVldFBN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T281-4C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T281-4C/Teleflora'sTrueHorizonBouquetPM",
 		"name": "True Horizon Bouquet",
-		"price": 224.99,
-		"typeName": "LILIES",
-		"quantity": 10
+		"price": 5175000,
+		"typeName": "LILIES"
 	},
 	{
 		"id": 18,
 		"categoryName": "FLOWERS",
 		"description": "A radiant celebration of faith, this bright bouquet of cheerful orange and pink blooms surrounds a reverent crystal cross keepsake. A precious addition to any special occasion.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpURVY1Ny0xQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RFVjU3LTFDL1RlbGVmbG9yYSdzUHJlY2lvdXNQZXRhbHNCb3VxdWV0UE0=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TEV57-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TEV57-1C/Teleflora'sPreciousPetalsBouquetPM",
 		"name": "Precious Petals Bouquet",
-		"price": 89.99,
-		"typeName": "LILIES",
-		"quantity": 10
+		"price": 2070000,
+		"typeName": "LILIES"
 	},
 	{
 		"id": 19,
 		"categoryName": "FLOWERS",
 		"description": "When you want to dazzle them, send this majestic purple orchid! Nestled in a bed of moss, the glorious living phalaenopsis plant looks lovely in this bubble-textured pink glass vase with glamorous metallic finish.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTlTMTEwQSxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1QxOVMxMTBBL1RlbGVmbG9yYSdzRGF6emxpbmdPcmNoaWQ=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T19S110A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T19S110A/Teleflora'sDazzlingOrchid",
 		"name": "Dazzling Orchid",
-		"price": 69.99,
-		"typeName": "ORCHIDS",
-		"quantity": 10
+		"price": 1610000,
+		"typeName": "ORCHIDS"
 	},
 	{
 		"id": 20,
 		"categoryName": "FLOWERS",
 		"description": "A duet of phalaenopsis orchids dance gracefully upward from a bed of natural seed gravel and moss. Presented in a serenely beautiful decorative planter, these tropical houseplants can thrive for years in the right conditions.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUOTktMUEscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UOTktMUEvRGl2aW5lT3JjaGlk",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T99-1A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T99-1A/DivineOrchid",
 		"name": "Divine Orchid",
-		"price": 99.99,
-		"typeName": "ORCHIDS",
-		"quantity": 10
+		"price": 2300000,
+		"typeName": "ORCHIDS"
 	},
 	{
 		"id": 21,
 		"categoryName": "FLOWERS",
 		"description": "Unusual elements including pink ginger, green artichoke, river cane and green anthuriums make this Asian-inspired arrangement especially eye-catching. The tall, serene sculpture is presented in a dark wooden box for a very Zen effect.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUODItMUEscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UODItMUEvTm93YW5kWmVu",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T82-1A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T82-1A/NowandZen",
 		"name": "Now and Zen",
-		"price": 169.99,
-		"typeName": "ORCHIDS",
-		"quantity": 10
+		"price": 3910000,
+		"typeName": "ORCHIDS"
 	},
 	{
 		"id": 23,
 		"categoryName": "FLOWERS",
 		"description": "Three cheers for sunny yellow! A happy pick for men and women, old and young, this sweet, summery arrangement of yellow and white flowers is delivered in our signature Sunny Day Pitcher!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUNTctMUIscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UNTctMUIvVGVsZWZsb3JhJ3NTdW5ueURheVBpdGNoZXJvZkNoZWVyRFg=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T57-1B,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T57-1B/Teleflora'sSunnyDayPitcherofCheerDX",
 		"name": "Sunny Day Pitcher of Cheer",
-		"price": 84.99,
-		"typeName": "DAISIES",
-		"quantity": 10
+		"price": 1955000,
+		"typeName": "DAISIES"
 	},
 	{
 		"id": 24,
 		"categoryName": "FLOWERS",
 		"description": "Yellow daisies in a terra-cotta pot. Does it get any sweeter than that? Send sunshine someone's way with this long-lasting gift of a yellow chrysanthemum plant.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUOTUtMUEscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UOTUtMUEvU3dlZXRhc2FEYWlzeQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T95-1A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T95-1A/SweetasaDaisy",
 		"name": "Sweet as a Daisy",
-		"price": 29.99,
-		"typeName": "DAISIES",
-		"quantity": 10
+		"price": 690000,
+		"typeName": "DAISIES"
 	},
 	{
 		"id": 25,
 		"categoryName": "FLOWERS",
 		"description": "Wish the little lucky duck the warmest of welcomes with this classic keepsake! Bursting with yellow and blue blooms, this delightful ceramic duck container with a cute sailor's cap.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUTkIwOS0xQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1ROQjA5LTFDL1RlbGVmbG9yYSdzTHVja3lEdWNreUJvdXF1ZXRQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TNB09-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TNB09-1C/Teleflora'sLuckyDuckyBouquetPM",
 		"name": "Lucky Ducky Bouquet",
-		"price": 79.99,
-		"typeName": "DAISIES",
-		"quantity": 10
+		"price": 1840000,
+		"typeName": "DAISIES"
 	},
 	{
 		"id": 26,
 		"categoryName": "FLOWERS",
 		"description": "This magnificent arrangement of golden sunflowers and orange roses, presented in a hand-blown art glass vase, brings the beauty of an ocean sunset to any occasion.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpURVY1Ny01QyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RFVjU3LTVDL1RlbGVmbG9yYSdzU3VuZmxvd2VyQmVhdXR5Qm91cXVldFBN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TEV57-5C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TEV57-5C/Teleflora'sSunflowerBeautyBouquetPM",
 		"name": "Sunflower Beauty Bouquet",
-		"price": 114.99,
-		"typeName": "SUNFLOWERS",
-		"quantity": 10
+		"price": 2645000,
+		"typeName": "SUNFLOWERS"
 	},
 	{
 		"id": 27,
 		"categoryName": "FLOWERS",
 		"description": "A sunny sunflower bouquet gets an autumnal spin with the addition of pretty bronze daisy mums and rich red roses. The cheerful autumn floral arrangement is rich with color, making it a stylish.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTcxLTFDLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDE3MS0xQy9QdXJlSGFwcGluZXNzUE0=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T171-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T171-1C/PureHappinessPM",
 		"name": "Pure Happiness",
-		"price": 89.99,
-		"typeName": "SUNFLOWERS",
-		"quantity": 10
+		"price": 2070000,
+		"typeName": "SUNFLOWERS"
 	},
 	{
 		"id": 28,
 		"categoryName": "FLOWERS",
 		"description": "Send this colorful gift basket of flowers to your favorite garden lover or flower-loving grandmother. Like a miniature summer garden, the fresh cut flowers will brighten her kitchen counter, bedside table, coffee table.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTUyLTNBX0VOVixwZ182L3dfMTAwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UMTUyLTNBX0VOVi9QaWNuaWNpbnRoZVBhcms=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T152-3A_ENV,pg_6/w_1000,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T152-3A_ENV/PicnicinthePark",
 		"name": "Picnic in the Park",
-		"price": 89.99,
-		"typeName": "SUNFLOWERS",
-		"quantity": 10
+		"price": 2070000,
+		"typeName": "SUNFLOWERS"
 	},
 	{
 		"id": 29,
 		"categoryName": "FLOWERS",
 		"description": "Express your love with the eloquence of Shakespeare - without saying a word. She'll adore this exquisite bouquet of roses and lilies and other pastel favorites in a classic ginger vase.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUNTUtMkMscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UNTUtMkMvQXJyaXZlSW5TdHlsZVBN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T55-2C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T55-2C/ArriveInStylePM",
 		"name": "Arrive In Style",
-		"price": 59.99,
-		"typeName": "ALSTROEMERIA",
-		"quantity": 10
+		"price": 1380000,
+		"typeName": "ALSTROEMERIA"
 	},
 	{
 		"id": 30,
 		"categoryName": "FLOWERS",
 		"description": "Send good feng shui someone's way with this striking arrangement. Orange flowers, gorgeous green ti leaves and small bamboo-like canes are arranged in a balanced, Zen-like composition.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUNzctMUMscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UNzctMUMvVGVsZWZsb3JhJ3NFeG90aWNHcmFjZVBN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T77-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T77-1C/Teleflora'sExoticGracePM",
 		"name": "Exotic Grace",
-		"price": 89.99,
-		"typeName": "ALSTROEMERIA",
-		"quantity": 10
+		"price": 2070000,
+		"typeName": "ALSTROEMERIA"
 	},
 	{
 		"id": 31,
 		"categoryName": "FLOWERS",
 		"description": "True romance! Express your love with this gorgeous flower arrangement, bursting with romantic flowers in passionate shades of red, purple and pink. Your beloved recipient is sure to fall in love with it - and you!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTczLTJDLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDE3My0yQy9UZWxlZmxvcmEnc0ZhbGxpbkxvdmVQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T173-2C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T173-2C/Teleflora'sFallinLovePM",
 		"name": "Fall in Love",
-		"price": 59.99,
-		"typeName": "ALSTROEMERIA",
-		"quantity": 10
+		"price": 1380000,
+		"typeName": "ALSTROEMERIA"
 	},
 	{
 		"id": 32,
 		"categoryName": "FLOWERS",
 		"description": "This sweet bouquet includes a vast array of green miniature hydrangea and light pink spray roses arranged in our citrus green glass cube.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpURVYyMC0zQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RFVjIwLTNDL01ha2VIZXJEYXlieVRlbGVmbG9yYVBN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TEV20-3C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TEV20-3C/MakeHerDaybyTelefloraPM",
 		"name": "Make Her Day",
-		"price": 79.99,
-		"typeName": "ASTERS",
-		"quantity": 10
+		"price": 1840000,
+		"typeName": "ASTERS"
 	},
 	{
 		"id": 33,
 		"categoryName": "FLOWERS",
 		"description": "Get a handle on spring with this delightful array of floral favorites in a charming white bamboo basket accented with lavender ribbon. Surprise someone who could use a lift. It will make you both happy.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTFaMTA1QyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1QxMVoxMDVDL0RhaXN5RGF5ZHJlYW1zUE0=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T11Z105C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T11Z105C/DaisyDaydreamsPM",
 		"name": "Daisy Daydreams",
-		"price": 59.99,
-		"typeName": "ASTERS",
-		"quantity": 10
+		"price": 1380000,
+		"typeName": "ASTERS"
 	},
 	{
 		"id": 34,
 		"categoryName": "FLOWERS",
 		"description": "A sweetly romantic birthday present or heartfelt gift for a friend, this delightful arrangement pampers her with soft lavenders, deep purples and pretty pinks - not to mention the modern glass cube vase she'll use again and again!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTYtMUEscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UMTYtMUEvSGVhcnQnc0RlbGlnaHRieVRlbGVmbG9yYQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T16-1A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T16-1A/Heart'sDelightbyTeleflora",
 		"name": "Heart's Delight",
-		"price": 74.99,
-		"typeName": "ASTERS",
-		"quantity": 10
+		"price": 1725000,
+		"typeName": "ASTERS"
 	},
 	{
 		"id": 35,
 		"categoryName": "FLOWERS",
 		"description": "A unique take on the traditional topiary, this modern arrangement of graceful calla lilies among tropical leaves is a grand gesture indeed. Presented in a natural bamboo dish, it's both soft and strong.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUNzgtMUEscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UNzgtMUEvVGVsZWZsb3JhJ3NHcmFuZEdlc3R1cmU=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T78-1A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T78-1A/Teleflora'sGrandGesture",
 		"name": "Grand Gesture",
-		"price": 109.99,
-		"typeName": "CALLA LILIES",
-		"quantity": 10
+		"price": 2530000,
+		"typeName": "CALLA LILIES"
 	},
 	{
 		"id": 36,
 		"categoryName": "FLOWERS",
 		"description": "Who's the fairest of them all? Elegant callas, without a doubt. The graceful white flowers are accented with Zen greenery in a tall glass vase for a modern, romantic arrangement.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUODMtMUIscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UODMtMUIvTXlGYWlyTGFkeWJ5VGVsZWZsb3JhRFg=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T83-1B,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T83-1B/MyFairLadybyTelefloraDX",
 		"name": "My Fair Lady",
-		"price": 174.99,
-		"typeName": "CALLA LILIES",
-		"quantity": 10
+		"price": 4025000,
+		"typeName": "CALLA LILIES"
 	},
 	{
 		"id": 37,
 		"categoryName": "FLOWERS",
 		"description": "As magical as a moondance. Gracefully arching callas are balanced by lush white hydrangea and exotic orchids in this gorgeous green and white arrangement. It makes a chic statement in a tall glass vase.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUNzktMUEscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UNzktMUEvTW9vbmRhbmNl",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T79-1A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T79-1A/Moondance",
 		"name": "Moondance",
-		"price": 164.99,
-		"typeName": "CALLA LILIES",
-		"quantity": 10
+		"price": 3795000,
+		"typeName": "CALLA LILIES"
 	},
 	{
 		"id": 38,
 		"categoryName": "FLOWERS",
 		"description": "Hitch your wagon to a star! This little red wagon is a flower arrangement and nursery decoration all in one. A top-selling baby gift, it's filled with bold blooms of red, yellow and white.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMzUtMUMscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UMzUtMUMvQmFieSdzV293V2Fnb25ieVRlbGVmbG9yYS1Cb3lQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T35-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T35-1C/Baby'sWowWagonbyTeleflora-BoyPM",
 		"name": "Baby's Wow Wagon",
-		"price": 74.99,
-		"typeName": "CHRYSANTHEMUMS",
-		"quantity": 10
+		"price": 1725000,
+		"typeName": "CHRYSANTHEMUMS"
 	},
 	{
 		"id": 39,
 		"categoryName": "FLOWERS",
 		"description": "Escape to tropical bliss with this stunning, sculptural presentation. Sun-kissed lilies, tropical red ti leaves and eye-catching red ginger are mixed with other colorful flowers and leaves in a decorative bamboo planter.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUODUtMUEscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UODUtMUEvVGVsZWZsb3JhJ3NUcm9waWNhbEJsaXNz",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T85-1A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T85-1A/Teleflora'sTropicalBliss",
 		"name": "Tropical Bliss",
-		"price": 109.99,
-		"typeName": "CHRYSANTHEMUMS",
-		"quantity": 10
+		"price": 2530000,
+		"typeName": "CHRYSANTHEMUMS"
 	},
 	{
 		"id": 40,
 		"categoryName": "FLOWERS",
 		"description": "Simply charming, this sweet lavender bouquet of asters and chrysanthemums is accented with our shimmering pink keepsake vase she'll always treasure.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpURVYzNC0xQixwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RFVjM0LTFCL1RlbGVmbG9yYSdzVGltZVRvZ2V0aGVyQm91cXVldERY",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TEV34-1B,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TEV34-1B/Teleflora'sTimeTogetherBouquetDX",
 		"name": "Time Together Bouquet",
-		"price": 59.99,
-		"typeName": "CHRYSANTHEMUMS",
-		"quantity": 10
+		"price": 1380000,
+		"typeName": "CHRYSANTHEMUMS"
 	},
 	{
 		"id": 41,
 		"categoryName": "FLOWERS",
 		"description": "Throwing a summer soiree at the Hamptons? Planning a wedding on the sand? Or perhaps you just want to send an ocean breeze someone's way. In any event, this tin pail of summer blooms is a beautiful, beachy choice.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTYyLTFCLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDE2Mi0xQi9CZWFjaHNpZGVCbGlzc0RY",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T162-1B,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T162-1B/BeachsideBlissDX",
 		"name": "Beachside Bliss",
-		"price": 104.99,
-		"typeName": "DAHLIAS",
-		"quantity": 10
+		"price": 2415000,
+		"typeName": "DAHLIAS"
 	},
 	{
 		"id": 42,
 		"categoryName": "FLOWERS",
 		"description": "It's elegant, chic, even stunning. But your guests will simply describe it as \"Wow!\" This luxuriously lush, incredibly stylish arrangement gathers orchids, roses, hydrangea, dahlias and cushion mums.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTcyLTFBLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDE3Mi0xQS9UZWxlZmxvcmEnc0x1c2hhbmRMb3ZlbHk=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T172-1A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T172-1A/Teleflora'sLushandLovely",
 		"name": "Lush and Lovely",
-		"price": 159.99,
-		"typeName": "DAHLIAS",
-		"quantity": 10
+		"price": 3680000,
+		"typeName": "DAHLIAS"
 	},
 	{
 		"id": 43,
 		"categoryName": "FLOWERS",
 		"description": "Feeling hot, hot, hot! This sizzling summer floral arrangement mixes hot pink dahlias and carnations with bright orange roses and lilies in an orange cube vase. It's the floral equivalent of a trip to Miami in July!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTU4LTFCLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDE1OC0xQi9UZWxlZmxvcmEnc1N1bW1lckNoaWNEWA==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T158-1B,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T158-1B/Teleflora'sSummerChicDX",
 		"name": "Summer Chic",
-		"price": 74.99,
-		"typeName": "DAHLIAS",
-		"quantity": 10
+		"price": 1725000,
+		"typeName": "DAHLIAS"
 	},
 	{
 		"id": 44,
 		"categoryName": "FLOWERS",
 		"description": "Having a beach wedding or beach themed celebration? This beautiful centerpiece captures the wonder and romance of the seaside, making it a perfect choice for beach wedding flowers.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTg0LTFBLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDE4NC0xQS9UZWxlZmxvcmEnc1NlYXNpZGVDZW50ZXJwaWVjZQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T184-1A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T184-1A/Teleflora'sSeasideCenterpiece",
 		"name": "Seaside Centerpiece",
-		"price": 99.99,
-		"typeName": "DELPHINIUMS",
-		"quantity": 10
+		"price": 2300000,
+		"typeName": "DELPHINIUMS"
 	},
 	{
 		"id": 45,
 		"categoryName": "FLOWERS",
 		"description": "He'll be building block towers soon enough! For now, celebrate him with this beautiful keepsake baby block. Filled with soft blues and whites, the glass block can be used later in baby's room.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMzQtMkMscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UMzQtMkMvQmFieSdzRmlyc3RCbG9ja2J5VGVsZWZsb3JhLUJsdWVQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T34-2C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T34-2C/Baby'sFirstBlockbyTeleflora-BluePM",
 		"name": "Baby's First Block",
-		"price": 74.99,
-		"typeName": "DELPHINIUMS",
-		"quantity": 10
+		"price": 1725000,
+		"typeName": "DELPHINIUMS"
 	},
 	{
 		"id": 46,
 		"categoryName": "FLOWERS",
 		"description": "Pop goes the pink! A gorgeously chic gift for any occasion, this perky pink and orange bouquet is pure fun, especially when it's hand-delivered in our fabulous fuchsia Cube!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpURVYzMy0xQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RFVjMzLTFDL1RlbGVmbG9yYSdzVHVyblVwVGhlUGlua0JvdXF1ZXRQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TEV33-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TEV33-1C/Teleflora'sTurnUpThePinkBouquetPM",
 		"name": "Turn Up The Pink Bouquet",
-		"price": 79.99,
-		"typeName": "GERBERAS",
-		"quantity": 10
+		"price": 1840000,
+		"typeName": "GERBERAS"
 	},
 	{
 		"id": 47,
 		"categoryName": "FLOWERS",
 		"description": "There's no mistaking this bouquet for anything but a Happy Birthday wish! With its colorful streamers and birthday candle design, this bright arrangement is perfect as a great party centerpiece.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMjgtMUMscGdfNi93XzM2OCxoXzQ2MCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1QyOC0xQy9UZWxlZmxvcmEnc0JyaWxsaWFudEJpcnRoZGF5Qmxvb21zUE0=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T28-1C,pg_6/w_368,h_460,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T28-1C/Teleflora'sBrilliantBirthdayBloomsPM",
 		"name": "Brilliant Birthday Blooms",
-		"price": 64.99,
-		"typeName": "GERBERAS",
-		"quantity": 10
+		"price": 1495000,
+		"typeName": "GERBERAS"
 	},
 	{
 		"id": 48,
 		"categoryName": "FLOWERS",
 		"description": "In living color! Send them a lovely, long-lasting gift with this potted red gerbera daisy plant. An exceptional value, the happy houseplant is presented in a red-glazed terra-cotta pot that can be used to brighten up.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUOTUtNUEscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UOTUtNUEvUmFpbmJvd1JheXNQb3R0ZWRHZXJiZXJhLVJlZA==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T95-5A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T95-5A/RainbowRaysPottedGerbera-Red",
 		"name": "Rainbow Rays Potted Gerbera",
-		"price": 29.99,
-		"typeName": "GERBERAS",
-		"quantity": 10
+		"price": 690000,
+		"typeName": "GERBERAS"
 	},
 	{
 		"id": 49,
 		"categoryName": "FLOWERS",
 		"description": "As lush and serene as a tropical sunset, this paradise of feminine blooms is a unique way to send your best wishes. The well-balanced arrangement is both chic and Zen, with its graceful callas.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUODEtM0EscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UODEtM0EvVGVsZWZsb3JhJ3NUaWNrZXR0b1BhcmFkaXNl",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T81-3A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T81-3A/Teleflora'sTickettoParadise",
 		"name": "Ticket to Paradise",
-		"price": 119.99,
-		"typeName": "HYDRANGEAS",
-		"quantity": 10
+		"price": 2760000,
+		"typeName": "HYDRANGEAS"
 	},
 	{
 		"id": 50,
 		"categoryName": "FLOWERS",
 		"description": "Have you ever seen a happier plant? The hydrangea's beautiful, billowing blooms are beloved by all. Send this 6-inch potted blue hydrangea plant as a housewarming gift or simply to brighten someone's day with a living gift.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUODktMkEscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UODktMkEvSGFwcHlIeWRyYW5nZWEtQmx1ZQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T89-2A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T89-2A/HappyHydrangea-Blue",
 		"name": "Happy Hydrangea",
-		"price": 69.99,
-		"typeName": "HYDRANGEAS",
-		"quantity": 10
+		"price": 1610000,
+		"typeName": "HYDRANGEAS"
 	},
 	{
 		"id": 51,
 		"categoryName": "FLOWERS",
 		"description": "What's more beachy than a bouquet that comes with a built-in beach? This delightful summer arrangement is delivered in an acrylic vase that has an invisible panel holding a beach scene of seashells.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTYzLTNBLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDE2My0zQS9FdmVyeXRoaW5nJ3NCZWFjaHlieVRlbGVmbG9yYQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T163-3A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T163-3A/Everything'sBeachybyTeleflora",
 		"name": "Everything's Beachy",
-		"price": 94.99,
-		"typeName": "HYDRANGEAS",
-		"quantity": 10
+		"price": 2185000,
+		"typeName": "HYDRANGEAS"
 	},
 	{
 		"id": 52,
 		"categoryName": "FLOWERS",
 		"description": "Roses and tulips and hyacinth - oh, my! All your spring favorites are here, whimsically arranged in a shallow terra-cotta pot in pretty pastel spring colors. The fun potted flower arrangement is a wonderful way to welcome a new baby.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTQ5LTFDLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDE0OS0xQy9TcHJpbmdGYXZvcml0ZXNQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T149-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T149-1C/SpringFavoritesPM",
 		"name": "Spring Favorites",
-		"price": 89.99,
-		"typeName": "IRISES",
-		"quantity": 10
+		"price": 2070000,
+		"typeName": "IRISES"
 	},
 	{
 		"id": 53,
 		"categoryName": "FLOWERS",
-		"description": "A fairy tale\u2026in flowers! Delicate ivy climbs the handle of this round wicker basket that's home to a feminine garden of fuchsia flowers. You can almost imagine garden sprites dancing through the country style arrangement!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTQ3LTNCLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDE0Ny0zQi9GYWlyZXN0b2ZBbGxEWA==",
+		"description": "A fairy tale…in flowers! Delicate ivy climbs the handle of this round wicker basket that's home to a feminine garden of fuchsia flowers. You can almost imagine garden sprites dancing through the country style arrangement!",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T147-3B,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T147-3B/FairestofAllDX",
 		"name": "Fairest of All",
-		"price": 84.99,
-		"typeName": "LISIANTHUS",
-		"quantity": 10
+		"price": 1955000,
+		"typeName": "LISIANTHUS"
 	},
 	{
 		"id": 54,
 		"categoryName": "FLOWERS",
 		"description": "Invite the natural beauty and wonder of Napa Valley to your wedding! This beautiful white flower centerpiece delivers innocence and elegance along with a stunning array of white blossoms and graceful greens.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTk4LTFBLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDE5OC0xQS9UZWxlZmxvcmEnc05hcGFWYWxsZXlDZW50ZXJwaWVjZQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T198-1A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T198-1A/Teleflora'sNapaValleyCenterpiece",
 		"name": "Napa Valley Centerpiece",
-		"price": 139.99,
-		"typeName": "LISIANTHUS",
-		"quantity": 10
+		"price": 3220000,
+		"typeName": "LISIANTHUS"
 	},
 	{
 		"id": 55,
 		"categoryName": "FLOWERS",
 		"description": "Go all-out for style with this stunning silver vase filled with lavender roses and other lush blooms, and crowned by a snow-white orchid. She'll appreciate your impeccable taste and love the way you show your love for her.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUNDAzLTJCLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDQwMy0yQi9UZWxlZmxvcmEnc0JyZWF0aGxlc3NCb3VxdWV0RFg=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T403-2B,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T403-2B/Teleflora'sBreathlessBouquetDX",
 		"name": "Breathless Bouquet",
-		"price": 104.99,
-		"typeName": "LISIANTHUS",
-		"quantity": 10
+		"price": 2415000,
+		"typeName": "LISIANTHUS"
 	},
 	{
 		"id": 56,
 		"categoryName": "FLOWERS",
 		"description": "Good and girly! A fabulous pick for a stylish sister, friend or girlfriend, this trendy peony bouquet pairs lush, cloud-white hydrangea with the luscious beauty of pink peonies.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTQ1LTJDLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDE0NS0yQy9UZWxlZmxvcmEnc1ByZXR0eWluUGVvbnlQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T145-2C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T145-2C/Teleflora'sPrettyinPeonyPM",
 		"name": "Pretty in Peony",
-		"price": 89.99,
-		"typeName": "PEONIES",
-		"quantity": 10
+		"price": 2070000,
+		"typeName": "PEONIES"
 	},
 	{
 		"id": 57,
 		"categoryName": "FLOWERS",
 		"description": "Peony perfection! Everyone loves the lush, cloud-like appearance of fresh cut peonies. The romantic, feminine bloom is a popular summer wedding flower.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTQ0LTFDLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDE0NC0xQy9UZWxlZmxvcmEnc1BlcmZlY3RQZW9uaWVzUE0=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T144-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T144-1C/Teleflora'sPerfectPeoniesPM",
 		"name": "Perfect Peonies",
-		"price": 134.99,
-		"typeName": "PEONIES",
-		"quantity": 10
+		"price": 3105000,
+		"typeName": "PEONIES"
 	},
 	{
 		"id": 58,
 		"categoryName": "FLOWERS",
 		"description": "Chic and serene, this dreamy bouquet of wondrous white peonies and creamy blooms in a milk jug vase sends your very best wishes for a stylish spring!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUU1AwNi0xQyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RTUDA2LTFDL1NlcmVuZVNwcmluZ1Blb255Qm91cXVldFBN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TSP06-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TSP06-1C/SereneSpringPeonyBouquetPM",
 		"name": "Serene Spring Peony Bouquet",
-		"price": 119.99,
-		"typeName": "PEONIES",
-		"quantity": 10
+		"price": 2760000,
+		"typeName": "PEONIES"
 	},
 	{
 		"id": 59,
 		"categoryName": "FLOWERS",
 		"description": "Celebrate the beauty of a life fully lived with this lovely array of pink lilies, blue hydrangea and other floral favorites in a sparkling Ming urn.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMjY3LTFDLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDI2Ny0xQy9Mb3ZlRXZlcmxhc3RpbmdCb3VxdWV0UE0=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T267-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T267-1C/LoveEverlastingBouquetPM",
 		"name": "Love Everlasting Bouquet",
-		"price": 129.99,
-		"typeName": "STOCK",
-		"quantity": 10
+		"price": 2990000,
+		"typeName": "STOCK"
 	},
 	{
 		"id": 60,
 		"categoryName": "FLOWERS",
 		"description": "As enchanting as coming across a hidden cottage in the countryside! Lush white roses and purple stock mix with delicate lavender waxflower and green pitta negra for an elegant English garden look.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUNTAtMUMscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UNTAtMUMvVGVsZWZsb3JhJ3NFbmNoYW50ZWRDb3R0YWdlUE0=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T50-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T50-1C/Teleflora'sEnchantedCottagePM",
 		"name": "Enchanted Cottage",
-		"price": 69.99,
-		"typeName": "STOCK",
-		"quantity": 10
+		"price": 1610000,
+		"typeName": "STOCK"
 	},
 	{
 		"id": 61,
 		"categoryName": "FLOWERS",
 		"description": "Lavender and white sympathy flowers make a grand statement in this joyful bouquet. Cherish your memories with this lasting remembrance of lavender larkspur and roses, deep purple asters.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMjUxLTFDLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDI1MS0xQy9Kb3lmdWxNZW1vcnlQTQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T251-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T251-1C/JoyfulMemoryPM",
 		"name": "Joyful Memory",
-		"price": 134.99,
-		"typeName": "STOCK",
-		"quantity": 10
+		"price": 3105000,
+		"typeName": "STOCK"
 	},
 	{
 		"id": 62,
 		"categoryName": "FLOWERS",
 		"description": "This stylish, uplifting mix of sympathy flowers for the service is bursting with color. The tall arrangement features an array of flowers that will touch everyone's hearts, artistically arranged in a sympathy basket.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMjE4LTJBLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDIxOC0yQS9Mb3ZlJ3NUYXBlc3RyeQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T218-2A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T218-2A/Love'sTapestry",
 		"name": "Love's Tapestry",
-		"price": 104.99,
-		"typeName": "SNAPDRAGONS",
-		"quantity": 10
+		"price": 2415000,
+		"typeName": "SNAPDRAGONS"
 	},
 	{
 		"id": 63,
 		"categoryName": "FLOWERS",
 		"description": "Send sunshine to show you care. A symbol of friendship, these yellow sympathy flowers are accented with pretty pink carnations for a classic sympathy basket that will warm anyone's heart.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMjE4LTRBLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDIxOC00QS9WaXZpZFJlY29sbGVjdGlvbnM=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T218-4A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T218-4A/VividRecollections",
 		"name": "Vivid Recollections",
-		"price": 74.99,
-		"typeName": "SNAPDRAGONS",
-		"quantity": 10
+		"price": 1725000,
+		"typeName": "SNAPDRAGONS"
 	},
 	{
 		"id": 64,
 		"categoryName": "FLOWERS",
 		"description": "Tulips this tantalizing need no decoration! Celebrate a spring birthday, send your love, or simply let someone know you're thinking of them with this stunning monochrome bouquet.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTQ4LTJDLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDE0OC0yQy9QYXNzaW9uYXRlUHVycGxlVHVsaXBzUE0=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T148-2C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T148-2C/PassionatePurpleTulipsPM",
 		"name": "Passionate Purple Tulips",
-		"price": 104.99,
-		"typeName": "TULIPS",
-		"quantity": 10
+		"price": 2415000,
+		"typeName": "TULIPS"
 	},
 	{
 		"id": 65,
 		"categoryName": "FLOWERS",
 		"description": "Surrender to the elegant, natural beauty of tulips. Twenty five red and pink flowers are presented in our graceful Silver Reflections vase. It's a premium presentation that highlights the tulips' natural beauty.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUNDAyLTFDLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDQwMi0xQy9UZWxlZmxvcmEnc1N3ZWV0U3VycmVuZGVyQm91cXVldFBN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T402-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T402-1C/Teleflora'sSweetSurrenderBouquetPM",
 		"name": "Sweet Surrender Bouquet",
-		"price": 92.95,
-		"typeName": "TULIPS",
-		"quantity": 10
+		"price": 2138000,
+		"typeName": "TULIPS"
 	},
 	{
 		"id": 66,
 		"categoryName": "FLOWERS",
 		"description": "Sunny yellow tulips are a sure sign of spring. Even if the weather is not cooperating, you can be sure the person who receives this bright bouquet will feel the warmth of your message.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTQwLTFDLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDE0MC0xQy9TdW5ueVllbGxvd1R1bGlwc1BN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T140-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T140-1C/SunnyYellowTulipsPM",
 		"name": "Sunny Yellow Tulips",
-		"price": 104.99,
-		"typeName": "TULIPS",
-		"quantity": 10
+		"price": 2415000,
+		"typeName": "TULIPS"
 	},
 	{
 		"id": 67,
 		"categoryName": "FLOWERS",
 		"description": "A sculpture of blooms. Elevate any occasion with this exquisite masterpiece of elegant orchids, roses and graphic succulents, dripping with amaranthus and arranged in an oversized glass jug.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpURVY1Ni05QyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RFVjU2LTlDL0V4cXVpc2l0ZUVsZWdhbmNlQm91cXVldFBN",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TEV56-9C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TEV56-9C/ExquisiteEleganceBouquetPM",
 		"name": "Exquisite Elegance Bouquet",
-		"price": 174.99,
-		"typeName": "TROPICAL FLOWERS",
-		"quantity": 10
+		"price": 4025000,
+		"typeName": "TROPICAL FLOWERS"
 	},
 	{
 		"id": 68,
 		"categoryName": "FLOWERS",
 		"description": "Regally beautiful, this amazing orange cymbidium orhid plant in a gorgeous pot is a lovely, living gift that will make them smile every day! A stunning surprise for any occasion.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUUEwwNC0xQSxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RQTDA0LTFBL1RlbGVmbG9yYSdzUmVnYWxseVlvdXJzT3JjaGlk",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TPL04-1A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TPL04-1A/Teleflora'sRegallyYoursOrchid",
 		"name": "Regally Yours Orchid",
-		"price": 109.99,
-		"typeName": "TROPICAL FLOWERS",
-		"quantity": 10
+		"price": 2530000,
+		"typeName": "TROPICAL FLOWERS"
 	},
 	{
 		"id": 69,
 		"categoryName": "FLOWERS",
 		"description": "Minimalist beauty abounds in this unique mix of orchids, gladioli and leucadendron. Delivered in a large bamboo cube, it's sure to impress men and women alike.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUODQtMUEscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UODQtMUEvVGVsZWZsb3JhJ3NGYW50YXN5Rm91bmQ=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T84-1A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T84-1A/Teleflora'sFantasyFound",
 		"name": "Fantasy Found",
-		"price": 104.99,
-		"typeName": "TROPICAL FLOWERS",
-		"quantity": 10
+		"price": 2415000,
+		"typeName": "TROPICAL FLOWERS"
 	},
 	{
 		"id": 70,
 		"categoryName": "FLOWERS",
 		"description": "A daydream come true, this bold bouquet is an instant dose of sunshine! Celebrate your special someone with sunny blooms arranged in our rich blue vase.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpURVYzMS00QyxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1RFVjMxLTRDL1RlbGVmbG9yYSdzU3VtbWVyRGF5ZHJlYW1Cb3VxdWV0UE0=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:TEV31-4C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/TEV31-4C/Teleflora'sSummerDaydreamBouquetPM",
 		"name": "Summer Daydream Bouquet",
-		"price": 64.99,
-		"typeName": "MIXED BOUQUETS",
-		"quantity": 10
+		"price": 1495000,
+		"typeName": "MIXED BOUQUETS"
 	},
 	{
 		"id": 71,
 		"categoryName": "FLOWERS",
 		"description": "High-fashion flowers for the style-minded! This modern presentation of multicolored roses and green hydrangea has a tropical feel thanks to the hot color palette and the aspidistra leaves in the vase.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUNzQtMUMscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UNzQtMUMvQmxvc3NvbXNpblZvZ3VlUE0=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T74-1C,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T74-1C/BlossomsinVoguePM",
 		"name": "Blossoms in Vogue",
-		"price": 94.99,
-		"typeName": "MIXED BOUQUETS",
-		"quantity": 10
+		"price": 2185000,
+		"typeName": "MIXED BOUQUETS"
 	},
 	{
 		"id": 72,
 		"categoryName": "FLOWERS",
 		"description": "Exotic meets chic. Presented in a black glass cube, this artistic gift features bright, tropical blooms framed by folded red ti leaves. It's an energizing choice for a man or woman.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUODUtMkEscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UODUtMkEvVGVsZWZsb3JhJ3NJc2xhbmREcmVhbXM=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T85-2A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T85-2A/Teleflora'sIslandDreams",
 		"name": "Island Dreams",
-		"price": 99.99,
-		"typeName": "MIXED BOUQUETS",
-		"quantity": 10
+		"price": 2300000,
+		"typeName": "MIXED BOUQUETS"
 	},
 	{
 		"id": 73,
 		"categoryName": "PLANTS",
 		"description": "Imagine walking into a secret fern grotto. This lush garden arrangement features the delicate fronds of maidenhair and Boston ferns mixed with colorful kalanchoe and pink hypoestes.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUOTYtMkEscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UOTYtMkEvU2VjcmV0R2FyZGVuQmFza2V0",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T96-2A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T96-2A/SecretGardenBasket",
 		"name": "Secret Garden Basket",
-		"price": 69.99,
-		"typeName": "BLOOMING PLANTS",
-		"quantity": 10
+		"price": 1610000,
+		"typeName": "BLOOMING PLANTS"
 	},
 	{
 		"id": 74,
 		"categoryName": "PLANTS",
 		"description": "Healthy fruits and nuts are presented with a pretty potted kalanchoe plant in a large wicker basket. Health food has never looked so good!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTA4LTJBLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDEwOC0yQS9IZWFsdGhOdXRCYXNrZXQ=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T108-2A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T108-2A/HealthNutBasket",
 		"name": "Health Nut Basket",
-		"price": 74.99,
-		"typeName": "BLOOMING PLANTS",
-		"quantity": 10
+		"price": 1725000,
+		"typeName": "BLOOMING PLANTS"
 	},
 	{
 		"id": 75,
 		"categoryName": "PLANTS",
 		"description": "A modern way to send mixed plants! This colorful, long-lasting gift is presented in a dark vase with clean lines, making it a perfect pick for the home or office. Also an excellent get-well gift!",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTA2LTNBLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDEwNi0zQS9TdHlsaXNoUGxhbnRBc3NvcnRtZW50",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T106-3A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T106-3A/StylishPlantAssortment",
 		"name": "Stylish Plant Assortment",
-		"price": 79.99,
-		"typeName": "BLOOMING PLANTS",
-		"quantity": 10
+		"price": 1840000,
+		"typeName": "BLOOMING PLANTS"
 	},
 	{
 		"id": 76,
 		"categoryName": "PLANTS",
 		"description": "Not your typical houseplant! With its bright tropical foliage, exotic appearance and Asian-inspired square planter, this potted croton plant is an eye-catching natural addition to any room.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTA2LTJBLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDEwNi0yQS9TdGF0ZWx5Q3JvdG9u",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T106-2A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T106-2A/StatelyCroton",
 		"name": "Stately Croton",
-		"price": 74.99,
-		"typeName": "GREEN PLANTS",
-		"quantity": 10
+		"price": 1725000,
+		"typeName": "GREEN PLANTS"
 	},
 	{
 		"id": 77,
 		"categoryName": "PLANTS",
 		"description": "Harmonize the five elements within a space, bring good fortune and prosperity, and improve the flow of \"chi\" with a money tree! The money tree - or Pachira - is thought to bring good luck.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTJaMTAxQSxwZ182L3dfODAwLGhfMTAwMCxjc19ub19jbXlrLGNfcGFkL2ZfanBnLHFfYXV0bzplY28sZV9zaGFycGVuOjIwMC9mbG93ZXJzL1QxMloxMDFBL01vbmV5VHJlZQ==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T12Z101A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T12Z101A/MoneyTree",
 		"name": "Money Tree",
-		"price": 49.99,
-		"typeName": "GREEN PLANTS",
-		"quantity": 10
+		"price": 1150000,
+		"typeName": "GREEN PLANTS"
 	},
 	{
 		"id": 78,
 		"categoryName": "PLANTS",
 		"description": "The gift of Zen. Send peace someone's way with this elegant, eye-pleasing arrangement of low-maintenance succulent plants. Presented in a brown bamboo container, the plants are accented with smooth river rocks.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTAxLTFBLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDEwMS0xQS9UZWxlZmxvcmEnc1BlYWNlZnVsWmVuR2FyZGVu",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T101-1A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T101-1A/Teleflora'sPeacefulZenGarden",
 		"name": "Peaceful Zen Garden",
-		"price": 59.99,
-		"typeName": "GREEN PLANTS",
-		"quantity": 10
+		"price": 1380000,
+		"typeName": "GREEN PLANTS"
 	},
 	{
 		"id": 79,
 		"categoryName": "PLANTS",
 		"description": "A trio of colorful orchids is an elegant way to wish someone well. Presented in a beautiful white ceramic planter are three miniature phalaenopsis orchid plants.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUMTAzLTFBLHBnXzYvd184MDAsaF8xMDAwLGNzX25vX2NteWssY19wYWQvZl9qcGcscV9hdXRvOmVjbyxlX3NoYXJwZW46MjAwL2Zsb3dlcnMvVDEwMy0xQS9SZWdhbE9yY2hpZHM=",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T103-1A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T103-1A/RegalOrchids",
 		"name": "Regal Orchids",
-		"price": 174.99,
-		"typeName": "ORCHIDS & TROPICALS",
-		"quantity": 10
+		"price": 4025000,
+		"typeName": "ORCHIDS & TROPICALS"
 	},
 	{
 		"id": 80,
 		"categoryName": "PLANTS",
 		"description": "Send Zen. A graceful white phaleanopsis orchid plant potted in a modern bamboo container is an enchanting gift for any occasion.",
-		"imgUrl": "aHR0cHM6Ly9pbWcudGVsZWZsb3JhLmNvbS9pbWFnZXMvb18wL2xfZmxvd2VyczpUOTgtMkEscGdfNi93XzgwMCxoXzEwMDAsY3Nfbm9fY215ayxjX3BhZC9mX2pwZyxxX2F1dG86ZWNvLGVfc2hhcnBlbjoyMDAvZmxvd2Vycy9UOTgtMkEvVGVsZWZsb3JhJ3NPcHVsZW50T3JjaGlkcw==",
+		"imgUrl": "https://img.teleflora.com/images/o_0/l_flowers:T98-2A,pg_6/w_800,h_1000,cs_no_cmyk,c_pad/f_jpg,q_auto:eco,e_sharpen:200/flowers/T98-2A/Teleflora'sOpulentOrchids",
 		"name": "Opulent Orchids",
-		"price": 124.99,
-		"typeName": "ORCHIDS & TROPICALS",
-		"quantity": 10
+		"price": 2875000,
+		"typeName": "ORCHIDS & TROPICALS"
 	}
 ]

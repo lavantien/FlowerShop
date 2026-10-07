@@ -12,6 +12,7 @@ MVNW := sh ./mvnw
 MVN_ARGS ?=
 NPM := npm
 FRONTEND := frontend
+NODE := $(if $(wildcard $(FRONTEND)/node/node.exe),$(FRONTEND)/node/node.exe,node)
 DB_USER := root
 DB_PASS := flowershop
 DB_HOST := localhost
@@ -22,7 +23,7 @@ export LOCAL_MYSQL_DB_USERNAME := $(DB_USER)
 export LOCAL_MYSQL_DB_PASSWORD := $(DB_PASS)
 
 .DEFAULT_GOAL := help
-.PHONY: help env db-up db-down db-nuke db-seed db-hash frontend-install frontend-build frontend-lint frontend-test test-coverage frontend-serve backend-test build package run screenshots audit memguard clean
+.PHONY: help env db-up db-down db-nuke db-seed db-reset db-hash seeds frontend-install frontend-build frontend-lint frontend-test test-coverage frontend-serve backend-test build package run screenshots audit memguard clean
 
 # Set SKIP_DB_UP=1 when MySQL already runs elsewhere (CI service container);
 # every target below then skips its db-up prerequisite.
@@ -37,9 +38,12 @@ env: ## print resolved toolchain versions
 	@docker --version
 	@if [ -x "$(FRONTEND)/node/node.exe" ]; then "$(FRONTEND)/node/node.exe" -v; else node -v; fi
 
+# The socket healthcheck passes against the entrypoint's temporary init server,
+# so db-up also waits on a TCP ping only the final server answers.
 db-up: ## start MySQL 9.7 container and wait until healthy
 	@docker compose up -d
-	@id=$$(docker compose ps -q mysql); i=0; until [ "$$(docker inspect --format '{{.State.Health.Status}}' $$id)" = "healthy" ]; do if [ $$i -ge 60 ]; then echo "mysql health wait timed out"; exit 1; fi; sleep 2; i=$$((i+1)); done; echo "mysql healthy"
+	@id=$$(docker compose ps -q mysql); i=0; until [ "$$(docker inspect --format '{{.State.Health.Status}}' $$id)" = "healthy" ]; do if [ $$i -ge 60 ]; then echo "mysql health wait timed out"; exit 1; fi; sleep 2; i=$$((i+1)); done; \
+	until docker compose exec -T mysql mysqladmin ping -h 127.0.0.1 -u$(DB_USER) -p$(DB_PASS) >/dev/null 2>&1; do if [ $$i -ge 90 ]; then echo "mysql readiness wait timed out"; exit 1; fi; sleep 2; i=$$((i+1)); done; echo "mysql healthy"
 
 db-down: ## stop MySQL container (keeps volume)
 	@docker compose down
@@ -47,10 +51,15 @@ db-down: ## stop MySQL container (keeps volume)
 db-nuke: ## stop MySQL container and drop the volume
 	@docker compose down -v
 
-db-seed: ## seed the database from db/run.sql (skips its create-database preamble)
-	@tail -n +3 db/run.sql | docker compose exec -T mysql mysql --default-character-set=utf8mb4 -u$(DB_USER) -p$(DB_PASS) flowershop
+db-seed: ## seed schema, users, taxonomy, branches, coupons (run.sql) plus products and stock (seed.sql)
+	@{ tail -n +3 db/run.sql; cat db/seed.sql; } | docker compose exec -T mysql mysql --default-character-set=utf8mb4 -u$(DB_USER) -p$(DB_PASS) flowershop
+
+db-reset: db-nuke db-up db-seed ## drop the volume, boot MySQL fresh, and seed everything
 
 DB_HASH_PASSWORDS ?= 1234qwer 12345678
+
+seeds: ## regenerate db/product.json and db/seed.sql from the committed product source
+	@$(NODE) scripts/tools/regenerate-product-seeds.mjs
 
 db-hash: ## print bcrypt hashes for DB_HASH_PASSWORDS (defaults: seed passwords)
 	@$(MVNW) -q $(MVN_ARGS) dependency:build-classpath -Dmdep.outputFile=target/cp.txt
@@ -83,8 +92,10 @@ build: $(if $(SKIP_DB_UP),,db-up) ## build the jar, skipping tests
 package: $(if $(SKIP_DB_UP),,db-up) ## full clean build: frontend + backend + tests + repackaged jar
 	@$(MVNW) $(MVN_ARGS) clean package
 
-run: $(if $(SKIP_DB_UP),,db-up) ## run the packaged jar against the compose MySQL
-	@"$(JAVA_BIN)" -jar target/flowershop-2.0.jar
+run: $(if $(SKIP_DB_UP),,db-up) ## run the newest packaged jar against the compose MySQL
+	@jar=$$(ls -t target/flowershop-*.jar 2>/dev/null | head -n 1); \
+	if [ -z "$$jar" ]; then echo "no target/flowershop-*.jar; run make package first"; exit 1; fi; \
+	"$(JAVA_BIN)" -jar $$jar
 
 screenshots: db-up ## capture the current UI into project-pictures (runs the packaged jar headlessly)
 	@$(NPM) install --prefix scripts/screenshots
