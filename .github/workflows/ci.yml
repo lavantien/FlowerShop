@@ -44,6 +44,47 @@ jobs:
           name: backend-coverage
           path: target/site/jacoco/jacoco.csv
 
+  fuzz:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:9.7.2
+        env:
+          MYSQL_DATABASE: flowershop
+          MYSQL_ROOT_PASSWORD: flowershop
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -pflowershop"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      MAVEN_OPTS: -Xmx512m -XX:+UseSerialGC -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m -XX:-UsePerfData
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: oracle
+          java-version: 27
+          cache: maven
+      # localhost resolves to ::1 on runners and skips the service container,
+      # so pin the IPv4 loopback like the backend job. The service container is
+      # not the compose service db-seed execs into, hence the TCP seed path.
+      - run: make db-seed-tcp DB_HOST=127.0.0.1
+      # The API gate needs the jar, not a second test sweep: the backend job
+      # already verified this commit's suite.
+      - run: make build SKIP_DB_UP=1 DB_HOST=127.0.0.1 MVN_ARGS="-Dskip.npm -Dskip.installnodenpm"
+      - run: make fuzz SKIP_DB_UP=1 DB_HOST=127.0.0.1
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        continue-on-error: true
+        with:
+          name: fuzz-failure
+          path: |
+            docs/qa/fuzz-report.md
+            .tools/fuzz-server.log
+
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -75,7 +116,7 @@ jobs:
 
   badges:
     if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-    needs: [backend, frontend, audit]
+    needs: [backend, fuzz, frontend, audit]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -89,7 +130,7 @@ jobs:
           node-version: 24
       - run: node scripts/badges/generate.mjs --backend-csv artifacts/backend-coverage/jacoco.csv --frontend-summary artifacts/frontend-coverage/coverage-summary.json --ci "$CI_STATUS" --out badges-out
         env:
-          CI_STATUS: ${{ (needs.backend.result == 'success' && needs.frontend.result == 'success' && needs.audit.result == 'success') && 'passing' || 'failing' }}
+          CI_STATUS: ${{ (needs.backend.result == 'success' && needs.fuzz.result == 'success' && needs.frontend.result == 'success' && needs.audit.result == 'success') && 'passing' || 'failing' }}
       - run: |
           cd badges-out
           git init -b badges

@@ -6,7 +6,15 @@ JDK27_HOME ?= $(subst \,/,$(USERPROFILE))/dev/jdk/jdk-27_oracle
 ifneq ($(wildcard $(JDK27_HOME)/bin/java.exe),)
   export JAVA_HOME := $(JDK27_HOME)
 endif
-JAVA_BIN := $(if $(JAVA_HOME),$(JAVA_HOME)/bin/java.exe,java)
+# java.exe only on Windows: on the Linux CI runner the same expansion must
+# name java, or every JAVA_BIN consumer (run, screenshots, fuzz, db-hash)
+# spawns a nonexistent binary.
+ifeq ($(OS),Windows_NT)
+  JAVA_EXE := java.exe
+else
+  JAVA_EXE := java
+endif
+JAVA_BIN := $(if $(JAVA_HOME),$(JAVA_HOME)/bin/$(JAVA_EXE),java)
 
 MVNW := sh ./mvnw
 MVN_ARGS ?=
@@ -23,7 +31,7 @@ export LOCAL_MYSQL_DB_USERNAME := $(DB_USER)
 export LOCAL_MYSQL_DB_PASSWORD := $(DB_PASS)
 
 .DEFAULT_GOAL := help
-.PHONY: help env db-up db-down db-nuke db-seed db-reset db-hash seeds frontend-install frontend-build frontend-lint frontend-test test-coverage frontend-serve backend-test build package run screenshots audit memguard fuzz mutate mutate-front diagrams clean
+.PHONY: help env db-up db-down db-nuke db-seed db-seed-tcp db-reset db-hash seeds frontend-install frontend-build frontend-lint frontend-test test-coverage frontend-serve backend-test build package run screenshots audit memguard fuzz mutate mutate-front diagrams clean
 
 # Set SKIP_DB_UP=1 when MySQL already runs elsewhere (CI service container);
 # every target below then skips its db-up prerequisite.
@@ -53,6 +61,12 @@ db-nuke: ## stop MySQL container and drop the volume
 
 db-seed: ## seed schema, users, taxonomy, branches, coupons (run.sql) plus products and stock (seed.sql)
 	@{ sed -E '/^(CREATE DATABASE|USE)[[:space:]]/Id' db/run.sql; cat db/seed.sql; } | docker compose exec -T mysql mysql --default-character-set=utf8mb4 -u$(DB_USER) -p$(DB_PASS) flowershop
+
+# The CI path: the MySQL there is a service container, not the compose service
+# db-seed execs into, so the same strip rule and seed stream run through the
+# pinned client image over the host network. Linux only, like CI.
+db-seed-tcp: ## seed the TCP MySQL at DB_HOST:DB_PORT through the pinned mysql client image (CI service container)
+	@{ sed -E '/^(CREATE DATABASE|USE)[[:space:]]/Id' db/run.sql; cat db/seed.sql; } | docker run --rm -i --network host mysql:9.7.2 mysql --default-character-set=utf8mb4 -h$(DB_HOST) -P$(DB_PORT) -u$(DB_USER) -p$(DB_PASS) flowershop
 
 db-reset: db-nuke db-up db-seed ## drop the volume, boot MySQL fresh, and seed everything
 
