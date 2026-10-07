@@ -43,6 +43,9 @@ public class AuthController {
 		if (!passwordService.matches(request.password(), user.getPassword())) {
 			throw new UnauthenticatedException("invalid email or password");
 		}
+		// Guarded before the session secret is stored, so a roleless legacy
+		// account never leaves an orphaned session behind its 401.
+		Auth.requireRole(user.getRole());
 		return new SessionView(Auth.mintToken(user.getId(), user.getRole(), userService.login(user.getId())),
 			UserView.from(user));
 	}

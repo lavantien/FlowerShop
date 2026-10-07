@@ -112,6 +112,20 @@ class UserControllerTest {
 	}
 
 	@Test
+	void resetPasswordOnALegacyNullRoleAccountAnswers401NotA500() throws Exception {
+		User legacy = persona(7, Role.USER, "legacy@flowershop.example");
+		legacy.setRole(null);
+		when(userRepository.findByEmail("legacy@flowershop.example")).thenReturn(legacy);
+
+		mockMvc.perform(post("/api/user/resetPassword").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"email\":\"legacy@flowershop.example\",\"answer\":\"demo\",\"newPassword\":\"newpass123\"}"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
+
+		assertFalse(userService.isLoggedIn(7L));
+	}
+
+	@Test
 	void resetPasswordRejectsABlankNewPasswordAsAValidationError() throws Exception {
 		mockMvc.perform(post("/api/user/resetPassword").contentType(MediaType.APPLICATION_JSON)
 				.content("{\"email\":\"member@flowershop.example\",\"answer\":\"demo\",\"newPassword\":\"\"}"))

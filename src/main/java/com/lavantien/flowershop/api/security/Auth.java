@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.security;
 
+import com.lavantien.flowershop.api.error.UnauthenticatedException;
 import com.lavantien.flowershop.api.user.Role;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -33,7 +34,17 @@ public final class Auth {
 		}
 	}
 
+	// A carried-forward volume can hold a NULL role; a roleless account must
+	// never open a session, and the NPE must surface as 401, not 500. Callers
+	// invoke this before the session secret is minted and stored.
+	public static void requireRole(Role role) {
+		if (role == null) {
+			throw new UnauthenticatedException("the account has no role assigned and cannot open a session");
+		}
+	}
+
 	public static String mintToken(long id, Role role, String secret) {
+		requireRole(role);
 		return Base64.getEncoder().encodeToString((id + "+" + role.name() + "+" + secret).getBytes(StandardCharsets.UTF_8));
 	}
 

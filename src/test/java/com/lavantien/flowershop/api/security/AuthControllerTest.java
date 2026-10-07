@@ -1,6 +1,7 @@
 package com.lavantien.flowershop.api.security;
 
 import com.lavantien.flowershop.api.error.ApiExceptionHandler;
+import com.lavantien.flowershop.api.error.UnauthenticatedException;
 import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.User;
 import com.lavantien.flowershop.api.user.UserRepository;
@@ -20,6 +21,7 @@ import static com.lavantien.flowershop.api.security.AuthTestSupport.prime;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.tokenIdentity;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.tokenOf;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -77,6 +79,27 @@ class AuthControllerTest {
 			.andExpect(jsonPath("$.user.city").value("Hanoi"))
 			.andExpect(jsonPath("$.user.password").doesNotExist())
 			.andExpect(jsonPath("$.user.answer").doesNotExist());
+	}
+
+	@Test
+	void loginOnALegacyNullRoleAccountAnswers401NotA500() throws Exception {
+		// ddl-auto update on a carried-forward volume can leave role NULL;
+		// minting a session for such an account must fail as 401 problem+json.
+		User legacy = persona(7, Role.USER, "legacy@flowershop.example");
+		legacy.setRole(null);
+		when(userRepository.findByEmail("legacy@flowershop.example")).thenReturn(legacy);
+
+		mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+				.content(loginBody("legacy@flowershop.example", "1234qwer")))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
+
+		assertFalse(userService.isLoggedIn(7L), "no session may open for a roleless account");
+	}
+
+	@Test
+	void mintingATokenWithoutARoleThrowsUnauthenticated() {
+		assertThrows(UnauthenticatedException.class, () -> Auth.mintToken(1, null, "secret"));
 	}
 
 	@Test
