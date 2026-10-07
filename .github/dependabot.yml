@@ -17,6 +17,10 @@ updates:
       angular:
         patterns:
           - "@angular/*"
+  - package-ecosystem: npm
+    directory: /scripts/screenshots
+    schedule:
+      interval: weekly
   - package-ecosystem: docker
     directory: /
     schedule:

@@ -22,7 +22,7 @@ export LOCAL_MYSQL_DB_USERNAME := $(DB_USER)
 export LOCAL_MYSQL_DB_PASSWORD := $(DB_PASS)
 
 .DEFAULT_GOAL := help
-.PHONY: help env db-up db-down db-nuke db-seed frontend-install frontend-build frontend-lint frontend-test frontend-serve backend-test build package run audit clean
+.PHONY: help env db-up db-down db-nuke db-seed frontend-install frontend-build frontend-lint frontend-test frontend-serve backend-test build package run screenshots audit clean
 
 help: ## show targets
 	@grep -E '^[a-zA-Z][a-zA-Z0-9_-]*:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "%-18s %s\n", $$1, $$2}'
@@ -74,9 +74,14 @@ package: db-up ## full clean build: frontend + backend + tests + repackaged jar
 run: db-up ## run the packaged jar against the compose MySQL
 	@"$(JAVA_BIN)" -jar target/flowershop-2.0.jar
 
+screenshots: db-up ## capture the current UI into project-pictures (runs the packaged jar headlessly)
+	@$(NPM) install --prefix scripts/screenshots
+	@JAVA_BIN="$(JAVA_BIN)" node scripts/screenshots/capture.mjs
+
 audit: ## npm audit, prod and dev, 0 vulnerabilities or fail
 	@$(NPM) audit --omit=dev --prefix $(FRONTEND)
 	@$(NPM) audit --prefix $(FRONTEND)
+	@$(NPM) audit --prefix scripts/screenshots
 
 clean: ## maven clean and drop node_modules
 	@$(MVNW) $(MVN_ARGS) clean
