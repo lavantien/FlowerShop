@@ -54,11 +54,6 @@ public class BillController {
 		return ResponseEntity.ok(bill.get());
 	}
 
-	@PostMapping("/create")
-	public ResponseEntity<Bill> create(@RequestBody Bill bill) {
-		return ResponseEntity.ok(bill);
-	}
-
 	@RequireRole(Auth.ADMIN_TYPE)
 	@PutMapping("/{id}")
 	public ResponseEntity<Bill> update(@PathVariable Long id, @RequestBody Bill bill) {

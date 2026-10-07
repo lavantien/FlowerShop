@@ -2,7 +2,6 @@ package com.lavantien.flowershop.api.user;
 
 import com.lavantien.flowershop.api.security.Auth;
 import com.lavantien.flowershop.api.security.RequireRole;
-import com.lavantien.flowershop.service.MailService;
 import com.lavantien.flowershop.service.PasswordService;
 import com.lavantien.flowershop.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,15 +18,11 @@ import java.util.Optional;
 @RequestMapping("/api/user")
 public class UserController {
 	private UserRepository userRepository;
-	@SuppressWarnings("unused")
-	private MailService mailService;
 	private UserService userService;
 	private PasswordService passwordService;
 
-	public UserController(UserRepository userRepository, MailService mailService, UserService userService,
-			PasswordService passwordService) {
+	public UserController(UserRepository userRepository, UserService userService, PasswordService passwordService) {
 		this.userRepository = userRepository;
-		this.mailService = mailService;
 		this.userService = userService;
 		this.passwordService = passwordService;
 	}

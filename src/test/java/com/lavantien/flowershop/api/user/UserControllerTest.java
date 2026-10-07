@@ -1,7 +1,6 @@
 package com.lavantien.flowershop.api.user;
 
 import com.lavantien.flowershop.api.security.TokenInterceptor;
-import com.lavantien.flowershop.service.MailService;
 import com.lavantien.flowershop.service.PasswordService;
 import com.lavantien.flowershop.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,8 +40,7 @@ class UserControllerTest {
 		userRepository = mock(UserRepository.class);
 		userService = new UserService();
 		passwordService = new PasswordService();
-		mockMvc = MockMvcBuilders.standaloneSetup(
-			new UserController(userRepository, mock(MailService.class), userService, passwordService))
+		mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userRepository, userService, passwordService))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
 			.build();
 	}
