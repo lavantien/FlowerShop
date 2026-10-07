@@ -111,6 +111,19 @@
 		"CHECKOUT_INVALID": "Please complete the delivery details.",
 		"ORDER_FAILED": "Order failed, please retry."
 	},
+	"PAY": {
+		"TITLE": "FlowerShop Pay",
+		"STATUS": "Status",
+		"PAY": "Pay now",
+		"CANCEL": "Cancel payment",
+		"CONFIRMED_NOTE": "This payment is already confirmed.",
+		"CANCELLED_NOTE": "This payment was cancelled.",
+		"CONFIRMED_TOAST": "Payment confirmed, thank you!",
+		"CANCELLED_TOAST": "Payment cancelled.",
+		"BAD_LINK": "The payment link is incomplete.",
+		"LOAD_FAILED": "This payment link is invalid or expired.",
+		"ACTION_FAILED": "The gateway could not process the request, please retry."
+	},
 	"DATA": {
 		"FLOWERS": "Flowers",
 		"PLANTS": "Plants",

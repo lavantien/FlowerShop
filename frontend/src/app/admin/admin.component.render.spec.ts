@@ -6,6 +6,7 @@ import {provideNoopAnimations} from '@angular/platform-browser/animations';
 import {provideRouter} from '@angular/router';
 import {provideTranslateService} from '@ngx-translate/core';
 import {beforeAll, beforeEach, afterEach, describe, expect, it, vi} from 'vitest';
+import {ToastService} from '../core/toast.service';
 import {Product} from '../_models/product';
 import {Category} from '../_models/category';
 import {Type} from '../_models/type';
@@ -78,6 +79,8 @@ function attachFile(input: HTMLInputElement, file: File) {
 
 describe('AdminComponent rendering', () => {
 	let httpMock: HttpTestingController;
+	let toastShow: ReturnType<typeof vi.spyOn>;
+	let toastSuccess: ReturnType<typeof vi.spyOn>;
 	let fixture: ComponentFixture<InstanceType<typeof AdminComponent>>;
 	let writeFile: ReturnType<typeof vi.fn>;
 
@@ -88,7 +91,6 @@ describe('AdminComponent rendering', () => {
 
 	beforeEach(() => {
 		localStorage.clear();
-		vi.stubGlobal('alert', vi.fn());
 		writeFile = XLSX.writeFile as unknown as ReturnType<typeof vi.fn>;
 		writeFile.mockClear();
 		TestBed.configureTestingModule({
@@ -105,6 +107,9 @@ describe('AdminComponent rendering', () => {
 			]
 		});
 		httpMock = TestBed.inject(HttpTestingController);
+		const toast = TestBed.inject(ToastService);
+		toastShow = vi.spyOn(toast, 'show');
+		toastSuccess = vi.spyOn(toast, 'success');
 	});
 
 	afterEach(() => {
@@ -377,7 +382,7 @@ describe('AdminComponent rendering', () => {
 		const fileInput = modal.querySelector('input[type="file"]') as HTMLInputElement;
 		attachFile(fileInput, new File(['nope'], 'notes.txt', {type: 'text/plain'}));
 		fileInput.dispatchEvent(new Event('change', {bubbles: true}));
-		await vi.waitFor(() => expect(alert).toHaveBeenCalledTimes(1));
+		await vi.waitFor(() => expect(toastShow).toHaveBeenCalledTimes(1));
 
 		const emptyWorkbook = XLSX.utils.book_new();
 		XLSX.utils.book_append_sheet(emptyWorkbook, XLSX.utils.aoa_to_sheet([[
@@ -386,7 +391,7 @@ describe('AdminComponent rendering', () => {
 		const empty = XLSX.write(emptyWorkbook, {bookType: 'xlsx', type: 'binary'}) as string;
 		attachFile(fileInput, excelFile(empty, 'empty.xlsx'));
 		fileInput.dispatchEvent(new Event('change', {bubbles: true}));
-		await vi.waitFor(() => expect(alert).toHaveBeenCalledTimes(2));
+		await vi.waitFor(() => expect(toastShow).toHaveBeenCalledTimes(2));
 		click(modal.querySelector('.modal-footer button') as Element);
 		const importRequest = await vi.waitFor(() => httpMock.expectOne(request =>
 			request.url === '/api/product' && request.method === 'POST'));
@@ -412,7 +417,7 @@ describe('AdminComponent rendering', () => {
 		importRequest.flush([]);
 		flushProducts(products);
 		tick();
-		expect(alert).toHaveBeenCalledTimes(1);
+		expect(toastSuccess).toHaveBeenCalledTimes(1);
 		expect(component.modalRef).toBeDefined();
 	});
 
@@ -466,7 +471,7 @@ describe('AdminComponent rendering', () => {
 			configurable: true
 		});
 		fileInput.dispatchEvent(new Event('change', {bubbles: true}));
-		expect(alert).toHaveBeenCalledTimes(1);
+		expect(toastShow).toHaveBeenCalledTimes(1);
 		click(modal.querySelector('.btn-close') as Element);
 	});
 });

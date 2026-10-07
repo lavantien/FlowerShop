@@ -6,6 +6,7 @@ import {provideTranslateService} from '@ngx-translate/core';
 import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
 import {beforeEach, afterEach, describe, expect, it, vi} from 'vitest';
 import {AdminComponent, buildExportFilename} from './admin.component';
+import {ToastService} from '../core/toast.service';
 import {SessionService, SessionUser} from '../core/session.service';
 import {Product} from '../_models/product';
 
@@ -23,10 +24,10 @@ const admin: SessionUser = {
 
 describe('AdminComponent request bodies', () => {
 	let httpMock: HttpTestingController;
+	let toast: ToastService;
 
 	beforeEach(() => {
 		localStorage.clear();
-		vi.stubGlobal('alert', vi.fn());
 		TestBed.configureTestingModule({
 			imports: [AdminComponent],
 			providers: [
@@ -39,6 +40,8 @@ describe('AdminComponent request bodies', () => {
 		TestBed.inject(SessionService).login('token-1', admin);
 		vi.spyOn(TestBed.inject(BsModalService), 'show').mockReturnValue({hide: vi.fn()} as unknown as BsModalRef);
 		httpMock = TestBed.inject(HttpTestingController);
+		toast = TestBed.inject(ToastService);
+		vi.spyOn(toast, 'success');
 	});
 
 	afterEach(() => {
@@ -154,7 +157,7 @@ describe('AdminComponent request bodies', () => {
 		}]);
 		req.flush(rows);
 		httpMock.expectOne('/api/product').flush([]);
-		expect(alert).toHaveBeenCalledTimes(1);
+		expect(toast.success).toHaveBeenCalledTimes(1);
 	});
 
 	it('clones the edited row so the form does not mutate the table', () => {

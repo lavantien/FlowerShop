@@ -1,0 +1,40 @@
+<div class="pay-wrapper">
+	<div class="gateway-card">
+		<div class="gateway-header">
+			<b>{{'PAY.TITLE' | translate}}</b>
+		</div>
+		@if (payment(); as view) {
+			<div class="gateway-body text-center">
+				<div class="summary text-muted">{{view.summary}}</div>
+				<div class="amount" data-test="pay-amount">
+					{{view.amount | currency:'VND':'symbol':'1.0-0':lang()}}
+				</div>
+				<div class="mb-3" data-test="pay-status">
+					<span [class]="statusClass(view.status)">{{'PAY.STATUS' | translate}}: {{view.status}}</span>
+				</div>
+				@if (view.status === 'PENDING') {
+					<div class="gateway-actions">
+						<button (click)="onPay()" [disabled]="working()" class="btn btn-success" data-test="pay-confirm"
+						        type="button">
+							{{'PAY.PAY' | translate}}
+						</button>
+						<button (click)="onCancel()" [disabled]="working()" class="btn btn-outline-dark"
+						        data-test="pay-cancel" type="button">
+							{{'PAY.CANCEL' | translate}}
+						</button>
+					</div>
+				} @else {
+					<div class="text-muted" data-test="pay-settled">
+						{{'PAY.' + view.status + '_NOTE' | translate}}
+					</div>
+				}
+			</div>
+		}
+		@if (loadFailed()) {
+			<div class="gateway-body text-center">
+				<div class="text-danger" data-test="pay-error">{{'PAY.LOAD_FAILED' | translate}}</div>
+				<a class="btn btn-dark mt-2" routerLink="/shop">{{'NOT_FOUND.BACK' | translate}}</a>
+			</div>
+		}
+	</div>
+</div>

@@ -18,6 +18,7 @@ import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
 import {TooltipDirective} from 'ngx-bootstrap/tooltip';
 import {PageChangedEvent, PaginationComponent} from 'ngx-bootstrap/pagination';
 import * as XLSX from 'xlsx';
+import {ToastService} from '../core/toast.service';
 import {Product} from '../_models/product';
 import {Category} from '../_models/category';
 import {Type} from '../_models/type';
@@ -98,6 +99,7 @@ export class AdminComponent implements OnInit {
 
 	private readonly http = inject(HttpClient);
 	private readonly modalService = inject(BsModalService);
+	private readonly toast = inject(ToastService);
 	readonly translate = inject(TranslateService);
 	readonly translateWrongExcel = toSignal(this.translate.stream('ALERT.NOT_EXCEL'), {initialValue: ''});
 	readonly translateWrongFormat = toSignal(this.translate.stream('ALERT.WRONG_FORMAT'), {initialValue: ''});
@@ -314,7 +316,7 @@ export class AdminComponent implements OnInit {
 		}
 		const file = target.files.item(0);
 		if (file === null || file.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-			alert(this.translateWrongExcel());
+			this.toast.show(this.translateWrongExcel(), 'warning');
 			return;
 		}
 		const reader: FileReader = new FileReader();
@@ -330,7 +332,7 @@ export class AdminComponent implements OnInit {
 			if (this.excelData().length > 0) {
 				this.onImportExcel(this.excelData());
 			} else {
-				alert(this.translateWrongFormat());
+				this.toast.show(this.translateWrongFormat(), 'warning');
 			}
 		};
 		reader.readAsArrayBuffer(file);
@@ -338,7 +340,7 @@ export class AdminComponent implements OnInit {
 
 	onImportExcel(excelData: Product[]) {
 		this.http.post<Product[]>('/api/product', excelData).subscribe(() => {
-			alert(this.translateImportSuccessful());
+			this.toast.success(this.translateImportSuccessful());
 			this.getProducts();
 		}, error => {
 			console.log(`Error: ${error}`);

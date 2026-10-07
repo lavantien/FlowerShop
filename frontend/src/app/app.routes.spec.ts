@@ -8,6 +8,7 @@ import {appConfig} from './app.config';
 import {StoreComponent} from './store/store.component';
 import {CartComponent} from './cart/cart.component';
 import {ContactComponent} from './contact/contact.component';
+import {PayComponent} from './pay/pay.component';
 import {AdminComponent} from './admin/admin.component';
 import {InfoComponent} from './info/info.component';
 import {SummaryComponent} from './summary/summary.component';
@@ -28,6 +29,7 @@ describe('app routes', () => {
 			StoreComponent,
 			CartComponent,
 			ContactComponent,
+			PayComponent,
 			AdminComponent,
 			InfoComponent,
 			SummaryComponent,
@@ -42,6 +44,7 @@ describe('app routes', () => {
 		expect(byPath.get('admin')?.canActivate).toBeDefined();
 		expect(byPath.get('summary')?.canActivate).toBeDefined();
 		expect(byPath.get('shop')?.canActivate).toBeUndefined();
+		expect(byPath.get('pay/:paymentId')?.canActivate).toBeUndefined();
 	});
 
 	it('falls back to the wildcard not found route', () => {

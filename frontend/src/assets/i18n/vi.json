@@ -111,6 +111,19 @@
 		"CHECKOUT_INVALID": "Vui lòng điền đủ thông tin giao hàng.",
 		"ORDER_FAILED": "Đặt hàng thất bại, vui lòng thử lại."
 	},
+	"PAY": {
+		"TITLE": "FlowerShop Pay",
+		"STATUS": "Trạng thái",
+		"PAY": "Thanh toán ngay",
+		"CANCEL": "Hủy thanh toán",
+		"CONFIRMED_NOTE": "Khoản thanh toán này đã được xác nhận.",
+		"CANCELLED_NOTE": "Khoản thanh toán này đã bị hủy.",
+		"CONFIRMED_TOAST": "Đã xác nhận thanh toán, cảm ơn bạn!",
+		"CANCELLED_TOAST": "Đã hủy thanh toán.",
+		"BAD_LINK": "Liên kết thanh toán không đầy đủ.",
+		"LOAD_FAILED": "Liên kết thanh toán không hợp lệ hoặc đã hết hạn.",
+		"ACTION_FAILED": "Cổng thanh toán không xử lý được yêu cầu, vui lòng thử lại."
+	},
 	"DATA": {
 		"FLOWERS": "Hoa",
 		"PLANTS": "Cây cảnh",

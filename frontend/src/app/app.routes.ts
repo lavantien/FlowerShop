@@ -25,6 +25,11 @@ export const routes: Routes = [
 		loadComponent: () => import('./contact/contact.component').then(m => m.ContactComponent)
 	},
 	{
+		path: 'pay/:paymentId',
+		title: 'Pay',
+		loadComponent: () => import('./pay/pay.component').then(m => m.PayComponent)
+	},
+	{
 		path: 'admin',
 		title: 'Admin',
 		canActivate: [adminGuard],

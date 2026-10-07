@@ -1,0 +1,42 @@
+.pay-wrapper {
+	min-height: 60vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	.gateway-card {
+		width: 100%;
+		max-width: 420px;
+		border: 1px solid #dee2e6;
+		border-radius: 0.5rem;
+		overflow: hidden;
+		box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+
+		.gateway-header {
+			padding: 1rem;
+			background-color: #343a40;
+			color: #fff;
+			text-align: center;
+		}
+
+		.gateway-body {
+			padding: 1.5rem 1rem;
+
+			.summary {
+				font-size: 0.9rem;
+			}
+
+			.amount {
+				font-size: 2rem;
+				font-weight: 700;
+				margin: 0.5rem 0 1rem;
+			}
+
+			.gateway-actions {
+				display: flex;
+				gap: 0.75rem;
+				justify-content: center;
+			}
+		}
+	}
+}
