@@ -6,8 +6,11 @@
 // all count as killed, a green selective run is a survivor and fails the gate.
 // The tree must be clean before the run starts and is restored with git after
 // every mutant, verified against git diff between mutants. Serialized: one
-// mutant, one build, one selective test run at a time. Writes the committed
-// artifact docs/qa/mutation-report.md. Run via `make mutate` (JAVA_HOME from
+// mutant, one build, one selective test run at a time. A control run over the
+// mapped tests must pass unmutated before the sweep: a dead MySQL, offline
+// maven, or a genuinely red suite would otherwise turn every nonzero exit
+// into a phantom kill and hand the gate a false all-killed report. Writes the
+// committed artifact docs/qa/mutation-report.md. Run via `make mutate` (JAVA_HOME from
 // the Makefile wins; the JDK 27 fallback mirrors it). Exit 0 on zero
 // survivors, 1 otherwise. --list prints the curated mutant set without
 // running anything, --only <id> runs a single mutant for triage.
@@ -453,6 +456,9 @@ function renderReport(run) {
 	lines.push(`Commit: ${run.head}`);
 	lines.push(`Command: ${run.command}`);
 	lines.push(`Total mutants: ${run.mutants.length}, killed: ${run.killed}, survivors: ${run.survivors.length}`);
+	if (run.controlTests) {
+		lines.push(`Control run: green over ${run.controlTests} mapped test classes before the sweep.`);
+	}
 	lines.push(`Runtime: ${run.seconds.toFixed(0)} s serialized (${(run.seconds / 60).toFixed(1)} min), per-mutant timeout ${cfg.perMutantTimeoutMs / 1000} s`, '');
 	lines.push('## operator set', '');
 	lines.push('| operator | rewrite |');
@@ -522,11 +528,22 @@ async function main() {
 	}
 	const head = git('rev-parse', 'HEAD');
 	console.log(`mutation run over ${selected.length} mutants at ${head}`);
+	// Control run: the mapped tests must be green with no mutant applied, or
+	// every later nonzero exit would masquerade as a kill.
+	const controlTests = [...new Set(selected.flatMap((mutant) => mutant.tests))];
+	console.log(`control run: ${controlTests.length} mapped test classes unmutated`);
+	const control = await runMaven(controlTests);
+	if (control.timedOut || control.exitCode !== 0) {
+		console.error(`control run failed (${control.timedOut ? 'timeout' : `exit ${control.exitCode}`}): `
+			+ `the mapped tests are red before any mutant, full output in ${cfg.logPath}`);
+		process.exit(3);
+	}
 	const results = [];
 	const run = {
 		mutants: selected, results, survivors: [], head,
 		finishedAt: new Date().toISOString(),
 		command: 'make mutate',
+		controlTests: controlTests.length,
 	};
 	const started = Date.now();
 	try {

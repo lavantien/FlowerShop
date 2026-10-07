@@ -7,7 +7,11 @@
 // as killed, a green selective run is a survivor and fails the gate. Every
 // mutated file is restored with git after each mutant and verified against
 // git diff before the next. Serialized: one mutant, one build, one run at a
-// time. Writes the committed artifact docs/qa/mutation-front-report.md. Run
+// time. A control run over the mapped specs must pass unmutated before the
+// sweep: missing node_modules, a broken builder, or a genuinely red suite
+// would otherwise turn every nonzero exit into a phantom kill and hand the
+// gate a false all-killed report. Writes the committed artifact
+// docs/qa/mutation-front-report.md. Run
 // via `make mutate-front`. Exit 0 on zero survivors, 1 otherwise. --list
 // prints the curated mutant set without running anything, --only <id> runs a
 // single mutant for triage.
@@ -413,6 +417,9 @@ function renderReport(run) {
 	lines.push(`Commit: ${run.head}`);
 	lines.push(`Command: ${run.command}`);
 	lines.push(`Total mutants: ${run.mutants.length}, killed: ${run.killed}, survivors: ${run.survivors.length}`);
+	if (run.controlSpecs) {
+		lines.push(`Control run: green over ${run.controlSpecs} mapped spec files before the sweep.`);
+	}
 	lines.push(`Runtime: ${run.seconds.toFixed(0)} s serialized (${(run.seconds / 60).toFixed(1)} min), per-mutant timeout ${cfg.perMutantTimeoutMs / 1000} s`, '');
 	lines.push('## operator set', '');
 	lines.push('| operator | rewrite |');
@@ -483,11 +490,22 @@ async function main() {
 	}
 	const head = git('rev-parse', 'HEAD');
 	console.log(`frontend mutation run over ${selected.length} mutants at ${head}`);
+	// Control run: the mapped specs must be green with no mutant applied, or
+	// every later nonzero exit would masquerade as a kill.
+	const controlSpecs = [...new Set(selected.flatMap((mutant) => mutant.tests))];
+	console.log(`control run: ${controlSpecs.length} mapped spec files unmutated`);
+	const control = await runTests(controlSpecs);
+	if (control.timedOut || control.exitCode !== 0) {
+		console.error(`control run failed (${control.timedOut ? 'timeout' : `exit ${control.exitCode}`}): `
+			+ `the mapped specs are red before any mutant, full output in ${cfg.logPath}`);
+		process.exit(3);
+	}
 	const results = [];
 	const run = {
 		mutants: selected, results, survivors: [], head,
 		finishedAt: new Date().toISOString(),
 		command: 'make mutate-front',
+		controlSpecs: controlSpecs.length,
 	};
 	const started = Date.now();
 	try {
