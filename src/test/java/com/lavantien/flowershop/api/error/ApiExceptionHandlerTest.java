@@ -5,10 +5,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.context.request.WebRequest;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -83,9 +87,11 @@ class ApiExceptionHandlerTest {
 		binding.addError(new FieldError("request", "email", "the second message for the same field loses"));
 		binding.addError(new FieldError("request", "password", "must not be blank"));
 
-		ProblemDetail problem = new ApiExceptionHandler()
-			.handleValidation(new MethodArgumentNotValidException(new MethodParameter(method, 0), binding),
-				requestOn("/api/example"));
+		WebRequest request = mock(WebRequest.class);
+		ResponseEntity<Object> response = new ApiExceptionHandler().handleMethodArgumentNotValid(
+			new MethodArgumentNotValidException(new MethodParameter(method, 0), binding),
+			HttpHeaders.EMPTY, HttpStatus.BAD_REQUEST, request);
+		ProblemDetail problem = (ProblemDetail) response.getBody();
 
 		assertEquals(400, problem.getStatus());
 		assertEquals("Bad Request", problem.getTitle());
