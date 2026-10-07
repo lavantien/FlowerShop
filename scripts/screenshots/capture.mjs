@@ -117,14 +117,13 @@ function assertMoney(name, expected, actual) {
 	}
 }
 
-function assertOrderMoney(label, order, {delivery, fee, discount}) {
+function assertOrderMoney(label, order, expected) {
 	for (const field of ['subtotal', 'deliveryFee', 'discountAmount', 'total']) {
 		if (!Number.isInteger(order[field])) {
 			throw new Error(`${label}: ${field} is not whole-dong VND: ${order[field]}`);
 		}
+		assertMoney(`${label} ${field}`, expected[field], order[field]);
 	}
-	assertMoney(`${label} deliveryFee vs the geo formula`, fee, order.deliveryFee);
-	assertMoney(`${label} discountAmount vs the coupon math`, discount, order.discountAmount);
 	assertMoney(`${label} subtotal vs the line totals`,
 		order.items.reduce((sum, item) => sum + item.lineTotal, 0), order.subtotal);
 	for (const item of order.items) {
@@ -364,7 +363,20 @@ async function main() {
 	const branches = await fetchJson(`${CONFIG.baseUrl}/api/branch`);
 	const fee = expectedDeliveryFee(delivery, nearestBranchDistance(branches, districtPoint));
 	const coupon = readSeedCoupon(CONFIG.couponCode);
-	console.log(`[money] ${CONFIG.member.district} expects delivery fee ${fee}, ${CONFIG.couponCode} is ${coupon.kind} ${coupon.value}`);
+	// The walk's two carts, priced from the same catalog page the store grid
+	// renders (sorted name-asc, page 1): card 0 twice plus card 2 once for the
+	// couponed checkout, card 0 once for the cancel-path checkout.
+	const catalog = await fetchJson(`${CONFIG.baseUrl}/api/product?page=0&size=12&sort=name-asc`);
+	const priceOf = index => catalog.content[index].price;
+	const expectedMoney = (lines, appliedCoupon) => {
+		const subtotal = lines.reduce((sum, line) => sum + line.price * line.quantity, 0);
+		const discountAmount = appliedCoupon ? expectedDiscount(delivery, subtotal, appliedCoupon) : 0;
+		return {subtotal, discountAmount, deliveryFee: fee, total: subtotal - discountAmount + fee};
+	};
+	const couponedMoney = expectedMoney([{price: priceOf(0), quantity: 2}, {price: priceOf(2), quantity: 1}], coupon);
+	const plainMoney = expectedMoney([{price: priceOf(0), quantity: 1}], null);
+	console.log(`[money] ${CONFIG.member.district} expects fee ${fee}, ${CONFIG.couponCode} is ${coupon.kind} ${coupon.value},`
+		+ ` couponed cart ${couponedMoney.subtotal} -> ${couponedMoney.total}, plain cart ${plainMoney.subtotal} -> ${plainMoney.total}`);
 	let browser;
 	let page;
 	try {
@@ -377,10 +389,13 @@ async function main() {
 			}
 		});
 		page.on('requestfailed', request => console.log(`[requestfailed] ${request.method()} ${request.url()} ${request.failure()?.errorText}`));
-		// Money trail: the JSON behind checkout, the pay view, and the order
-		// history, asserted at the walk's checkpoints instead of trusting the
-		// rendered DOM alone.
-		const trail = {checkouts: [], payments: [], history: []};
+		// Money trail: the JSON behind the pay view and the order history. The
+		// checkout response itself is unreadable here: the cart redirects to
+		// the gateway with document.location.assign, and Chromium discards the
+		// previous document's network resources, so the walked order is instead
+		// predicted from the catalog prices and asserted on the surfaces whose
+		// bodies survive.
+		const trail = {payments: [], history: []};
 		page.on('response', async response => {
 			if (response.status() >= 400) {
 				console.log(`[http ${response.status()}] ${response.request().method()} ${response.url()}`);
@@ -388,9 +403,7 @@ async function main() {
 			const method = response.request().method();
 			const url = response.url();
 			try {
-				if (method === 'POST' && response.status() === 201 && url.endsWith('/api/order')) {
-					trail.checkouts.push(await response.json());
-				} else if (method === 'GET' && response.status() === 200 && url.includes('/api/order/me')) {
+				if (method === 'GET' && response.status() === 200 && url.includes('/api/order/me')) {
 					trail.history.push(await response.json());
 				} else if (method === 'GET' && response.status() === 200 && url.includes('/api/payment/')) {
 					trail.payments.push(await response.json());
@@ -453,9 +466,8 @@ async function main() {
 		await page.waitForFunction(() => (document.querySelector('[data-test="pay-status"]')?.textContent ?? '').includes('PENDING'),
 			null, {timeout: 10_000});
 		await shot(page, '13-pay-gateway.png');
-		const paid = trail.checkouts.at(-1).order;
-		assertOrderMoney('coupon checkout', paid, {delivery, fee, discount: expectedDiscount(delivery, paid.subtotal, coupon)});
-		assertMoney('pay view amount vs the order total', paid.total, trail.payments.at(-1).amount);
+		assertMoney('couponed pay view amount', couponedMoney.total, trail.payments.at(-1).amount);
+		const couponedPayment = trail.payments.at(-1);
 		await page.locator('[data-test="pay-confirm"]').click();
 		await page.waitForURL(/\/info/, {timeout: 15_000});
 		await page.waitForSelector('[data-test="order-card"]');
@@ -474,22 +486,24 @@ async function main() {
 		await page.waitForSelector('[data-test="pay-amount"]');
 		await page.waitForFunction(() => (document.querySelector('[data-test="pay-status"]')?.textContent ?? '').includes('PENDING'),
 			null, {timeout: 10_000});
-		const pending = trail.checkouts.at(-1).order;
-		assertOrderMoney('plain checkout', pending, {delivery, fee, discount: 0});
+		assertMoney('plain pay view amount', plainMoney.total, trail.payments.at(-1).amount);
 		await page.locator('a[href="/info"]').click();
 		await page.waitForFunction(() => document.querySelectorAll('[data-test="order-card"]').length === 2,
 			null, {timeout: 10_000});
-		// The history view must echo the exact money the checkouts carried.
+		// The history view must carry exactly the predicted money: the couponed
+		// order is the one that used the coupon, the plain one is not.
 		const history = trail.history.at(-1).content;
-		for (const order of [paid, pending]) {
-			const echo = history.find(entry => entry.id === order.id);
-			if (!echo) {
-				throw new Error(`order ${order.id} is missing from the history view`);
-			}
-			for (const field of ['subtotal', 'deliveryFee', 'discountAmount', 'total']) {
-				assertMoney(`history echo of order ${order.id} ${field}`, order[field], echo[field]);
-			}
+		if (history.length !== 2) {
+			throw new Error(`history view answered ${history.length} orders, expected the 2 walked`);
 		}
+		const couponedOrder = history.find(order => order.couponCode === CONFIG.couponCode);
+		const plainOrder = history.find(order => order.couponCode == null);
+		if (!couponedOrder || !plainOrder) {
+			throw new Error('history view is missing one of the two walked orders');
+		}
+		assertOrderMoney('couponed history order', couponedOrder, couponedMoney);
+		assertOrderMoney('plain history order', plainOrder, plainMoney);
+		assertMoney('history total vs the pay view amount', couponedOrder.total, couponedPayment.amount);
 		await page.locator('[data-test="order-cancel"]').first().click();
 		await page.waitForFunction(() => document.querySelectorAll('[data-test="order-cancel"]').length === 0,
 			null, {timeout: 10_000});
