@@ -7,6 +7,7 @@ import com.lavantien.flowershop.api.product.ProductRepository;
 import com.lavantien.flowershop.api.product.ProductView;
 import com.lavantien.flowershop.api.security.Auth;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -53,7 +54,13 @@ public class WishlistController {
 				return new ToggleOutcome(false);
 			})
 			.orElseGet(() -> {
-				wishlistItemRepository.save(new WishlistItem(userId, productId));
+				try {
+					wishlistItemRepository.save(new WishlistItem(userId, productId));
+				} catch (DataIntegrityViolationException raced) {
+					// Two concurrent toggles both missed the find and both
+					// insert: the unique key rejecting this one means the row
+					// exists now, which is the add this request asked for.
+				}
 				return new ToggleOutcome(true);
 			});
 	}
