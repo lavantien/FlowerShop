@@ -120,5 +120,9 @@
 		"NOT_EXCEL": "Không phải Excel!",
 		"WRONG_FORMAT": "Sai Định dạng!",
 		"IMPORT_SUCCESSFUL": "Nạp vào Thành công!"
+	},
+	"NOT_FOUND": {
+		"MESSAGE": "Trang này không tồn tại.",
+		"BACK": "Về cửa hàng"
 	}
 }

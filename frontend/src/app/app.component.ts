@@ -25,6 +25,7 @@ import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
 import {TooltipDirective} from 'ngx-bootstrap/tooltip';
 import {NgxSpinnerComponent} from 'ngx-spinner';
 import {Subscription} from 'rxjs';
+import {ToastContainerComponent} from './core/toast.component';
 import {InputValidatorService} from './_services/input-validator.service';
 import {SharedService} from './_services/shared.service';
 import {SessionService} from './_services/session.service';
@@ -44,7 +45,8 @@ import {Bill} from './_models/bill';
 		TranslatePipe,
 		FaIconComponent,
 		TooltipDirective,
-		NgxSpinnerComponent
+		NgxSpinnerComponent,
+		ToastContainerComponent
 	],
 	templateUrl: './app.component.html',
 	styleUrls: ['./app.component.scss']

@@ -10,6 +10,7 @@ import {ContactComponent} from './contact/contact.component';
 import {AdminComponent} from './admin/admin.component';
 import {InfoComponent} from './info/info.component';
 import {SummaryComponent} from './summary/summary.component';
+import {NotFoundComponent} from './not-found/not-found.component';
 
 @Component({selector: 'app-empty', template: ''})
 class EmptyComponent {
@@ -27,8 +28,21 @@ describe('app routes', () => {
 			ContactComponent,
 			AdminComponent,
 			InfoComponent,
-			SummaryComponent
+			SummaryComponent,
+			NotFoundComponent
 		]);
+	});
+
+	it('guards the member and admin surfaces', () => {
+		const byPath = new Map(routes.map(route => [route.path, route]));
+		expect(byPath.get('info')?.canActivate).toBeDefined();
+		expect(byPath.get('admin')?.canActivate).toBeDefined();
+		expect(byPath.get('summary')?.canActivate).toBeDefined();
+		expect(byPath.get('shop')?.canActivate).toBeUndefined();
+	});
+
+	it('falls back to the wildcard not found route', () => {
+		expect(routes[routes.length - 1].path).toBe('**');
 	});
 });
 

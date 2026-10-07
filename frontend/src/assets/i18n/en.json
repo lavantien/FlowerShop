@@ -120,5 +120,9 @@
 		"NOT_EXCEL": "Not Excel!",
 		"WRONG_FORMAT": "Wrong Format!",
 		"IMPORT_SUCCESSFUL": "Import Successful!"
+	},
+	"NOT_FOUND": {
+		"MESSAGE": "This page does not exist.",
+		"BACK": "Back to the shop"
 	}
 }
