@@ -2,7 +2,10 @@ package com.lavantien.flowershop.service;
 
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -42,5 +45,15 @@ class ShopPropertiesTest {
 		assertDoesNotThrow(() -> new ShopProperties.Delivery(20000, 5000, 200000, 1000));
 		assertDoesNotThrow(() -> new ShopProperties.Delivery(15000, 3500, 150000, 500));
 		assertDoesNotThrow(() -> new ShopProperties.Delivery(0, 0, 0, 1000));
+	}
+
+	@Test
+	void deliveryAcceptsAWholeDongStep() {
+		// Step 1 is the finest legal grid: the positivity boundary must stop at
+		// zero, not swallow the whole-dong step.
+		ShopProperties.Delivery wholeDong
+			= assertDoesNotThrow(() -> new ShopProperties.Delivery(20000, 5000, 200000, 1));
+		assertEquals(0, BigDecimal.valueOf(255000).compareTo(wholeDong.round(BigDecimal.valueOf(255000))),
+			"a step of 1 rounds every whole dong to itself");
 	}
 }

@@ -1094,6 +1094,21 @@ class OrderControllerTest {
 	}
 
 	@Test
+	void theAdminCancelsAPendingOrderThroughTheStatusEndpointWithoutASessionOnRecord() throws Exception {
+		Order order = stubCancellableOrder(OrderStatus.PENDING, PaymentStatus.PENDING);
+		when(paymentSessionRepository.lockByOrderId(12L)).thenReturn(Optional.empty());
+
+		mockMvc.perform(post("/api/order/12/status").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"status\": \"CANCELLED\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("CANCELLED"));
+
+		assertEquals(OrderStatus.CANCELLED, order.getStatus());
+		verify(stockLevelRepository).increment(3001L, 2);
+	}
+
+	@Test
 	void confirmingAPaymentAfterAnAdminStatusCancelAnswers409() throws Exception {
 		stubCancellableOrder(OrderStatus.PENDING, PaymentStatus.PENDING);
 		when(paymentSessionRepository.lockById("pid-1")).thenReturn(Optional.of(stubbedPayment));
