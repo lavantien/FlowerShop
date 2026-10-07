@@ -4,5 +4,18 @@
 		"processNames": ["java.exe", "node.exe", "chrome.exe", "chromium.exe", "headless_shell.exe"],
 		"includePatterns": ["flowershop", "vitest", "esbuild", "playwright", "ms-playwright"],
 		"excludePatterns": ["claude"]
+	},
+	"fuzz": {
+		"seed": 20261007,
+		"port": 8199,
+		"paymentSecret": "dev-only-secret",
+		"bootTimeoutMs": 120000,
+		"requestTimeoutMs": 10000,
+		"runBudgetMs": 420000,
+		"generatedVariantsPerEndpoint": 6,
+		"stockTopUpQuantity": 500,
+		"corpusPath": "scripts/tools/fuzz-corpus.json",
+		"reportPath": "docs/qa/fuzz-report.md",
+		"serverLogPath": ".tools/fuzz-server.log"
 	}
 }

@@ -1,0 +1,43 @@
+{
+	"$comment": "Committed fuzz corpus consumed by scripts/tools/fuzz-api.mjs (make fuzz). Data only: pools of hostile values the harness composes into requests per endpoint, plus seeded generated variants. Pools are deterministic, the run seed lives in qa.json under fuzz.seed.",
+	"malformedBodies": [
+		"{",
+		"[1,2",
+		"{\"email\": ",
+		"{}}",
+		"null",
+		"123",
+		"\"just a string\"",
+		"{\"a\": undefined}",
+		"{\"a\":1,}",
+		"[]][",
+		"{\"a\": NaN}",
+		"{'a': 1}"
+	],
+	"strings": [
+		"",
+		" ",
+		"null",
+		"undefined",
+		"NaN",
+		"<script>alert(1)</script>",
+		"' OR '1'='1 --",
+		"\"; DROP TABLE user; --",
+		"一個花店 Tulip 🌷 bouquet",
+		"tab\tand\nnewline",
+		"%00%c0%af../../etc/passwd",
+		"\u0000control",
+		"-",
+		"0",
+		"true"
+	],
+	"longString": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+	"numbers": [0, -1, -2147483648, 2147483647, 9223372036854775807, -9223372036854775808, 1e15, -1e15, 0.5, 1.0000000001, 4200000000],
+	"emails": ["", "not-an-email", "a@b", "admin@flowershop.example", "user@", "@x.y", "é@ü.y", "a b@c.d"],
+	"tokenPlaintexts": ["1+USER+secret", "x+y+z", "999999+ADMIN+hijack", "1+USER", ""],
+	"sigs": ["", "zz", "deadbeefdeadbeef", "0000000000000000000000000000000000000000000000000000000000000000", "A", "sig", "%20"],
+	"enums": ["SUPERUSER", "user", "BANANA", "", "-", "0", "PENDING ", "PAID,SHIPPED"],
+	"sortValues": ["name-asc", "name-desc", "price-asc", "price-desc", "banana", "", "-name-asc", "NAME-ASC", "id; DROP TABLE product"],
+	"pages": [0, 1, 7, 999999, -1, -2147483648, 2147483647],
+	"sizes": [1, 12, 48, 49, 0, -5, 1000000, 2147483647]
+}

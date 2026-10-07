@@ -23,7 +23,7 @@ export LOCAL_MYSQL_DB_USERNAME := $(DB_USER)
 export LOCAL_MYSQL_DB_PASSWORD := $(DB_PASS)
 
 .DEFAULT_GOAL := help
-.PHONY: help env db-up db-down db-nuke db-seed db-reset db-hash seeds frontend-install frontend-build frontend-lint frontend-test test-coverage frontend-serve backend-test build package run screenshots audit memguard clean
+.PHONY: help env db-up db-down db-nuke db-seed db-reset db-hash seeds frontend-install frontend-build frontend-lint frontend-test test-coverage frontend-serve backend-test build package run screenshots audit memguard fuzz clean
 
 # Set SKIP_DB_UP=1 when MySQL already runs elsewhere (CI service container);
 # every target below then skips its db-up prerequisite.
@@ -108,6 +108,9 @@ audit: ## npm audit, prod and dev, 0 vulnerabilities or fail
 
 memguard: ## enforce the 4 GB aggregated project-process cap, kill the largest offender on breach
 	@pwsh.exe -NoProfile -File scripts/tools/memguard.ps1
+
+fuzz: $(if $(SKIP_DB_UP),,db-up) ## run the API fuzz harness against the packaged jar, write docs/qa/fuzz-report.md
+	@JAVA_BIN="$(JAVA_BIN)" node scripts/tools/fuzz-api.mjs
 
 clean: ## maven clean and drop node_modules
 	@$(MVNW) $(MVN_ARGS) clean
