@@ -13,7 +13,7 @@ eCommerce web app: a Spring Boot 4 REST API with JPA, BCrypt password hashing, a
 2. `Docker`, which runs MySQL 9.7 LTS through `make db-up`
 3. `MySQL Server 9.7 LTS`, or the Docker container above
 4. An editor of your choice: Neovim (my config lives at [github.com/lavantien/dotfiles](https://github.com/lavantien/dotfiles)), VS Code, or IntelliJ IDEA Community
-5. `Postman` or `Insomnia` for ad hoc API calls
+5. `Postman` or `CURL` for ad hoc API calls
 
 ## Pictures
 
