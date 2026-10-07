@@ -107,7 +107,7 @@ Regenerate this set against the current build with `make screenshots`.
 ```
 [INFO] Results:
 [INFO] 
-[INFO] Tests run: 116, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 119, Failures: 0, Errors: 0, Skipped: 0
 [INFO] 
 [INFO] 
 [INFO] --- jar:3.5.1:jar (default-jar) @ flowershop ---
@@ -119,7 +119,7 @@ Regenerate this set against the current build with `make screenshots`.
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  32.495 s
-[INFO] Finished at: 2026-10-07T10:40:21+07:00
+[INFO] Total time:  35.854 s
+[INFO] Finished at: 2026-10-07T10:51:45+07:00
 [INFO] ------------------------------------------------------------------------
 ```
