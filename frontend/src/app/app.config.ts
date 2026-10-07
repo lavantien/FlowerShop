@@ -8,6 +8,7 @@ import {provideTranslateHttpLoader} from '@ngx-translate/http-loader';
 import {routes} from './app.routes';
 import {PageTitleStrategy} from './core/page-title.strategy';
 import {globalHttpInterceptor} from './core/global-http-interceptor';
+import './locale';
 
 export const appConfig: ApplicationConfig = {
 	providers: [

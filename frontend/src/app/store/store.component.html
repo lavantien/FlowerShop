@@ -2,94 +2,103 @@
 	<div class="wrapper-product">
 		<div class="wrapper-filter">
 			<div class="row">
-				<div class="mb-3 col-xl-2 col-lg-2 col-md-2 col-sm-3 col-3">
-					<input (keyup.enter)="onSearch()" [(ngModel)]="searchForm.name" class="form-control"
-					       placeholder="{{'ADMIN.PRODUCT_NAME' | translate}}"
+				<div class="mb-3 col-xl-2 col-lg-2 col-md-3 col-sm-6 col-6">
+					<input (keyup.enter)="onSearch()" [(ngModel)]="searchText" class="form-control"
+					       data-test="store-search" placeholder="{{'SHOP.SEARCH_PLACEHOLDER' | translate}}"
 					       type="text">
 				</div>
-				<div class="mb-3 col-xl-2 col-lg-2 col-md-2 col-sm-3 col-3">
-					<select (change)="onChangeCategory(); onSearch()" [(ngModel)]="searchForm.categoryName"
-					        class="form-control">
-						@for (category of categories(); track category.name) {
-							<option [value]="category.name">{{'DATA.' + category.name | translate}}</option>
+				<div class="mb-3 col-xl-2 col-lg-2 col-md-3 col-sm-6 col-6">
+					<select #categorySelect (change)="onCategoryChange(categorySelect.value)" class="form-control"
+					        data-test="store-category">
+						<option value="">{{'SHOP.ALL_CATEGORIES' | translate}}</option>
+						@for (categoryOption of categories(); track categoryOption.name) {
+							<option [selected]="categoryOption.name === category()"
+							        [value]="categoryOption.name">{{'DATA.' + categoryOption.name | translate}}</option>
 						}
 					</select>
 				</div>
-				<div class="mb-3 col-xl-2 col-lg-2 col-md-2 col-sm-3 col-3">
-					<select (change)="onChangeTypeSearch(); onSearch()" [(ngModel)]="searchForm.typeName" class="form-control">
-						@for (type of types(); track type.name) {
-							@if (type.categoryName === searchForm.categoryName) {
-								<option [value]="type.name">{{'DATA.' + type.name | translate}}</option>
-							}
+				<div class="mb-3 col-xl-2 col-lg-2 col-md-3 col-sm-6 col-6">
+					<select #typeSelect (change)="onTypeChange(typeSelect.value)" class="form-control"
+					        data-test="store-type">
+						<option value="">{{'SHOP.ALL_TYPES' | translate}}</option>
+						@for (typeOption of typesForCategory(); track typeOption.name) {
+							<option [selected]="typeOption.name === type()"
+							        [value]="typeOption.name">{{'DATA.' + typeOption.name | translate}}</option>
 						}
 					</select>
 				</div>
-				<div class="mb-3 col-xl-1 col-lg-1 col-md-1 col-sm-3 col-3">
-					<button (click)="onSearch()" class="btn btn-dark" placement="bottom"
-					        tooltip="{{'ADMIN.SEARCH_ADVANCED' | translate}}">
+				<div class="mb-3 col-xl-1 col-lg-1 col-md-3 col-sm-6 col-6">
+					<button (click)="onSearch()" class="btn btn-dark" data-test="store-search-button"
+					        placement="bottom" tooltip="{{'ADMIN.SEARCH_ADVANCED' | translate}}" type="button">
 						<fa-icon [icon]="faMagnifyingGlass"></fa-icon>
 					</button>
 				</div>
-				<div class="mb-3 col-xl-3 col-lg-3 col-md-3 col-sm-8 col-8">
+				<div class="mb-3 col-xl-3 col-lg-3 col-md-12 col-sm-12 col-12 text-center">
 					<pagination (pageChanged)="onPageChanged($event)"
-					            [(ngModel)]="currentPage"
 					            [boundaryLinks]="true"
-					            [itemsPerPage]="itemPerPage()"
+					            [itemsPerPage]="size()"
 					            [maxSize]="maxSize"
 					            [pageBtnClass]="'btn-outline-dark'"
-					            [totalItems]="totalItem()"
-					            class="" firstText="&laquo;" lastText="&raquo;" nextText="&rsaquo;"
+					            [totalItems]="totalElements()"
+					            class="store-pagination" firstText="&laquo;" lastText="&raquo;" nextText="&rsaquo;"
 					            previousText="&lsaquo;">
 					</pagination>
+					<div class="range-label" data-test="store-range">{{rangeLabel()}}</div>
 				</div>
-				<div class="mb-3 col-xl-1 col-lg-1 col-md-1 col-sm-1 col-1">
-					<button (click)="onSortPrice()" class="btn btn-dark responsive-float"
-					        placement="bottom" tooltip="{{'SHOP.SORT_PRICE' | translate}}">
-						@if (sortFlip) {
-							<fa-icon [icon]="faArrowUpShortWide"></fa-icon>
+				<div class="mb-3 col-xl-1 col-lg-1 col-md-6 col-sm-6 col-6">
+					<select #sortSelect (change)="onSortChange(sortSelect.value)" class="btn btn-outline-dark w-100"
+					        data-test="store-sort" placement="bottom" tooltip="{{'SHOP.SORT' | translate}}">
+						@for (option of sortOptions; track option) {
+							<option [selected]="option === sort()" [value]="option">
+								{{'SHOP.SORT_' + option.toUpperCase().replace('-', '_') | translate}}
+							</option>
 						}
-						@if (!sortFlip) {
-							<fa-icon [icon]="faArrowDownShortWide"></fa-icon>
-						}
-					</button>
+					</select>
 				</div>
-				<div class="mb-3 col-xl-1 col-lg-1 col-md-1 col-sm-3 col-3">
-					<select (change)="paging(searchResults())" [(ngModel)]="itemPerPage"
-					        class="btn btn-outline-dark responsive-float" placement="bottom"
-					        tooltip="{{'ADMIN.ITEMS_PER_PAGE' | translate}}">
-						@for (val of [6, 12, 24, 48, 96]; track $index; let i = $index) {
-							<option [selected]="i === 0" [value]="val">{{val}}</option>
+				<div class="mb-3 col-xl-1 col-lg-1 col-md-6 col-sm-6 col-6">
+					<select #sizeSelect (change)="onSizeChange(sizeSelect.value)" class="btn btn-outline-dark w-100"
+					        data-test="store-size" placement="bottom" tooltip="{{'ADMIN.ITEMS_PER_PAGE' | translate}}">
+						@for (option of sizeOptions; track option) {
+							<option [selected]="option === size()" [value]="option">{{option}}</option>
 						}
 					</select>
 				</div>
 			</div>
 		</div>
 		<div class="container-fluid">
-			@if (displayProducts().length !== 0) {
+			@if (content().length !== 0) {
 				<div class="row">
-					@for (product of displayProducts(); track $index; let i = $index) {
+					@for (product of content(); track product.id) {
 						<div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 card-group mb-2 px-1">
 							<div class="card">
 								<div class="card-header bg-light text-dark"><b>{{product.name}}</b></div>
 								<div class="card-body">
-									<img (click)="onOpenImage(i, imageTemplate)" [alt]="product.name" [src]="product.imgUrl"
-									     class="card-img-top">
+									<img (click)="openModal(product, detailsTemplate)" [alt]="product.name"
+									     [src]="product.imgUrl" class="card-img-top" data-test="store-card-image">
 								</div>
 								<div class="card-footer bg-light text-dark">
-									<span class="float-start">{{product.price.toLocaleString(translate.currentLang() ?? 'en')}} đ</span>
+									<span class="float-start price">{{product.price | currency:'VND':'symbol':'1.0-0':lang()}}</span>
 									<span class="float-end">
-									<button (click)="onAddToCart(i)" class="btn btn-dark" placement="bottom"
-									        tooltip="{{'SHOP.ADD_TO_CART' | translate}}">
-										<fa-icon [icon]="faCartPlus"></fa-icon>
-									</button>
-								</span>
+										<button (click)="toggleWishlist(product)"
+										        [class.text-danger]="wishlistIds().has(product.id)"
+										        [class.text-secondary]="!wishlistIds().has(product.id)"
+										        class="btn btn-link heart" data-test="store-heart"
+										        placement="bottom" tooltip="{{'SHOP.WISHLIST' | translate}}" type="button">
+											<fa-icon [icon]="faHeart"></fa-icon>
+										</button>
+										<button (click)="addToCart(product)" [disabled]="product.stock < 1"
+										        class="btn btn-dark" data-test="store-add"
+										        placement="bottom" tooltip="{{'SHOP.ADD_TO_CART' | translate}}" type="button">
+											<fa-icon [icon]="faCartPlus"></fa-icon>
+										</button>
+									</span>
 								</div>
 							</div>
 						</div>
 					}
 				</div>
 			}
-			@if (displayProducts().length === 0) {
+			@if (content().length === 0) {
 				<div class="row">
 					<div class="mx-auto"><i>{{'ADMIN.NO_PRODUCT_FOUND' | translate}}</i></div>
 				</div>
@@ -98,9 +107,9 @@
 	</div>
 </div>
 
-<ng-template #imageTemplate>
-	<div class="modal-body text-center">
-		<img [alt]="lightboxCaption()" [src]="lightboxSrc()" class="img-fluid">
-		<div [innerHTML]="lightboxCaption()" class="text-center"></div>
-	</div>
+<ng-template #detailsTemplate>
+	@if (selected(); as product) {
+		<app-product-modal (addToCart)="onModalAddToCart($event)" (toggleWishlist)="toggleWishlist($event)"
+		                   [product]="product" [wished]="wishlistIds().has(product.id)"/>
+	}
 </ng-template>

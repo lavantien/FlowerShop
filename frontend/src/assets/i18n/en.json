@@ -81,7 +81,20 @@
 	"SHOP": {
 		"DETAILS": "Details",
 		"ADD_TO_CART": "Add to shopping cart",
-		"SORT_PRICE": "Sort by price"
+		"SORT_PRICE": "Sort by price",
+		"SEARCH_PLACEHOLDER": "Search flowers...",
+		"ALL_CATEGORIES": "All categories",
+		"ALL_TYPES": "All types",
+		"SORT": "Sort by",
+		"SORT_NAME_ASC": "Name A-Z",
+		"SORT_NAME_DESC": "Name Z-A",
+		"SORT_PRICE_ASC": "Price low to high",
+		"SORT_PRICE_DESC": "Price high to low",
+		"STOCK": "In stock",
+		"OUT_OF_STOCK": "Out of stock",
+		"WISHLIST": "Wishlist",
+		"WISHLIST_ADDED": "Added to wishlist!",
+		"WISHLIST_REMOVED": "Removed from wishlist!"
 	},
 	"DATA": {
 		"FLOWERS": "Flowers",

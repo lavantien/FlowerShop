@@ -81,7 +81,20 @@
 	"SHOP": {
 		"DETAILS": "Chi tiết",
 		"ADD_TO_CART": "Thêm vào giỏ hàng",
-		"SORT_PRICE": "Sắp xếp theo giá"
+		"SORT_PRICE": "Sắp xếp theo giá",
+		"SEARCH_PLACEHOLDER": "Tìm hoa...",
+		"ALL_CATEGORIES": "Tất cả các loại",
+		"ALL_TYPES": "Tất cả các dạng",
+		"SORT": "Sắp xếp",
+		"SORT_NAME_ASC": "Tên A-Z",
+		"SORT_NAME_DESC": "Tên Z-A",
+		"SORT_PRICE_ASC": "Giá tăng dần",
+		"SORT_PRICE_DESC": "Giá giảm dần",
+		"STOCK": "Còn hàng",
+		"OUT_OF_STOCK": "Hết hàng",
+		"WISHLIST": "Yêu thích",
+		"WISHLIST_ADDED": "Đã thêm vào yêu thích!",
+		"WISHLIST_REMOVED": "Đã bỏ khỏi yêu thích!"
 	},
 	"DATA": {
 		"FLOWERS": "Hoa",
