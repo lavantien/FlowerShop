@@ -1,0 +1,117 @@
+<div class="orders-wrapper table-responsive">
+	<div class="wrapper-filter row">
+		<div class="mb-3 col-2">
+			<select #statusSelect (change)="onStatusChange(statusSelect.value)" class="form-control"
+			        data-test="admin-orders-status">
+				<option value="">{{'ADMIN.ALL_STATUSES' | translate}}</option>
+				@for (option of statusOptions; track option) {
+					<option [selected]="option === status()" [value]="option">
+						{{'INFO.STATUS_' + option | translate}}
+					</option>
+				}
+			</select>
+		</div>
+		<div class="mb-3 col-2">
+			<input (change)="onFromDateChange(fromInput.value)" #fromInput [value]="from()" class="form-control"
+			       data-test="admin-orders-from" placeholder="{{'ADMIN.FROM' | translate}}" type="date">
+		</div>
+		<div class="mb-3 col-2">
+			<input (change)="onToDateChange(toInput.value)" #toInput [value]="to()" class="form-control"
+			       data-test="admin-orders-to" placeholder="{{'ADMIN.TO' | translate}}" type="date">
+		</div>
+		<div class="mb-3 col-6">
+			<pagination (pageChanged)="onPageChanged($event)"
+			            [boundaryLinks]="true"
+			            [itemsPerPage]="12"
+			            [maxSize]="maxSize"
+			            [pageBtnClass]="'pagination-style'"
+			            [totalItems]="totalElements()"
+			            class="float-end" data-test="admin-orders-pagination" firstText="&laquo;" lastText="&raquo;"
+			            nextText="&rsaquo;" previousText="&lsaquo;">
+			</pagination>
+		</div>
+	</div>
+	<table class="table table-bordered table-striped table-hover table-sm">
+		<thead class="bg-light text-dark">
+		<tr>
+			<th scope="col">#</th>
+			<th scope="col">{{'ADMIN.ORDER_DATE' | translate}}</th>
+			<th scope="col">{{'ADMIN.USER_ID' | translate}}</th>
+			<th scope="col">{{'ADMIN.STATUS' | translate}}</th>
+			<th scope="col">{{'INFO.TOTAL' | translate}}</th>
+			<th scope="col">{{'INFO.BRANCH' | translate}}</th>
+			<th scope="col">{{'ADMIN.ACTION' | translate}}</th>
+		</tr>
+		</thead>
+		<tbody>
+		@if (content().length !== 0) {
+			@for (order of content(); track order.id) {
+				<ng-container>
+					<tr (click)="toggleExpanded(order)" class="order-row">
+						<th scope="row">{{order.id}}
+							<fa-icon [icon]="isExpanded(order) ? faChevronUp : faChevronDown"></fa-icon>
+						</th>
+						<td>{{order.placedAt | date:'medium':undefined:lang()}}</td>
+						<td>{{order.userId}}</td>
+						<td><span [class]="'badge ' + statusBadge(order.status)"
+						          data-test="admin-order-status">{{order.status}}</span></td>
+						<td>{{order.total | currency:'VND':'symbol':'1.0-0':lang()}}</td>
+						<td>{{order.branchName}}</td>
+						<td (click)="$event.stopPropagation()">
+							@for (target of forwardTargets(order); track target) {
+								<button (click)="onTransition(order, target)" [disabled]="busy() !== null"
+								        class="btn btn-sm btn-info me-1" data-test="admin-order-transition"
+								        placement="bottom" tooltip="{{'INFO.STATUS_' + target | translate}}" type="button">
+									<fa-icon [icon]="target === 'SHIPPED' ? faTruck : faCheck"></fa-icon>
+								</button>
+							}
+							@if (canCancel(order)) {
+								<button (click)="onCancel(order)" [disabled]="busy() !== null" class="btn btn-sm btn-warning"
+								        data-test="admin-order-cancel" placement="bottom"
+								        tooltip="{{'INFO.STATUS_CANCELLED' | translate}}" type="button">
+									<fa-icon [icon]="faBan"></fa-icon>
+								</button>
+							}
+						</td>
+					</tr>
+					@if (isExpanded(order)) {
+						<tr class="order-detail">
+							<td colspan="7">
+								<div class="detail-line">
+									{{'INFO.DELIVERY_TO' | translate}}: {{order.address}}, {{order.district}},
+									{{order.city}} - {{order.phone}}
+								</div>
+								<div class="detail-line">
+									{{'ADMIN.SUBTOTAL' | translate}}: {{order.subtotal | currency:'VND':'symbol':'1.0-0':lang()}}
+									@if (order.discountAmount > 0) {
+										- {{'CART.DISCOUNT' | translate}} ({{order.couponCode}}):
+										-{{order.discountAmount | currency:'VND':'symbol':'1.0-0':lang()}}
+									}
+									- {{'INFO.DELIVERY_FEE' | translate}}:
+									{{order.deliveryFee | currency:'VND':'symbol':'1.0-0':lang()}}
+									({{order.distanceKm}} km)
+								</div>
+								<table class="table table-sm">
+									@for (item of order.items; track item.id) {
+										<tr>
+											<td data-test="admin-order-item">{{item.productName}}</td>
+											<td>{{item.quantity}} x</td>
+											<td>{{item.unitPrice | currency:'VND':'symbol':'1.0-0':lang()}}</td>
+											<td>{{item.lineTotal | currency:'VND':'symbol':'1.0-0':lang()}}</td>
+										</tr>
+									}
+								</table>
+							</td>
+						</tr>
+					}
+				</ng-container>
+			}
+		}
+		@if (content().length === 0) {
+			<tr>
+				<td colspan="7"><i>{{'ADMIN.NO_ORDERS' | translate}}</i></td>
+			</tr>
+		}
+		</tbody>
+	</table>
+</div>

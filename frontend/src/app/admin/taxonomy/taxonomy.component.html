@@ -1,0 +1,107 @@
+<div class="taxonomy-wrapper">
+	<div class="card mb-3">
+		<div class="card-header bg-light text-dark"><b>{{'ADMIN.CATEGORIES' | translate}}</b></div>
+		<div class="card-body">
+			<form (ngSubmit)="onCategorySubmit()" [formGroup]="categoryForm" class="row mb-3">
+				<div class="col-6">
+					<input class="form-control" data-test="admin-category-name" formControlName="name"
+					       placeholder="{{'ADMIN.NAME' | translate}}" type="text">
+				</div>
+				<div class="col-6">
+					<button class="btn btn-success me-1" data-test="admin-category-save" type="submit">
+						<fa-icon [icon]="faPlus"></fa-icon>
+						{{(editCategoryId() === null ? 'ADMIN.ADD' : 'ADMIN.SAVE') | translate}}
+					</button>
+					@if (editCategoryId() !== null) {
+						<button (click)="resetCategoryForm()" class="btn btn-dark" type="button">
+							{{'ADMIN.REFRESH' | translate}}
+						</button>
+					}
+				</div>
+			</form>
+			<table class="table table-bordered table-striped table-sm">
+				<tbody>
+				@for (category of categories(); track category.id) {
+					<tr>
+						<th scope="row">{{category.id}}</th>
+						<td>{{'DATA.' + category.name | translate}}</td>
+						<td class="col-actions">
+							<button (click)="editCategory(category)" class="btn btn-info btn-sm me-1"
+							        data-test="admin-category-edit" placement="bottom"
+							        tooltip="{{'ADMIN.EDIT' | translate}}" type="button">
+								<fa-icon [icon]="faPen"></fa-icon>
+							</button>
+							<button (click)="onCategoryDelete(category)" class="btn btn-warning btn-sm"
+							        data-test="admin-category-delete" placement="bottom"
+							        tooltip="{{'ADMIN.DELETE' | translate}}" type="button">
+								<fa-icon [icon]="faTrash"></fa-icon>
+							</button>
+						</td>
+					</tr>
+				}
+				@if (categories().length === 0) {
+					<tr>
+						<td><i>{{'ADMIN.NO_CATEGORIES' | translate}}</i></td>
+					</tr>
+				}
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<div class="card">
+		<div class="card-header bg-light text-dark"><b>{{'ADMIN.TYPES' | translate}}</b></div>
+		<div class="card-body">
+			<form (ngSubmit)="onTypeSubmit()" [formGroup]="typeForm" class="row mb-3">
+				<div class="col-4">
+					<input class="form-control" data-test="admin-type-name" formControlName="name"
+					       placeholder="{{'ADMIN.NAME' | translate}}" type="text">
+				</div>
+				<div class="col-4">
+					<select class="form-control" data-test="admin-type-category" formControlName="categoryName">
+						@for (category of categories(); track category.id) {
+							<option [value]="category.name">{{'DATA.' + category.name | translate}}</option>
+						}
+					</select>
+				</div>
+				<div class="col-4">
+					<button class="btn btn-success me-1" data-test="admin-type-save" type="submit">
+						<fa-icon [icon]="faPlus"></fa-icon>
+						{{(editTypeId() === null ? 'ADMIN.ADD' : 'ADMIN.SAVE') | translate}}
+					</button>
+					@if (editTypeId() !== null) {
+						<button (click)="resetTypeForm()" class="btn btn-dark" type="button">
+							{{'ADMIN.REFRESH' | translate}}
+						</button>
+					}
+				</div>
+			</form>
+			<table class="table table-bordered table-striped table-sm">
+				<tbody>
+				@for (type of types(); track type.id) {
+					<tr>
+						<th scope="row">{{type.id}}</th>
+						<td>{{'DATA.' + type.name | translate}}</td>
+						<td>{{'DATA.' + type.categoryName | translate}}</td>
+						<td class="col-actions">
+							<button (click)="editType(type)" class="btn btn-info btn-sm me-1" data-test="admin-type-edit"
+							        placement="bottom" tooltip="{{'ADMIN.EDIT' | translate}}" type="button">
+								<fa-icon [icon]="faPen"></fa-icon>
+							</button>
+							<button (click)="onTypeDelete(type)" class="btn btn-warning btn-sm" data-test="admin-type-delete"
+							        placement="bottom" tooltip="{{'ADMIN.DELETE' | translate}}" type="button">
+								<fa-icon [icon]="faTrash"></fa-icon>
+							</button>
+						</td>
+					</tr>
+				}
+				@if (types().length === 0) {
+					<tr>
+						<td><i>{{'ADMIN.NO_TYPES' | translate}}</i></td>
+					</tr>
+				}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>

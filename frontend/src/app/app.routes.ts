@@ -40,6 +40,21 @@ export const routes: Routes = [
 				path: 'products',
 				title: 'Products',
 				loadComponent: () => import('./admin/products/products.component').then(m => m.ProductsComponent)
+			},
+			{
+				path: 'orders',
+				title: 'Orders',
+				loadComponent: () => import('./admin/orders/orders.component').then(m => m.AdminOrdersComponent)
+			},
+			{
+				path: 'users',
+				title: 'Users',
+				loadComponent: () => import('./admin/users/users.component').then(m => m.AdminUsersComponent)
+			},
+			{
+				path: 'taxonomy',
+				title: 'Taxonomy',
+				loadComponent: () => import('./admin/taxonomy/taxonomy.component').then(m => m.AdminTaxonomyComponent)
 			}
 		]
 	},

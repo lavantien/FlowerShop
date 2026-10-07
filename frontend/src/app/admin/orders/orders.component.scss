@@ -1,0 +1,24 @@
+.orders-wrapper {
+	margin: 10px;
+
+	.order-row {
+		cursor: pointer;
+	}
+
+	.order-detail {
+		background-color: rgba(0, 0, 0, .03);
+
+		.detail-line {
+			margin-bottom: 0.5rem;
+		}
+
+		td {
+			text-align: left;
+		}
+	}
+
+	th, td {
+		text-align: center;
+		vertical-align: middle;
+	}
+}

@@ -6,6 +6,9 @@ import {provideTranslateService} from '@ngx-translate/core';
 import {beforeEach, afterEach, describe, expect, it} from 'vitest';
 import {AdminComponent} from './admin.component';
 import {ProductsComponent} from './products/products.component';
+import {AdminOrdersComponent} from './orders/orders.component';
+import {AdminUsersComponent} from './users/users.component';
+import {AdminTaxonomyComponent} from './taxonomy/taxonomy.component';
 import {SessionService, SessionUser} from '../core/session.service';
 
 const admin: SessionUser = {
@@ -34,7 +37,10 @@ describe('AdminComponent shell', () => {
 						component: AdminComponent,
 						children: [
 							{path: '', pathMatch: 'full', redirectTo: 'products'},
-							{path: 'products', component: ProductsComponent}
+							{path: 'products', component: ProductsComponent},
+							{path: 'orders', component: AdminOrdersComponent},
+							{path: 'users', component: AdminUsersComponent},
+							{path: 'taxonomy', component: AdminTaxonomyComponent}
 						]
 					},
 					{path: '**', component: AdminComponent}
@@ -66,11 +72,14 @@ describe('AdminComponent shell', () => {
 		}
 	});
 
-	it('renders the products tab', () => {
+	it('renders the four admin tabs', () => {
 		configure();
 		fixture.detectChanges();
 		const element: HTMLElement = fixture.nativeElement;
 		expect(element.textContent).toContain('ADMIN.TAB_PRODUCTS');
+		expect(element.textContent).toContain('ADMIN.TAB_ORDERS');
+		expect(element.textContent).toContain('ADMIN.TAB_USERS');
+		expect(element.textContent).toContain('ADMIN.TAB_TAXONOMY');
 		expect(element.querySelector('router-outlet')).not.toBeNull();
 	});
 
@@ -94,5 +103,16 @@ describe('AdminComponent shell', () => {
 		flushChildRequests();
 		fixture.detectChanges();
 		expect(fixture.nativeElement.textContent).toContain('ADMIN.NO_PRODUCT_FOUND');
+	});
+
+	it('hosts the taxonomy child under its tab', async () => {
+		configure();
+		fixture.detectChanges();
+		const router = TestBed.inject(Router);
+		await router.navigate(['/admin/taxonomy']);
+		fixture.detectChanges();
+		flushChildRequests();
+		fixture.detectChanges();
+		expect(fixture.nativeElement.textContent).toContain('ADMIN.NO_CATEGORIES');
 	});
 });

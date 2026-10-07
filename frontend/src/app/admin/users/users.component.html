@@ -1,0 +1,53 @@
+<div class="users-wrapper table-responsive">
+	<table class="table table-bordered table-striped table-hover table-sm">
+		<thead class="bg-light text-dark">
+		<tr>
+			<th scope="col">#</th>
+			<th scope="col">{{'MAIN.NAME' | translate}}</th>
+			<th scope="col">{{'MAIN.EMAIL' | translate}}</th>
+			<th scope="col">{{'MAIN.PHONE' | translate}}</th>
+			<th scope="col">{{'ADMIN.ROLE' | translate}}</th>
+			<th scope="col">{{'ADMIN.ENABLED' | translate}}</th>
+			<th scope="col">{{'ADMIN.ACTION' | translate}}</th>
+		</tr>
+		</thead>
+		<tbody>
+		@if (users().length !== 0) {
+			@for (user of users(); track user.id) {
+				<tr>
+					<th scope="row">{{user.id}}</th>
+					<td>{{user.name}}</td>
+					<td>{{user.email}}</td>
+					<td>{{user.phone}}</td>
+					<td>
+						<select (change)="onRoleChange(user, roleSelect.value)" #roleSelect [disabled]="busyId() !== null"
+						        class="form-select form-select-sm" data-test="admin-user-role">
+							@for (role of roles; track role) {
+								<option [selected]="role === user.role" [value]="role">{{role}}</option>
+							}
+						</select>
+					</td>
+					<td>
+						<button (click)="onToggleEnable(user)" [class]="'btn btn-sm ' + (user.enable ? 'btn-success' : 'btn-secondary')"
+						        [disabled]="busyId() !== null" data-test="admin-user-enable" type="button">
+							<fa-icon [icon]="user.enable ? faCheck : faBan"></fa-icon>
+						</button>
+					</td>
+					<td>
+						<button (click)="onDelete(user)" [disabled]="busyId() !== null" class="btn btn-sm btn-warning"
+						        data-test="admin-user-delete" placement="bottom"
+						        tooltip="{{'ADMIN.DELETE_USER' | translate}}" type="button">
+							<fa-icon [icon]="faTrash"></fa-icon>
+						</button>
+					</td>
+				</tr>
+			}
+		}
+		@if (users().length === 0) {
+			<tr>
+				<td colspan="7"><i>{{'ADMIN.NO_USERS' | translate}}</i></td>
+			</tr>
+		}
+		</tbody>
+	</table>
+</div>
