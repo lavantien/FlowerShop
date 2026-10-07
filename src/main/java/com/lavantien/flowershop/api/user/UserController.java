@@ -1,13 +1,14 @@
 package com.lavantien.flowershop.api.user;
 
 import com.lavantien.flowershop.service.MailService;
+import com.lavantien.flowershop.service.PasswordService;
 import com.lavantien.flowershop.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -17,15 +18,15 @@ public class UserController {
 	@SuppressWarnings("unused")
 	private MailService mailService;
 	private UserService userService;
+	private PasswordService passwordService;
 
-	public UserController(UserRepository userRepository, MailService mailService, UserService userService) {
+	public UserController(UserRepository userRepository, MailService mailService, UserService userService,
+			PasswordService passwordService) {
 		this.userRepository = userRepository;
 		this.mailService = mailService;
 		this.userService = userService;
+		this.passwordService = passwordService;
 	}
-
-	@Autowired
-
 
 	@GetMapping
 	public ResponseEntity<List<User>> getAll() {
@@ -34,6 +35,9 @@ public class UserController {
 
 	@PostMapping
 	public ResponseEntity<List<User>> createMany(@RequestBody List<User> users) {
+		for (User user : users) {
+			hashPassword(user);
+		}
 		return ResponseEntity.ok(userRepository.saveAll(users));
 	}
 
@@ -58,7 +62,7 @@ public class UserController {
 
 	@PostMapping("/create")
 	public ResponseEntity<User> create(@RequestBody User user) {
-		user.setPassword(Base64.getEncoder().encodeToString(user.getPassword().getBytes()));
+		hashPassword(user);
 		return ResponseEntity.ok(userRepository.save(user));
 	}
 
@@ -87,14 +91,10 @@ public class UserController {
 		String email = decodedInfo.substring(0, index);
 		String password = decodedInfo.substring(index + 3);
 		User foundUser = userRepository.findByEmail(email);
-		String foundEncodedPassword = foundUser != null ? userRepository.findByEmail(email).getPassword() : "ajB6";
-		String foundPassword = new String(Base64.getDecoder().decode(foundEncodedPassword));
-		TokenDto tokenDto = new TokenDto(Base64.getEncoder().encodeToString("0+GUESS".getBytes()), "0", "A, Nam Tu Liem, Hanoi");
-		if (foundPassword.compareTo(password) == 0) {
-			if (userService.loggedInIds.isEmpty() || userService.loggedInIds.indexOf(foundUser.getId()) == -1) {
-				userService.loggedInIds.add(foundUser.getId());
-			}
-			tokenDto.setToken(Base64.getEncoder().encodeToString((foundUser.getId() + "+" + foundUser.getType()).getBytes()));
+		TokenDto tokenDto = new TokenDto(guessToken(), "0", "A, Cau Giay, Hanoi");
+		if (foundUser != null && passwordService.matches(password, foundUser.getPassword())) {
+			markLoggedIn(foundUser);
+			tokenDto.setToken(userToken(foundUser));
 			tokenDto.setPhone(foundUser.getPhone());
 			tokenDto.setDetailAddress(foundUser.getAddress() + ", " + foundUser.getDistrict() + ", " + foundUser.getCity());
 		}
@@ -110,18 +110,41 @@ public class UserController {
 		if (!userService.loggedInIds.isEmpty()) {
 			userService.loggedInIds.remove(id);
 		}
-		return ResponseEntity.ok(new TokenDto(Base64.getEncoder().encodeToString("0+GUESS".getBytes()), "0", "A, Nam Tu Liem, Hanoi"));
+		return ResponseEntity.ok(new TokenDto(Base64.getEncoder().encodeToString("0+GUESS".getBytes()), "0", "A, Cau Giay, Hanoi"));
 	}
 
 	@PostMapping("/resetPassword")
 	public ResponseEntity<TokenDto> doResetPassword(@RequestBody ForgotDto forgotDto) {
 		User foundUser = userRepository.findByEmail(forgotDto.getEmail());
-		if (foundUser == null || foundUser.getAnswer().compareTo(forgotDto.getAnswer()) != 0) {
-			return ResponseEntity.ok(new TokenDto(Base64.getEncoder().encodeToString("0+GUESS".getBytes()), "0", "A, Nam Tu Liem, Hanoi"));
+		boolean answerMatches = foundUser != null && forgotDto.getPassword() != null
+			&& Objects.equals(foundUser.getAnswer(), forgotDto.getAnswer());
+		if (!answerMatches) {
+			return ResponseEntity.ok(new TokenDto(guessToken(), "0", "A, Cau Giay, Hanoi"));
 		}
-		foundUser.setPassword(forgotDto.getPassword());
+		foundUser.setPassword(passwordService.hash(forgotDto.getPassword()));
 		userRepository.save(foundUser);
-		return ResponseEntity.ok(new TokenDto(Base64.getEncoder().encodeToString((foundUser.getId() + "+" + foundUser.getType()).getBytes()), foundUser.getPhone(), foundUser.getAddress() + ", " + foundUser.getDistrict() + ", " + foundUser.getCity()));
+		markLoggedIn(foundUser);
+		return ResponseEntity.ok(new TokenDto(userToken(foundUser), foundUser.getPhone(), foundUser.getAddress() + ", " + foundUser.getDistrict() + ", " + foundUser.getCity()));
+	}
+
+	private void hashPassword(User user) {
+		if (user.getPassword() != null) {
+			user.setPassword(passwordService.hash(user.getPassword()));
+		}
+	}
+
+	private void markLoggedIn(User user) {
+		if (!userService.loggedInIds.contains(user.getId())) {
+			userService.loggedInIds.add(user.getId());
+		}
+	}
+
+	private static String userToken(User user) {
+		return Base64.getEncoder().encodeToString((user.getId() + "+" + user.getType()).getBytes());
+	}
+
+	private static String guessToken() {
+		return Base64.getEncoder().encodeToString("0+GUESS".getBytes());
 	}
 }
 
