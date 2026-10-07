@@ -56,8 +56,8 @@ db-hash: ## print bcrypt hashes for DB_HASH_PASSWORDS (defaults: seed passwords)
 	@$(MVNW) -q $(MVN_ARGS) dependency:build-classpath -Dmdep.outputFile=target/cp.txt
 	@"$(JAVA_BIN)" --class-path "$$(cat target/cp.txt)" db/tools/BcryptHash.java $(DB_HASH_PASSWORDS)
 
-frontend-install: ## npm install in frontend
-	@$(NPM) install --prefix $(FRONTEND)
+frontend-install: ## clean install of the frontend lockfile (npm ci)
+	@$(NPM) ci --prefix $(FRONTEND)
 
 frontend-build: ## production build of the Angular app into src/main/resources/public
 	@$(NPM) run build --prefix $(FRONTEND)
