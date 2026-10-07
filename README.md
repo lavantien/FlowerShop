@@ -5,7 +5,7 @@
 [![frontend coverage](https://raw.githubusercontent.com/lavantien/FlowerShop/badges/frontend-coverage.svg)](https://github.com/lavantien/FlowerShop/actions/workflows/ci.yml)
 ![aws ready](https://raw.githubusercontent.com/lavantien/FlowerShop/badges/aws-ready.svg)
 
-eCommerce web app: a Spring Boot 4 REST API with JPA, BCrypt password hashing, and token auth, an Angular 22 storefront with an admin console, and MySQL 9.7 LTS storage. The Maven wrapper and `make` targets wrap every build, test, and run step, and the build provisions its own Node 24, so the host needs only a JDK, Docker, and make.
+eCommerce web app: a Spring Boot 4 REST API with JPA, BCrypt password hashing, and token auth, an Angular 22 storefront with an admin console, and MySQL 9.7 LTS storage. The Maven wrapper and `make` targets wrap every build, test, and run step, and the build provisions its own Node 24, so the host needs only a JDK, Docker, and make. For a simpler legacy architecture, check the [v2.0 tag](https://github.com/lavantien/FlowerShop/tree/v2.0).
 
 ## Requirements
 
