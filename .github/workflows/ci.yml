@@ -35,8 +35,11 @@ jobs:
       # localhost resolves to ::1 on runners and skips the service container,
       # so pin the IPv4 loopback. SKIP_DB_UP hands MySQL to the service above.
       - run: make backend-test SKIP_DB_UP=1 DB_HOST=127.0.0.1 MVN_ARGS="-Dskip.npm -Dskip.installnodenpm"
+      # continue-on-error keeps the artifacts optional: a build that dies before
+      # reporting must not block the badges job from publishing a red ci badge.
       - uses: actions/upload-artifact@v7
         if: always()
+        continue-on-error: true
         with:
           name: backend-coverage
           path: target/site/jacoco/jacoco.csv
@@ -53,8 +56,10 @@ jobs:
       - run: make frontend-install
       - run: make frontend-lint
       - run: make test-coverage
+      - run: make frontend-build
       - uses: actions/upload-artifact@v7
         if: always()
+        continue-on-error: true
         with:
           name: frontend-coverage
           path: frontend/coverage/frontend/coverage-summary.json

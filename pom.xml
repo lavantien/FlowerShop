@@ -112,6 +112,11 @@
 						<goals>
 							<goal>prepare-agent</goal>
 						</goals>
+						<configuration>
+							<!-- Overwrite instead of append so the gate measures exactly one
+							run: appended sessions keep deleted tests counted as covered. -->
+							<append>false</append>
+						</configuration>
 					</execution>
 					<execution>
 						<id>report</id>

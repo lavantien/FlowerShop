@@ -9,7 +9,7 @@ function arg(name, fallback) {
 }
 
 const backendCsv = arg('backend-csv', 'target/site/jacoco/jacoco.csv');
-const frontendSummary = arg('frontend-summary', 'frontend/coverage/coverage-summary.json');
+const frontendSummary = arg('frontend-summary', 'frontend/coverage/frontend/coverage-summary.json');
 const ciStatus = arg('ci', 'passing');
 const outDir = arg('out', 'badges-out');
 
@@ -71,6 +71,18 @@ function coverageColor(percent) {
 	return '#e05d44';
 }
 
+// A missing artifact means the producing job died before reporting (for example
+// surefire stopped the build), so the honest badge value is unknown, not a throw:
+// the badges job must still publish a red ci badge over a stale green one.
+async function readPercentOrNull(reader, source) {
+	try {
+		return await reader();
+	} catch (error) {
+		console.log(`[badge] ${source} unreadable (${error.code ?? error.message}), rendering unknown`);
+		return null;
+	}
+}
+
 async function backendCoveragePercent() {
 	const csv = await readFile(backendCsv, 'utf8');
 	let missed = 0;
@@ -98,12 +110,19 @@ async function frontendCoveragePercent() {
 	return Math.floor(pct);
 }
 
+function coverageBadge(label, percent) {
+	if (percent === null) {
+		return badge(label, 'unknown', '#9f9f9f');
+	}
+	return badge(label, `${percent}%`, coverageColor(percent));
+}
+
 await mkdir(outDir, {recursive: true});
-const backendPercent = await backendCoveragePercent();
-const frontendPercent = await frontendCoveragePercent();
+const backendPercent = await readPercentOrNull(backendCoveragePercent, backendCsv);
+const frontendPercent = await readPercentOrNull(frontendCoveragePercent, frontendSummary);
 const badges = [
-	['backend-coverage.svg', badge('backend coverage', `${backendPercent}%`, coverageColor(backendPercent))],
-	['frontend-coverage.svg', badge('frontend coverage', `${frontendPercent}%`, coverageColor(frontendPercent))],
+	['backend-coverage.svg', coverageBadge('backend coverage', backendPercent)],
+	['frontend-coverage.svg', coverageBadge('frontend coverage', frontendPercent)],
 	['ci.svg', badge('ci', ciStatus === 'passing' ? 'passing' : 'failing', ciStatus === 'passing' ? '#4c1' : '#e05d44')]
 ];
 for (const [name, svg] of badges) {
