@@ -4,7 +4,7 @@ import {TestBed} from '@angular/core/testing';
 import {provideRouter} from '@angular/router';
 import {provideTranslateService} from '@ngx-translate/core';
 import {beforeEach, afterEach, describe, expect, it, vi} from 'vitest';
-import {AdminComponent} from './admin.component';
+import {AdminComponent, buildExportFilename} from './admin.component';
 import {Product} from '../_models/product';
 
 describe('AdminComponent request bodies', () => {
@@ -137,5 +137,15 @@ describe('AdminComponent request bodies', () => {
 		req.flush(rows);
 		httpMock.expectOne('/api/product').flush([]);
 		expect(alert).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('buildExportFilename', () => {
+	it('uses the vietnamese file name for the vi interface', () => {
+		expect(buildExportFilename('vi', new Date(2026, 0, 7, 8, 5, 3))).toBe('sản_phẩm__7/1/2026__08:05:03.xlsx');
+	});
+
+	it('uses an ascii file name for the english interface', () => {
+		expect(buildExportFilename('en', new Date(2026, 0, 7, 8, 5, 3))).toBe('data__1/7/2026__8:05:03 AM.xlsx');
 	});
 });
