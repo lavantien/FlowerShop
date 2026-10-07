@@ -19,6 +19,7 @@ import java.util.Optional;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.persona;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.prime;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.tokenOf;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -174,18 +175,20 @@ class TypeControllerTest {
 	}
 
 	@Test
-	void updateSavesTheSubmittedTypeWhenTheRowExists() throws Exception {
+	void updateRenamesTheAddressedRowEvenWhenTheBodyCarriesNoId() throws Exception {
 		when(typeRepository.findById(5L)).thenReturn(Optional.of(flower()));
 		when(typeRepository.save(any(Type.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+		// The documented body and the frontend both send no id.
 		mockMvc.perform(put("/api/type/5").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"id\":5,\"name\":\"POTTED\",\"categoryName\":\"PLANT\"}"))
+				.content("{\"name\":\"POTTED\",\"categoryName\":\"PLANT\"}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.name").value("POTTED"));
 
 		ArgumentCaptor<Type> saved = ArgumentCaptor.forClass(Type.class);
 		verify(typeRepository).save(saved.capture());
+		assertEquals(5L, saved.getValue().getId());
 		assertTrue(saved.getValue().getName().equals("POTTED"));
 		assertTrue(saved.getValue().getCategoryName().equals("PLANT"));
 	}

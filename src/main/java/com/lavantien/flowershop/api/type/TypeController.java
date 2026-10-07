@@ -59,9 +59,14 @@ public class TypeController {
 	@RequireRole(Role.ADMIN)
 	@PutMapping("/{id}")
 	public ResponseEntity<Type> update(@PathVariable Long id, @RequestBody Type type) {
-		typeRepository.findById(id).orElseThrow(() -> new NotFoundException("no type with id " + id));
+		// The documented body carries no id, so the addressed row must be
+		// mutated and saved: saving the request entity would insert a phantom.
+		Type target = typeRepository.findById(id)
+			.orElseThrow(() -> new NotFoundException("no type with id " + id));
 		requireFreeName(type.getName(), id);
-		return ResponseEntity.ok(typeRepository.save(type));
+		target.setName(type.getName());
+		target.setCategoryName(type.getCategoryName());
+		return ResponseEntity.ok(typeRepository.save(target));
 	}
 
 	@RequireRole(Role.ADMIN)

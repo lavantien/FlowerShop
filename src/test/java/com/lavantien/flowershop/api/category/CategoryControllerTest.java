@@ -19,6 +19,7 @@ import java.util.Optional;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.persona;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.prime;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.tokenOf;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -170,18 +171,20 @@ class CategoryControllerTest {
 	}
 
 	@Test
-	void updateSavesTheSubmittedCategoryWhenTheRowExists() throws Exception {
+	void updateRenamesTheAddressedRowEvenWhenTheBodyCarriesNoId() throws Exception {
 		when(categoryRepository.findById(3L)).thenReturn(Optional.of(bouquet()));
 		when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+		// The documented body and the frontend both send no id.
 		mockMvc.perform(put("/api/category/3").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"id\":3,\"name\":\"POTTED\"}"))
+				.content("{\"name\":\"POTTED\"}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.name").value("POTTED"));
 
 		ArgumentCaptor<Category> saved = ArgumentCaptor.forClass(Category.class);
 		verify(categoryRepository).save(saved.capture());
+		assertEquals(3L, saved.getValue().getId());
 		assertTrue(saved.getValue().getName().equals("POTTED"));
 	}
 

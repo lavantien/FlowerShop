@@ -59,9 +59,13 @@ public class CategoryController {
 	@RequireRole(Role.ADMIN)
 	@PutMapping("/{id}")
 	public ResponseEntity<Category> update(@PathVariable Long id, @RequestBody Category category) {
-		categoryRepository.findById(id).orElseThrow(() -> new NotFoundException("no category with id " + id));
+		// The documented body carries no id, so the addressed row must be
+		// mutated and saved: saving the request entity would insert a phantom.
+		Category target = categoryRepository.findById(id)
+			.orElseThrow(() -> new NotFoundException("no category with id " + id));
 		requireFreeName(category.getName(), id);
-		return ResponseEntity.ok(categoryRepository.save(category));
+		target.setName(category.getName());
+		return ResponseEntity.ok(categoryRepository.save(target));
 	}
 
 	@RequireRole(Role.ADMIN)
