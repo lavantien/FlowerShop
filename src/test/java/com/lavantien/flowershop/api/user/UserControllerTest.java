@@ -8,6 +8,7 @@ import com.lavantien.flowershop.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -155,6 +156,23 @@ class UserControllerTest {
 				.content("{\"name\":\"Clone\",\"email\":\"member@flowershop.example\",\"password\":\"1234qwer\","
 					+ "\"answer\":\"demo\"}"))
 			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("EMAIL_IN_USE"));
+	}
+
+	@Test
+	void createAnswersTheDocumented409WhenTheUniqueKeyRaceBeatsThePreflight() throws Exception {
+		// The preflight find misses, the save hits the email unique key.
+		when(userRepository.findByEmail("raced@flowershop.example")).thenReturn(null);
+		when(userRepository.save(any(User.class))).thenThrow(new DataIntegrityViolationException(
+			"could not execute statement",
+			new RuntimeException("Duplicate entry 'raced@flowershop.example' for key '"
+				+ User.EMAIL_UNIQUE_KEY + "'")));
+
+		mockMvc.perform(post("/api/user/create").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Racer\",\"email\":\"raced@flowershop.example\",\"password\":\"1234qwer\","
+					+ "\"answer\":\"demo\"}"))
+			.andExpect(status().isConflict())
+			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
 			.andExpect(jsonPath("$.code").value("EMAIL_IN_USE"));
 	}
 

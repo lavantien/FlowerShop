@@ -1,5 +1,7 @@
 package com.lavantien.flowershop.api.error;
 
+import com.lavantien.flowershop.api.coupon.Coupon;
+import com.lavantien.flowershop.api.user.User;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.context.MessageSourceResolvable;
@@ -27,6 +29,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 // Extending ResponseEntityExceptionHandler claims the framework-raised
 // failures (unreadable bodies, type mismatches, method validation, unmatched
@@ -36,6 +40,12 @@ import java.util.Map;
 // per-field errors map.
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
+	private static final Map<String, String> CONFLICT_CODES_BY_KEY = Map.of(
+		User.EMAIL_UNIQUE_KEY, "EMAIL_IN_USE",
+		Coupon.CODE_UNIQUE_KEY, "NAME_IN_USE");
+
+	private static final Pattern DUPLICATE_KEY = Pattern.compile("for key '([^']+)'");
+
 	@ExceptionHandler(ApiException.class)
 	public ProblemDetail handle(ApiException exception, HttpServletRequest request) {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(exception.status(), exception.getMessage());
@@ -55,13 +65,20 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return problem;
 	}
 
+	// A raced unique-key insert answers "Duplicate entry ... for key '<name>'"
+	// on MySQL 9; the documented 409 codes map by constraint name while any
+	// other integrity failure stays a 400.
 	@ExceptionHandler(DataIntegrityViolationException.class)
 	public ProblemDetail handleIntegrityViolation(DataIntegrityViolationException exception,
 		HttpServletRequest request) {
-		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
-			"the request would violate a data constraint");
+		String key = duplicateKeyOf(exception);
+		String conflictCode = key == null ? null : CONFLICT_CODES_BY_KEY.get(key);
+		ProblemDetail problem = conflictCode == null
+			? ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "the request would violate a data constraint")
+			: ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"the request collides with an existing row on a unique key");
 		problem.setInstance(URI.create(request.getRequestURI()));
-		problem.setProperty("code", "VALIDATION");
+		problem.setProperty("code", conflictCode == null ? "VALIDATION" : conflictCode);
 		return problem;
 	}
 
@@ -150,5 +167,22 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 	private static URI uriOf(WebRequest request) {
 		return request instanceof ServletWebRequest servlet ? URI.create(servlet.getRequest().getRequestURI()) : null;
+	}
+
+	// Walks the cause chain for MySQL's duplicate-entry message and returns
+	// the violated constraint's name, tolerating the 'table.constraint'
+	// qualified form. Null when the violation is not a duplicate key.
+	private static String duplicateKeyOf(DataIntegrityViolationException exception) {
+		for (Throwable cause = exception; cause != null && cause != cause.getCause(); cause = cause.getCause()) {
+			if (cause.getMessage() == null || !cause.getMessage().contains("Duplicate entry")) {
+				continue;
+			}
+			Matcher match = DUPLICATE_KEY.matcher(cause.getMessage());
+			if (match.find()) {
+				String key = match.group(1);
+				return key.substring(key.lastIndexOf('.') + 1);
+			}
+		}
+		return null;
 	}
 }

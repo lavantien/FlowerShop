@@ -9,6 +9,7 @@ import com.lavantien.flowershop.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -32,6 +33,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -142,6 +144,21 @@ class CouponControllerTest {
 			.andExpect(jsonPath("$.code").value("NAME_IN_USE"));
 
 		verify(couponRepository, never()).save(any(Coupon.class));
+	}
+
+	@Test
+	void createAnswersTheDocumented409WhenTheUniqueKeyRaceBeatsThePreflight() throws Exception {
+		when(couponRepository.existsByCode("WELCOME10")).thenReturn(false);
+		when(couponRepository.save(any(Coupon.class))).thenThrow(new DataIntegrityViolationException(
+			"could not execute statement",
+			new RuntimeException("Duplicate entry 'WELCOME10' for key '" + Coupon.CODE_UNIQUE_KEY + "'")));
+
+		mockMvc.perform(post("/api/coupon").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"code\":\"WELCOME10\",\"kind\":\"PERCENT\",\"value\":10}"))
+			.andExpect(status().isConflict())
+			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.code").value("NAME_IN_USE"));
 	}
 
 	@Test

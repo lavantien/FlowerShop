@@ -1,5 +1,7 @@
 package com.lavantien.flowershop.api.error;
 
+import com.lavantien.flowershop.api.coupon.Coupon;
+import com.lavantien.flowershop.api.user.User;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
@@ -77,6 +79,38 @@ class ApiExceptionHandlerTest {
 		assertEquals("Bad Request", problem.getTitle());
 		assertEquals("VALIDATION", problem.getProperties().get("code"));
 		assertEquals("/api/branch", problem.getInstance().toString());
+	}
+
+	@Test
+	void aRacedUserEmailDuplicateAnswers409EmailInUse() {
+		ProblemDetail problem = new ApiExceptionHandler().handleIntegrityViolation(racedDuplicate(
+			"a@b.c", User.EMAIL_UNIQUE_KEY), requestOn("/api/user/create"));
+
+		assertEquals(409, problem.getStatus());
+		assertEquals("EMAIL_IN_USE", problem.getProperties().get("code"));
+	}
+
+	@Test
+	void aRacedCouponCodeDuplicateAnswers409NameInUse() {
+		ProblemDetail problem = new ApiExceptionHandler().handleIntegrityViolation(racedDuplicate(
+			"WELCOME10", Coupon.CODE_UNIQUE_KEY), requestOn("/api/coupon"));
+
+		assertEquals(409, problem.getStatus());
+		assertEquals("NAME_IN_USE", problem.getProperties().get("code"));
+	}
+
+	@Test
+	void theTableQualifiedDuplicateKeyFormMapsToo() {
+		ProblemDetail problem = new ApiExceptionHandler().handleIntegrityViolation(racedDuplicate(
+			"a@b.c", "user." + User.EMAIL_UNIQUE_KEY), requestOn("/api/user/create"));
+
+		assertEquals(409, problem.getStatus());
+		assertEquals("EMAIL_IN_USE", problem.getProperties().get("code"));
+	}
+
+	private static DataIntegrityViolationException racedDuplicate(String entry, String key) {
+		return new DataIntegrityViolationException("could not execute statement",
+			new RuntimeException("Duplicate entry '" + entry + "' for key '" + key + "'"));
 	}
 
 	@Test
