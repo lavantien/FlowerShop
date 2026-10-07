@@ -162,7 +162,25 @@ Every gate runs through a make target, and the committed reports under [docs/qa/
 
 ### Build log (v3.0 release)
 
-<!-- placeholder: the release commit appends the final v3.0 build log under this heading -->
+```
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 351, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] --- jar:3.5.1:jar (default-jar) @ flowershop ---
+[INFO] Building jar: C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-3.0.jar
+[INFO]
+[INFO] --- spring-boot:4.1.1:repackage (repackage) @ flowershop ---
+[INFO] Replacing main artifact C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-3.0.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-3.0.jar.original
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  58.556 s
+[INFO] Finished at: 2026-10-08T01:11:01+07:00
+[INFO] ------------------------------------------------------------------------
+```
 
 ## Architecture and flows
 
