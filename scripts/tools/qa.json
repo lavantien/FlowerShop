@@ -2,7 +2,7 @@
 	"memguard": {
 		"capBytes": 4294967296,
 		"processNames": ["java.exe", "node.exe", "chrome.exe", "chromium.exe", "headless_shell.exe"],
-		"includePatterns": ["flowershop", "vitest", "esbuild", "playwright", "ms-playwright"],
+		"includePatterns": ["flowershop", "vitest", "esbuild", "playwright", "ms-playwright", "maven-wrapper", "classworlds", "\\.m2[/\\\\]wrapper"],
 		"excludePatterns": ["claude"]
 	},
 	"fuzz": {
