@@ -338,6 +338,47 @@ class ProductControllerTest {
 	}
 
 	@Test
+	void adminCannotCreateAProductWithAZeroOrNegativePrice() throws Exception {
+		for (String price : new String[]{"0", "-1000"}) {
+			mockMvc.perform(post("/api/product/create").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"name\":\"Rose\",\"price\":" + price + "}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("VALIDATION"))
+				.andExpect(jsonPath("$.errors.price").value("must be greater than 0"));
+		}
+
+		verify(productRepository, never()).save(any(Product.class));
+	}
+
+	@Test
+	void adminCannotUpdateAProductToAZeroOrNegativePrice() throws Exception {
+		when(productRepository.findById(2L)).thenReturn(Optional.of(rose()));
+
+		for (String price : new String[]{"0", "-1000"}) {
+			mockMvc.perform(put("/api/product/2").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"name\":\"Rose\",\"price\":" + price + "}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("VALIDATION"))
+				.andExpect(jsonPath("$.errors.price").value("must be greater than 0"));
+		}
+
+		verify(productRepository, never()).save(any(Product.class));
+	}
+
+	@Test
+	void bulkUpsertRejectsAZeroOrNegativePriceInTheList() throws Exception {
+		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("[{\"name\":\"Rose\",\"price\":-5},{\"name\":\"Tulip\",\"price\":100000}]"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("VALIDATION"));
+
+		verify(productRepository, never()).save(any(Product.class));
+	}
+
+	@Test
 	void updateReplacesTheRowWithThePathId() throws Exception {
 		when(productRepository.findById(2L)).thenReturn(Optional.of(rose()));
 		when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));

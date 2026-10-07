@@ -2,13 +2,15 @@ package com.lavantien.flowershop.api.product;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import org.hibernate.validator.constraints.Length;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 public record ProductInput(Long id, @NotBlank String name, @Length(max = 2000) String description,
-	@Length(max = 2000) String imgUrl, @NotNull BigDecimal price, String typeName, String categoryName) {
+	@Length(max = 2000) String imgUrl, @NotNull @Positive BigDecimal price, String typeName,
+	String categoryName) {
 
 	// VND prices are whole dong: normalize any submitted scale to 0 so the
 	// DECIMAL(12,0) column and the JSON wire shape never disagree.
