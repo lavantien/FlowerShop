@@ -5,7 +5,7 @@
 // cancel, wishlist, then the full admin back office and a 404.
 import {spawn} from 'node:child_process';
 import {readdir, mkdir} from 'node:fs/promises';
-import {existsSync, statSync} from 'node:fs';
+import {existsSync, statSync, readFileSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright-core';
@@ -44,6 +44,94 @@ async function fetchJson(url, options) {
 		throw new Error(`${options?.method ?? 'GET'} ${url} -> ${response.status}`);
 	}
 	return response.json();
+}
+
+// Money mirrors of the jar's own math (GeoService, Coupon, ShopProperties),
+// parameterized from the committed config and seeds so the expected numbers
+// cannot drift from the source of truth.
+
+function readDeliveryConfig() {
+	const block = readFileSync(path.join(REPO_ROOT, 'src/main/resources/application.yml'), 'utf8')
+		.split('delivery:')[1].split('payment:')[0];
+	const value = key => Number(block.match(new RegExp(`${key}:\\s*(\\d+)`))[1]);
+	return {baseFee: value('base-fee'), perKm: value('per-km'), maxFee: value('max-fee'), roundTo: value('round-to')};
+}
+
+function readDistrictPoint(district) {
+	const hit = JSON.parse(readFileSync(path.join(REPO_ROOT, 'src/main/resources/geo/vn-geo.json'), 'utf8'))
+		.districts.find(entry => entry.name === district);
+	if (!hit) {
+		throw new Error(`district ${district} is missing from vn-geo.json`);
+	}
+	return hit;
+}
+
+function readSeedCoupon(code) {
+	const line = readFileSync(path.join(REPO_ROOT, 'db/run.sql'), 'utf8')
+		.split('\n').find(row => row.includes(`'${code}',`));
+	const hit = line?.match(/^\(\d+,\s*'[^']+',\s*'([A-Z]+)',\s*(\d+),\s*(true|false)/);
+	if (!hit) {
+		throw new Error(`seed coupon ${code} not found in db/run.sql`);
+	}
+	return {kind: hit[1], value: Number(hit[2])};
+}
+
+// Mean earth radius, IUGG R1, with GeoService's ceil to the next tenth of a km.
+const EARTH_RADIUS_KM = 6371.0088;
+
+function distanceKm(from, to) {
+	const radians = degrees => degrees * Math.PI / 180;
+	const sinLat = Math.sin(radians(to.lat - from.lat) / 2);
+	const sinLng = Math.sin(radians(to.lng - from.lng) / 2);
+	const a = sinLat * sinLat
+		+ Math.cos(radians(from.lat)) * Math.cos(radians(to.lat)) * sinLng * sinLng;
+	return Math.ceil(2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(a))) * 10) / 10;
+}
+
+function expectedDeliveryFee(delivery, distance) {
+	const raw = Math.min(delivery.baseFee + delivery.perKm * distance, delivery.maxFee);
+	// HALF_UP onto the round-to step, like ShopProperties.Delivery.round.
+	return Math.round(raw / delivery.roundTo) * delivery.roundTo;
+}
+
+// The fee depends only on the distance, so the nearest eligible branch decides
+// it regardless of GeoService's lowest-id tie-break among equals.
+function nearestBranchDistance(branches, target) {
+	return Math.min(...branches
+		.filter(branch => branch.active && branch.lat !== null && branch.lng !== null)
+		.map(branch => distanceKm({lat: branch.lat, lng: branch.lng}, target)));
+}
+
+// Coupon.discountOn (percent kinds ceil, both clamp to the subtotal) followed
+// by the checkout's round-then-min clamp.
+function expectedDiscount(delivery, subtotal, coupon) {
+	const raw = coupon.kind === 'PERCENT'
+		? Math.ceil(subtotal * coupon.value / 100)
+		: coupon.value;
+	return Math.min(Math.round(Math.min(raw, subtotal) / delivery.roundTo) * delivery.roundTo, subtotal);
+}
+
+function assertMoney(name, expected, actual) {
+	if (expected !== actual) {
+		throw new Error(`money mismatch on ${name}: expected ${expected}, got ${actual}`);
+	}
+}
+
+function assertOrderMoney(label, order, {delivery, fee, discount}) {
+	for (const field of ['subtotal', 'deliveryFee', 'discountAmount', 'total']) {
+		if (!Number.isInteger(order[field])) {
+			throw new Error(`${label}: ${field} is not whole-dong VND: ${order[field]}`);
+		}
+	}
+	assertMoney(`${label} deliveryFee vs the geo formula`, fee, order.deliveryFee);
+	assertMoney(`${label} discountAmount vs the coupon math`, discount, order.discountAmount);
+	assertMoney(`${label} subtotal vs the line totals`,
+		order.items.reduce((sum, item) => sum + item.lineTotal, 0), order.subtotal);
+	for (const item of order.items) {
+		assertMoney(`${label} lineTotal on ${item.productName}`, item.unitPrice * item.quantity, item.lineTotal);
+	}
+	assertMoney(`${label} total identity`,
+		order.subtotal - order.discountAmount + order.deliveryFee, order.total);
 }
 
 async function findJar() {
@@ -271,6 +359,12 @@ async function main() {
 	const server = await startServer();
 	const totalProducts = await verifySeeded();
 	console.log(`[seed] ${totalProducts} products, database is ready`);
+	const delivery = readDeliveryConfig();
+	const districtPoint = readDistrictPoint(CONFIG.member.district);
+	const branches = await fetchJson(`${CONFIG.baseUrl}/api/branch`);
+	const fee = expectedDeliveryFee(delivery, nearestBranchDistance(branches, districtPoint));
+	const coupon = readSeedCoupon(CONFIG.couponCode);
+	console.log(`[money] ${CONFIG.member.district} expects delivery fee ${fee}, ${CONFIG.couponCode} is ${coupon.kind} ${coupon.value}`);
 	let browser;
 	let page;
 	try {
@@ -283,9 +377,26 @@ async function main() {
 			}
 		});
 		page.on('requestfailed', request => console.log(`[requestfailed] ${request.method()} ${request.url()} ${request.failure()?.errorText}`));
-		page.on('response', response => {
+		// Money trail: the JSON behind checkout, the pay view, and the order
+		// history, asserted at the walk's checkpoints instead of trusting the
+		// rendered DOM alone.
+		const trail = {checkouts: [], payments: [], history: []};
+		page.on('response', async response => {
 			if (response.status() >= 400) {
 				console.log(`[http ${response.status()}] ${response.request().method()} ${response.url()}`);
+			}
+			const method = response.request().method();
+			const url = response.url();
+			try {
+				if (method === 'POST' && response.status() === 201 && url.endsWith('/api/order')) {
+					trail.checkouts.push(await response.json());
+				} else if (method === 'GET' && response.status() === 200 && url.includes('/api/order/me')) {
+					trail.history.push(await response.json());
+				} else if (method === 'GET' && response.status() === 200 && url.includes('/api/payment/')) {
+					trail.payments.push(await response.json());
+				}
+			} catch {
+				// non-JSON bodies never join the money trail
 			}
 		});
 
@@ -342,6 +453,9 @@ async function main() {
 		await page.waitForFunction(() => (document.querySelector('[data-test="pay-status"]')?.textContent ?? '').includes('PENDING'),
 			null, {timeout: 10_000});
 		await shot(page, '13-pay-gateway.png');
+		const paid = trail.checkouts.at(-1).order;
+		assertOrderMoney('coupon checkout', paid, {delivery, fee, discount: expectedDiscount(delivery, paid.subtotal, coupon)});
+		assertMoney('pay view amount vs the order total', paid.total, trail.payments.at(-1).amount);
 		await page.locator('[data-test="pay-confirm"]').click();
 		await page.waitForURL(/\/info/, {timeout: 15_000});
 		await page.waitForSelector('[data-test="order-card"]');
@@ -360,9 +474,22 @@ async function main() {
 		await page.waitForSelector('[data-test="pay-amount"]');
 		await page.waitForFunction(() => (document.querySelector('[data-test="pay-status"]')?.textContent ?? '').includes('PENDING'),
 			null, {timeout: 10_000});
+		const pending = trail.checkouts.at(-1).order;
+		assertOrderMoney('plain checkout', pending, {delivery, fee, discount: 0});
 		await page.locator('a[href="/info"]').click();
 		await page.waitForFunction(() => document.querySelectorAll('[data-test="order-card"]').length === 2,
 			null, {timeout: 10_000});
+		// The history view must echo the exact money the checkouts carried.
+		const history = trail.history.at(-1).content;
+		for (const order of [paid, pending]) {
+			const echo = history.find(entry => entry.id === order.id);
+			if (!echo) {
+				throw new Error(`order ${order.id} is missing from the history view`);
+			}
+			for (const field of ['subtotal', 'deliveryFee', 'discountAmount', 'total']) {
+				assertMoney(`history echo of order ${order.id} ${field}`, order[field], echo[field]);
+			}
+		}
 		await page.locator('[data-test="order-cancel"]').first().click();
 		await page.waitForFunction(() => document.querySelectorAll('[data-test="order-cancel"]').length === 0,
 			null, {timeout: 10_000});
