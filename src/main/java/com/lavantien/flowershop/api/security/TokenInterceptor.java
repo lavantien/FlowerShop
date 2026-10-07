@@ -1,5 +1,7 @@
 package com.lavantien.flowershop.api.security;
 
+import com.lavantien.flowershop.api.error.ForbiddenException;
+import com.lavantien.flowershop.api.error.UnauthenticatedException;
 import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.User;
 import com.lavantien.flowershop.api.user.UserRepository;
@@ -40,8 +42,7 @@ public class TokenInterceptor implements HandlerInterceptor {
 	}
 
 	@Override
-	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
-			throws Exception {
+	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
 		if (!(handler instanceof HandlerMethod) || isPublic(request)) {
 			return true;
 		}
@@ -49,19 +50,16 @@ public class TokenInterceptor implements HandlerInterceptor {
 		try {
 			session = Auth.parseSession(request.getHeader("X-Auth-Token"));
 		} catch (RuntimeException malformed) {
-			response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-			return false;
+			throw new UnauthenticatedException("a valid X-Auth-Token header is required");
 		}
 		User user = userRepository.findById(session.id()).orElse(null);
 		if (user == null || !Boolean.TRUE.equals(user.getEnable())
 				|| session.role() != user.getRole() || !userService.hasSession(session.id(), session.secret())) {
-			response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-			return false;
+			throw new UnauthenticatedException("the session is no longer valid");
 		}
 		RequireRole requiredRole = ((HandlerMethod) handler).getMethodAnnotation(RequireRole.class);
 		if (requiredRole != null && requiredRole.value() != session.role()) {
-			response.sendError(HttpServletResponse.SC_FORBIDDEN);
-			return false;
+			throw new ForbiddenException("this endpoint requires the " + requiredRole.value() + " role");
 		}
 		request.setAttribute(Auth.USER_ID_ATTRIBUTE, session.id());
 		request.setAttribute(Auth.ROLE_ATTRIBUTE, session.role());

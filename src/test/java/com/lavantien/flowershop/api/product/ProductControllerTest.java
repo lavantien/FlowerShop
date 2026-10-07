@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.product;
 
+import com.lavantien.flowershop.api.error.ApiExceptionHandler;
 import com.lavantien.flowershop.api.security.TokenInterceptor;
 import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.UserRepository;
@@ -44,6 +45,7 @@ class ProductControllerTest {
 		mockMvc = MockMvcBuilders.standaloneSetup(
 				new ProductController(productRepository, new ProductService(productRepository)))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
+			.setControllerAdvice(new ApiExceptionHandler())
 			.build();
 		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 	}
@@ -110,11 +112,12 @@ class ProductControllerTest {
 	}
 
 	@Test
-	void missingProductAnswersBadRequest() throws Exception {
+	void missingProductAnswersNotFound() throws Exception {
 		when(productRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(get("/api/product/99"))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
 	}
 
 	@Test
@@ -258,13 +261,13 @@ class ProductControllerTest {
 	}
 
 	@Test
-	void updateAnswersBadRequestForAMissingRow() throws Exception {
+	void updateAnswersNotFoundForAMissingRow() throws Exception {
 		when(productRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(put("/api/product/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"Tulip\"}"))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound());
 	}
 
 	@Test
@@ -278,10 +281,10 @@ class ProductControllerTest {
 	}
 
 	@Test
-	void deleteAnswersBadRequestForAMissingRow() throws Exception {
+	void deleteAnswersNotFoundForAMissingRow() throws Exception {
 		when(productRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(delete("/api/product/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound());
 	}
 }

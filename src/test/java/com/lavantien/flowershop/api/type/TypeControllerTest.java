@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.type;
 
+import com.lavantien.flowershop.api.error.ApiExceptionHandler;
 import com.lavantien.flowershop.api.security.TokenInterceptor;
 import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.UserRepository;
@@ -41,6 +42,7 @@ class TypeControllerTest {
 		UserService userService = new UserService();
 		mockMvc = MockMvcBuilders.standaloneSetup(new TypeController(typeRepository))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
+			.setControllerAdvice(new ApiExceptionHandler())
 			.build();
 		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
@@ -79,11 +81,12 @@ class TypeControllerTest {
 	}
 
 	@Test
-	void missingTypeAnswersBadRequest() throws Exception {
+	void missingTypeAnswersNotFound() throws Exception {
 		when(typeRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(get("/api/type/99"))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
 	}
 
 	@Test
@@ -169,13 +172,13 @@ class TypeControllerTest {
 	}
 
 	@Test
-	void updateAnswersBadRequestForAMissingType() throws Exception {
+	void updateAnswersNotFoundForAMissingType() throws Exception {
 		when(typeRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(put("/api/type/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"POTTED\"}"))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound());
 	}
 
 	@Test
@@ -189,10 +192,10 @@ class TypeControllerTest {
 	}
 
 	@Test
-	void deleteAnswersBadRequestForAMissingType() throws Exception {
+	void deleteAnswersNotFoundForAMissingType() throws Exception {
 		when(typeRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(delete("/api/type/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound());
 	}
 }

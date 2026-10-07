@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.category;
 
+import com.lavantien.flowershop.api.error.ApiExceptionHandler;
 import com.lavantien.flowershop.api.security.TokenInterceptor;
 import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.UserRepository;
@@ -41,6 +42,7 @@ class CategoryControllerTest {
 		UserService userService = new UserService();
 		mockMvc = MockMvcBuilders.standaloneSetup(new CategoryController(categoryRepository))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
+			.setControllerAdvice(new ApiExceptionHandler())
 			.build();
 		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
@@ -76,11 +78,12 @@ class CategoryControllerTest {
 	}
 
 	@Test
-	void missingCategoryAnswersBadRequest() throws Exception {
+	void missingCategoryAnswersNotFound() throws Exception {
 		when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(get("/api/category/99"))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
 	}
 
 	@Test
@@ -164,13 +167,13 @@ class CategoryControllerTest {
 	}
 
 	@Test
-	void updateAnswersBadRequestForAMissingCategory() throws Exception {
+	void updateAnswersNotFoundForAMissingCategory() throws Exception {
 		when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(put("/api/category/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"POTTED\"}"))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound());
 	}
 
 	@Test
@@ -184,10 +187,10 @@ class CategoryControllerTest {
 	}
 
 	@Test
-	void deleteAnswersBadRequestForAMissingCategory() throws Exception {
+	void deleteAnswersNotFoundForAMissingCategory() throws Exception {
 		when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(delete("/api/category/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound());
 	}
 }

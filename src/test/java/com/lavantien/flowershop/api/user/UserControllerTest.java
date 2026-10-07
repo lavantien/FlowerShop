@@ -1,6 +1,7 @@
 package com.lavantien.flowershop.api.user;
 
 import com.jayway.jsonpath.JsonPath;
+import com.lavantien.flowershop.api.error.ApiExceptionHandler;
 import com.lavantien.flowershop.api.security.TokenInterceptor;
 import com.lavantien.flowershop.service.PasswordService;
 import com.lavantien.flowershop.service.UserService;
@@ -31,6 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -47,6 +49,7 @@ class UserControllerTest {
 		passwordService = new PasswordService();
 		mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userRepository, userService, passwordService))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
+			.setControllerAdvice(new ApiExceptionHandler())
 			.build();
 	}
 
@@ -352,23 +355,27 @@ class UserControllerTest {
 	}
 
 	@Test
-	void getByIdAnswersBadRequestForAMissingAccount() throws Exception {
+	void getByIdAnswersNotFoundForAMissingAccount() throws Exception {
 		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(get("/api/user/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound())
+			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"))
+			.andExpect(jsonPath("$.detail").value("no user with id 99"));
 	}
 
 	@Test
-	void updateAnswersBadRequestForAMissingAccount() throws Exception {
+	void updateAnswersNotFoundForAMissingAccount() throws Exception {
 		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(put("/api/user/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"Ghost\"}"))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
 	}
 
 	@Test
@@ -383,12 +390,13 @@ class UserControllerTest {
 	}
 
 	@Test
-	void deleteAnswersBadRequestForAMissingAccount() throws Exception {
+	void deleteAnswersNotFoundForAMissingAccount() throws Exception {
 		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		when(userRepository.findById(9L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(delete("/api/user/9").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
 	}
 
 	@Test

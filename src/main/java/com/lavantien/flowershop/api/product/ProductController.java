@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.product;
 
+import com.lavantien.flowershop.api.error.NotFoundException;
 import com.lavantien.flowershop.api.security.RequireRole;
 import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.service.ProductService;
@@ -8,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/product")
@@ -51,11 +51,8 @@ public class ProductController {
 
 	@GetMapping("/{id}")
 	public ResponseEntity<Product> getById(@PathVariable Long id) {
-		Optional<Product> product = productRepository.findById(id);
-		if (product.isEmpty()) {
-			return ResponseEntity.badRequest().build();
-		}
-		return ResponseEntity.ok(product.get());
+		return ResponseEntity.ok(productRepository.findById(id)
+			.orElseThrow(() -> new NotFoundException("no product with id " + id)));
 	}
 
 	@RequireRole(Role.ADMIN)
@@ -67,18 +64,14 @@ public class ProductController {
 	@RequireRole(Role.ADMIN)
 	@PutMapping("/{id}")
 	public ResponseEntity<Product> update(@PathVariable Long id, @RequestBody Product product) {
-		if (productRepository.findById(id).isEmpty()) {
-			return ResponseEntity.badRequest().build();
-		}
+		productRepository.findById(id).orElseThrow(() -> new NotFoundException("no product with id " + id));
 		return ResponseEntity.ok(productRepository.save(product));
 	}
 
 	@RequireRole(Role.ADMIN)
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> delete(@PathVariable Long id) {
-		if (productRepository.findById(id).isEmpty()) {
-			return ResponseEntity.badRequest().build();
-		}
+		productRepository.findById(id).orElseThrow(() -> new NotFoundException("no product with id " + id));
 		productRepository.deleteById(id);
 		return ResponseEntity.ok().build();
 	}

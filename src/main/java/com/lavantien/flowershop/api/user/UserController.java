@@ -1,11 +1,13 @@
 package com.lavantien.flowershop.api.user;
 
+import com.lavantien.flowershop.api.error.ConflictException;
+import com.lavantien.flowershop.api.error.ForbiddenException;
+import com.lavantien.flowershop.api.error.NotFoundException;
 import com.lavantien.flowershop.api.security.Auth;
 import com.lavantien.flowershop.api.security.RequireRole;
 import com.lavantien.flowershop.service.PasswordService;
 import com.lavantien.flowershop.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,9 +38,7 @@ public class UserController {
 	@PostMapping
 	public ResponseEntity<List<User>> createMany(@RequestBody List<User> users) {
 		for (User user : users) {
-			if (emailInUse(user.getEmail())) {
-				return ResponseEntity.status(HttpStatus.CONFLICT).build();
-			}
+			refuseEmailInUse(user.getEmail());
 		}
 		for (User user : users) {
 			hashPassword(user);
@@ -60,22 +60,15 @@ public class UserController {
 	@GetMapping("/{id}")
 	public ResponseEntity<User> getById(@PathVariable Long id, HttpServletRequest request) {
 		if (!Auth.ownIdOrAdmin(id, request)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+			throw new ForbiddenException("only the owner or an admin may read this account");
 		}
-		Optional<User> user = userRepository.findById(id);
-		if (user.isEmpty()) {
-			return ResponseEntity.badRequest().build();
-		}
-		return ResponseEntity.ok(user.get());
+		return ResponseEntity.ok(userRepository.findById(id)
+			.orElseThrow(() -> new NotFoundException("no user with id " + id)));
 	}
 
 	@PostMapping("/create")
 	public ResponseEntity<User> create(@RequestBody User user) {
-		if (emailInUse(user.getEmail())) {
-			// A duplicate row would break findByEmail for that address forever,
-			// so refuse instead of letting the unique index explode at runtime.
-			return ResponseEntity.status(HttpStatus.CONFLICT).build();
-		}
+		refuseEmailInUse(user.getEmail());
 		user.setRole(Role.USER);
 		hashPassword(user);
 		return ResponseEntity.ok(userRepository.save(user));
@@ -84,11 +77,11 @@ public class UserController {
 	@PutMapping("/{id}")
 	public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User user, HttpServletRequest request) {
 		if (!Auth.ownIdOrAdmin(id, request)) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+			throw new ForbiddenException("only the owner or an admin may change this account");
 		}
 		Optional<User> existing = userRepository.findById(id);
 		if (existing.isEmpty()) {
-			return ResponseEntity.badRequest().build();
+			throw new NotFoundException("no user with id " + id);
 		}
 		User managed = existing.get();
 		managed.setName(user.getName());
@@ -105,9 +98,7 @@ public class UserController {
 	@RequireRole(Role.ADMIN)
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> delete(@PathVariable Long id) {
-		if (userRepository.findById(id).isEmpty()) {
-			return ResponseEntity.badRequest().build();
-		}
+		userRepository.findById(id).orElseThrow(() -> new NotFoundException("no user with id " + id));
 		userRepository.deleteById(id);
 		return ResponseEntity.ok().build();
 	}
@@ -178,8 +169,12 @@ public class UserController {
 		return userService.login(user.getId());
 	}
 
-	private boolean emailInUse(String email) {
-		return email != null && userRepository.findByEmail(email) != null;
+	private void refuseEmailInUse(String email) {
+		// A duplicate row would break findByEmail for that address forever,
+		// so refuse instead of letting the unique index explode at runtime.
+		if (email != null && userRepository.findByEmail(email) != null) {
+			throw new ConflictException("EMAIL_IN_USE", email + " is already registered");
+		}
 	}
 
 	private static String userToken(User user, String secret) {

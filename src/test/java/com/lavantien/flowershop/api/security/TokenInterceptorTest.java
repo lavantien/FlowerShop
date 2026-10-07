@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.security;
 
+import com.lavantien.flowershop.api.error.ApiExceptionHandler;
 import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.UserRepository;
 import com.lavantien.flowershop.service.UserService;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class TokenInterceptorTest {
@@ -35,6 +37,7 @@ class TokenInterceptorTest {
 		userService = new UserService();
 		mockMvc = MockMvcBuilders.standaloneSetup(new ProbeController())
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
+			.setControllerAdvice(new ApiExceptionHandler())
 			.build();
 	}
 
@@ -60,7 +63,9 @@ class TokenInterceptorTest {
 	@Test
 	void missingHeaderIsRejected() throws Exception {
 		mockMvc.perform(get("/api/probe"))
-			.andExpect(status().isUnauthorized());
+			.andExpect(status().isUnauthorized())
+			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
 	}
 
 	@Test
@@ -153,7 +158,8 @@ class TokenInterceptorTest {
 			.andExpect(status().isOk())
 			.andExpect(content().string("admin only"));
 		mockMvc.perform(get("/api/probe/admin").header("X-Auth-Token", tokenOf(4, Role.USER)))
-			.andExpect(status().isForbidden());
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.code").value("FORBIDDEN"));
 	}
 
 	private static String tokenOfRaw(String raw) {

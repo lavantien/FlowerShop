@@ -1,12 +1,12 @@
 package com.lavantien.flowershop.api.category;
 
+import com.lavantien.flowershop.api.error.NotFoundException;
 import com.lavantien.flowershop.api.security.RequireRole;
 import com.lavantien.flowershop.api.user.Role;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/category")
@@ -41,11 +41,8 @@ public class CategoryController {
 
 	@GetMapping("/{id}")
 	public ResponseEntity<Category> getById(@PathVariable Long id) {
-		Optional<Category> category = categoryRepository.findById(id);
-		if (category.isEmpty()) {
-			return ResponseEntity.badRequest().build();
-		}
-		return ResponseEntity.ok(category.get());
+		return ResponseEntity.ok(categoryRepository.findById(id)
+			.orElseThrow(() -> new NotFoundException("no category with id " + id)));
 	}
 
 	@RequireRole(Role.ADMIN)
@@ -57,18 +54,14 @@ public class CategoryController {
 	@RequireRole(Role.ADMIN)
 	@PutMapping("/{id}")
 	public ResponseEntity<Category> update(@PathVariable Long id, @RequestBody Category category) {
-		if (categoryRepository.findById(id).isEmpty()) {
-			return ResponseEntity.badRequest().build();
-		}
+		categoryRepository.findById(id).orElseThrow(() -> new NotFoundException("no category with id " + id));
 		return ResponseEntity.ok(categoryRepository.save(category));
 	}
 
 	@RequireRole(Role.ADMIN)
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> delete(@PathVariable Long id) {
-		if (categoryRepository.findById(id).isEmpty()) {
-			return ResponseEntity.badRequest().build();
-		}
+		categoryRepository.findById(id).orElseThrow(() -> new NotFoundException("no category with id " + id));
 		categoryRepository.deleteById(id);
 		return ResponseEntity.ok().build();
 	}

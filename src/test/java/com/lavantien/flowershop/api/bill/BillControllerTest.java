@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.bill;
 
+import com.lavantien.flowershop.api.error.ApiExceptionHandler;
 import com.lavantien.flowershop.api.security.TokenInterceptor;
 import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.UserRepository;
@@ -44,6 +45,7 @@ class BillControllerTest {
 		userService = new UserService();
 		mockMvc = MockMvcBuilders.standaloneSetup(new BillController(billRepository))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
+			.setControllerAdvice(new ApiExceptionHandler())
 			.build();
 		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
@@ -152,11 +154,12 @@ class BillControllerTest {
 	}
 
 	@Test
-	void missingBillAnswersBadRequest() throws Exception {
+	void missingBillAnswersNotFound() throws Exception {
 		when(billRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(get("/api/bill/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
 	}
 
 	@Test
@@ -184,13 +187,13 @@ class BillControllerTest {
 	}
 
 	@Test
-	void updateAnswersBadRequestForAMissingBill() throws Exception {
+	void updateAnswersNotFoundForAMissingBill() throws Exception {
 		when(billRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(put("/api/bill/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"status\":\"SETTLED\"}"))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound());
 	}
 
 	@Test
@@ -206,11 +209,11 @@ class BillControllerTest {
 	}
 
 	@Test
-	void deleteAnswersBadRequestForAMissingBill() throws Exception {
+	void deleteAnswersNotFoundForAMissingBill() throws Exception {
 		when(billRepository.findById(99L)).thenReturn(Optional.empty());
 
 		mockMvc.perform(delete("/api/bill/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNotFound());
 	}
 
 	@Test

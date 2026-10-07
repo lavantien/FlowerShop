@@ -1,12 +1,12 @@
 package com.lavantien.flowershop.api.type;
 
+import com.lavantien.flowershop.api.error.NotFoundException;
 import com.lavantien.flowershop.api.security.RequireRole;
 import com.lavantien.flowershop.api.user.Role;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/type")
@@ -41,11 +41,8 @@ public class TypeController {
 
 	@GetMapping("/{id}")
 	public ResponseEntity<Type> getById(@PathVariable Long id) {
-		Optional<Type> type = typeRepository.findById(id);
-		if (type.isEmpty()) {
-			return ResponseEntity.badRequest().build();
-		}
-		return ResponseEntity.ok(type.get());
+		return ResponseEntity.ok(typeRepository.findById(id)
+			.orElseThrow(() -> new NotFoundException("no type with id " + id)));
 	}
 
 	@RequireRole(Role.ADMIN)
@@ -57,18 +54,14 @@ public class TypeController {
 	@RequireRole(Role.ADMIN)
 	@PutMapping("/{id}")
 	public ResponseEntity<Type> update(@PathVariable Long id, @RequestBody Type type) {
-		if (typeRepository.findById(id).isEmpty()) {
-			return ResponseEntity.badRequest().build();
-		}
+		typeRepository.findById(id).orElseThrow(() -> new NotFoundException("no type with id " + id));
 		return ResponseEntity.ok(typeRepository.save(type));
 	}
 
 	@RequireRole(Role.ADMIN)
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> delete(@PathVariable Long id) {
-		if (typeRepository.findById(id).isEmpty()) {
-			return ResponseEntity.badRequest().build();
-		}
+		typeRepository.findById(id).orElseThrow(() -> new NotFoundException("no type with id " + id));
 		typeRepository.deleteById(id);
 		return ResponseEntity.ok().build();
 	}
