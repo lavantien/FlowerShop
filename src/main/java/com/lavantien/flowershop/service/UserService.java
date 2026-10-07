@@ -24,6 +24,12 @@ public class UserService {
 		sessionSecrets.remove(id, secret);
 	}
 
+	// A password change must kill every session the user holds, not just
+	// the one that asked for it.
+	public void logoutAll(long id) {
+		sessionSecrets.remove(id);
+	}
+
 	public boolean hasSession(long id, String secret) {
 		return secret != null && secret.equals(sessionSecrets.get(id));
 	}

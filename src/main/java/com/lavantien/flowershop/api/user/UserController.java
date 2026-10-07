@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.user;
 
+import com.lavantien.flowershop.api.bill.BillRepository;
 import com.lavantien.flowershop.api.error.ConflictException;
 import com.lavantien.flowershop.api.error.ForbiddenException;
 import com.lavantien.flowershop.api.error.NotFoundException;
@@ -16,97 +17,119 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
+	// Self registration never binds the entity raw: a submitted id would
+	// merge into someone else's row and a submitted enable or role would
+	// leak admin powers onto a public endpoint.
+	public record CreateRequest(@NotBlank String name, @NotBlank String email, @NotBlank String password,
+		String phone, String address, String district, String city, String answer) {}
+
+	public record UpdateMeRequest(@NotBlank String name, String phone, String address, String district, String city) {}
+
+	public record PasswordChangeRequest(@NotBlank String currentPassword, @NotBlank String newPassword) {}
+
+	public record AdminUpdateRequest(@NotBlank String name, String phone, Role role, Boolean enable) {}
+
+	public record ResetPasswordRequest(@NotBlank String email, @NotBlank String answer, @NotBlank String newPassword) {}
+
 	private final UserRepository userRepository;
+	private final BillRepository billRepository;
 	private final UserService userService;
 	private final PasswordService passwordService;
 
-	public UserController(UserRepository userRepository, UserService userService, PasswordService passwordService) {
+	public UserController(UserRepository userRepository, BillRepository billRepository, UserService userService,
+		PasswordService passwordService) {
 		this.userRepository = userRepository;
+		this.billRepository = billRepository;
 		this.userService = userService;
 		this.passwordService = passwordService;
 	}
 
+	@GetMapping("/me")
+	public UserView me(HttpServletRequest request) {
+		return UserView.from(currentUser(request));
+	}
+
+	@PutMapping("/me")
+	public UserView updateMe(@Valid @RequestBody UpdateMeRequest changes, HttpServletRequest request) {
+		User managed = currentUser(request);
+		managed.setName(changes.name());
+		managed.setPhone(changes.phone());
+		managed.setAddress(changes.address());
+		managed.setDistrict(changes.district());
+		managed.setCity(changes.city());
+		return UserView.from(userRepository.save(managed));
+	}
+
+	@PostMapping("/me/password")
+	public ResponseEntity<Void> changePassword(@Valid @RequestBody PasswordChangeRequest changes,
+		HttpServletRequest request) {
+		User managed = currentUser(request);
+		if (!passwordService.matches(changes.currentPassword(), managed.getPassword())) {
+			throw new UnauthenticatedException("the current password is wrong");
+		}
+		managed.setPassword(passwordService.hash(changes.newPassword()));
+		userRepository.save(managed);
+		userService.logoutAll(managed.getId());
+		return ResponseEntity.noContent().build();
+	}
+
 	@RequireRole(Role.ADMIN)
 	@GetMapping
-	public ResponseEntity<List<User>> getAll() {
-		return ResponseEntity.ok(userRepository.findAll());
+	public List<UserView> getAll() {
+		return userRepository.findAll().stream().map(UserView::from).toList();
 	}
 
 	@RequireRole(Role.ADMIN)
-	@PostMapping
-	public ResponseEntity<List<User>> createMany(@RequestBody List<User> users) {
-		for (User user : users) {
-			refuseEmailInUse(user.getEmail());
-		}
-		for (User user : users) {
-			hashPassword(user);
-		}
-		return ResponseEntity.ok(userRepository.saveAll(users));
-	}
-
-	@RequireRole(Role.ADMIN)
-	@DeleteMapping
-	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
-		if (ids == null) {
-			userRepository.deleteAll();
-			return ResponseEntity.ok().build();
-		}
-		userRepository.deleteAll(userRepository.findAllById(ids));
-		return ResponseEntity.ok().build();
-	}
-
-	@GetMapping("/{id}")
-	public ResponseEntity<User> getById(@PathVariable Long id, HttpServletRequest request) {
-		if (!Auth.ownIdOrAdmin(id, request)) {
-			throw new ForbiddenException("only the owner or an admin may read this account");
-		}
-		return ResponseEntity.ok(userRepository.findById(id)
-			.orElseThrow(() -> new NotFoundException("no user with id " + id)));
-	}
-
-	@PostMapping("/create")
-	public ResponseEntity<User> create(@RequestBody User user) {
-		refuseEmailInUse(user.getEmail());
-		user.setRole(Role.USER);
-		hashPassword(user);
-		return ResponseEntity.ok(userRepository.save(user));
-	}
-
 	@PutMapping("/{id}")
-	public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User user, HttpServletRequest request) {
-		if (!Auth.ownIdOrAdmin(id, request)) {
-			throw new ForbiddenException("only the owner or an admin may change this account");
+	public UserView update(@PathVariable Long id, @Valid @RequestBody AdminUpdateRequest changes) {
+		User managed = userRepository.findById(id)
+			.orElseThrow(() -> new NotFoundException("no user with id " + id));
+		managed.setName(changes.name());
+		managed.setPhone(changes.phone());
+		if (changes.role() != null) {
+			managed.setRole(changes.role());
 		}
-		Optional<User> existing = userRepository.findById(id);
-		if (existing.isEmpty()) {
-			throw new NotFoundException("no user with id " + id);
+		if (changes.enable() != null) {
+			managed.setEnable(changes.enable());
 		}
-		User managed = existing.get();
-		managed.setName(user.getName());
-		managed.setPhone(user.getPhone());
-		managed.setAddress(user.getAddress());
-		managed.setAnswer(user.getAnswer());
-		if (Auth.isAdmin(request)) {
-			managed.setRole(user.getRole());
-			managed.setEnable(user.getEnable());
-		}
-		return ResponseEntity.ok(userRepository.save(managed));
+		return UserView.from(userRepository.save(managed));
 	}
 
 	@RequireRole(Role.ADMIN)
 	@DeleteMapping("/{id}")
-	public ResponseEntity<?> delete(@PathVariable Long id) {
+	public ResponseEntity<Void> delete(@PathVariable Long id) {
 		userRepository.findById(id).orElseThrow(() -> new NotFoundException("no user with id " + id));
+		// Orders do not exist yet: bills stand in for the reference and the
+		// order entity will swap the check without touching the contract.
+		if (billRepository.existsByUserId(id)) {
+			throw new ConflictException("HAS_ORDERS", "user " + id + " has orders; disable the account instead");
+		}
 		userRepository.deleteById(id);
-		return ResponseEntity.ok().build();
+		return ResponseEntity.noContent().build();
 	}
 
-	public record ResetPasswordRequest(@NotBlank String email, @NotBlank String answer, @NotBlank String newPassword) {}
+	@GetMapping("/{id}")
+	public UserView getById(@PathVariable Long id, HttpServletRequest request) {
+		if (!Auth.ownIdOrAdmin(id, request)) {
+			throw new ForbiddenException("only the owner or an admin may read this account");
+		}
+		return UserView.from(userRepository.findById(id)
+			.orElseThrow(() -> new NotFoundException("no user with id " + id)));
+	}
+
+	@PostMapping("/create")
+	public ResponseEntity<UserView> create(@Valid @RequestBody CreateRequest request) {
+		refuseEmailInUse(request.email());
+		User user = new User(request.name(), request.password(), request.email(), request.phone(), request.address(),
+			request.district(), request.city(), request.answer());
+		user.setRole(Role.USER);
+		hashPassword(user);
+		return ResponseEntity.ok(UserView.from(userRepository.save(user)));
+	}
 
 	@PostMapping("/resetPassword")
 	public SessionView doResetPassword(@Valid @RequestBody ResetPasswordRequest request) {
@@ -122,7 +145,12 @@ public class UserController {
 		foundUser.setPassword(passwordService.hash(request.newPassword()));
 		userRepository.save(foundUser);
 		return new SessionView(Auth.mintToken(foundUser.getId(), foundUser.getRole(), userService.login(foundUser.getId())),
-			foundUser);
+			UserView.from(foundUser));
+	}
+
+	private User currentUser(HttpServletRequest request) {
+		return userRepository.findById(Auth.userId(request))
+			.orElseThrow(() -> new NotFoundException("the session user no longer exists"));
 	}
 
 	private void hashPassword(User user) {

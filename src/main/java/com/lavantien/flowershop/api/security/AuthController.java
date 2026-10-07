@@ -3,6 +3,7 @@ package com.lavantien.flowershop.api.security;
 import com.lavantien.flowershop.api.error.UnauthenticatedException;
 import com.lavantien.flowershop.api.user.User;
 import com.lavantien.flowershop.api.user.UserRepository;
+import com.lavantien.flowershop.api.user.UserView;
 import com.lavantien.flowershop.service.PasswordService;
 import com.lavantien.flowershop.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,7 +43,8 @@ public class AuthController {
 		if (!passwordService.matches(request.password(), user.getPassword())) {
 			throw new UnauthenticatedException("invalid email or password");
 		}
-		return new SessionView(Auth.mintToken(user.getId(), user.getRole(), userService.login(user.getId())), user);
+		return new SessionView(Auth.mintToken(user.getId(), user.getRole(), userService.login(user.getId())),
+			UserView.from(user));
 	}
 
 	@PostMapping("/logout")
