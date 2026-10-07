@@ -127,13 +127,27 @@ class TypeControllerTest {
 	}
 
 	@Test
-	void memberCreatesASingleType() throws Exception {
+	void memberCannotCreateASingleType() throws Exception {
 		mockMvc.perform(post("/api/type/create").header("X-Auth-Token", tokenOf(4, "USER"))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"FLOWER\",\"categoryName\":\"BOUQUET\"}"))
+			.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void adminCreatesASinglePersistedType() throws Exception {
+		when(typeRepository.save(any(Type.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		mockMvc.perform(post("/api/type/create").header("X-Auth-Token", tokenOf(1, "ADMIN"))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"FLOWER\",\"categoryName\":\"BOUQUET\"}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.name").value("FLOWER"))
 			.andExpect(jsonPath("$.categoryName").value("BOUQUET"));
+
+		ArgumentCaptor<Type> saved = ArgumentCaptor.forClass(Type.class);
+		verify(typeRepository).save(saved.capture());
+		assertTrue(saved.getValue().getName().equals("FLOWER"));
 	}
 
 	@Test

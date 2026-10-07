@@ -218,7 +218,9 @@ class ProductControllerTest {
 	}
 
 	@Test
-	void createEchoesTheSubmittedProductWithoutTouchingTheRepository() throws Exception {
+	void createPersistsTheSubmittedProduct() throws Exception {
+		when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
 		mockMvc.perform(post("/api/product/create").header("X-Auth-Token", tokenOf(1, "ADMIN"))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"Rose\",\"price\":12.5,\"quantity\":40}"))
@@ -226,7 +228,9 @@ class ProductControllerTest {
 			.andExpect(jsonPath("$.name").value("Rose"))
 			.andExpect(jsonPath("$.price").value(12.5));
 
-		verify(productRepository, never()).save(any(Product.class));
+		ArgumentCaptor<Product> saved = ArgumentCaptor.forClass(Product.class);
+		verify(productRepository).save(saved.capture());
+		assertTrue(saved.getValue().getName().equals("Rose"), "the created product must reach the repository");
 	}
 
 	@Test

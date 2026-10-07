@@ -61,7 +61,7 @@ public class ProductController {
 	@RequireRole(Auth.ADMIN_TYPE)
 	@PostMapping("/create")
 	public ResponseEntity<Product> create(@RequestBody Product product) {
-		return ResponseEntity.ok(product);
+		return ResponseEntity.ok(productRepository.save(product));
 	}
 
 	@RequireRole(Auth.ADMIN_TYPE)
