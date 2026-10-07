@@ -23,6 +23,7 @@ public class User {
 	private String address;
 	private String district;
 	private String city;
+	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	private String answer;
 	private String type = USER_TYPE;
 	private Boolean enable = true;
@@ -43,16 +44,16 @@ public class User {
 
 	@Override
 	public String toString() {
+		// Never print the password hash or the security answer: one stray log
+		// line must not leak either.
 		return "User{" +
 			"id=" + id +
 			", name='" + name + '\'' +
-			", password='" + password + '\'' +
 			", email='" + email + '\'' +
 			", phone='" + phone + '\'' +
 			", address='" + address + '\'' +
 			", district='" + district + '\'' +
 			", city='" + city + '\'' +
-			", answer='" + answer + '\'' +
 			", type='" + type + '\'' +
 			", enable=" + enable +
 			'}';

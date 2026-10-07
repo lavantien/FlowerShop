@@ -121,7 +121,10 @@ public class UserController {
 			String email = decodedInfo.substring(0, index);
 			String password = decodedInfo.substring(index + 3);
 			User foundUser = userRepository.findByEmail(email);
-			if (foundUser != null && passwordService.matches(password, foundUser.getPassword())) {
+			boolean usable = foundUser != null && Boolean.TRUE.equals(foundUser.getEnable());
+			if (!usable) {
+				passwordService.burnDummyComparison(password);
+			} else if (passwordService.matches(password, foundUser.getPassword())) {
 				tokenDto.setToken(userToken(foundUser, startSession(foundUser)));
 				tokenDto.setPhone(foundUser.getPhone());
 				tokenDto.setDetailAddress(foundUser.getAddress() + ", " + foundUser.getDistrict() + ", " + foundUser.getCity());

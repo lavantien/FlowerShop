@@ -368,6 +368,39 @@ class UserControllerTest {
 	}
 
 	@Test
+	void loginRefusesADisabledAccount() throws Exception {
+		User user = persona(3, "ADMIN", "staff@flowershop.example");
+		user.setEnable(false);
+		when(userRepository.findByEmail("staff@flowershop.example")).thenReturn(user);
+
+		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
+				.content(loginBody("staff@flowershop.example", "1234qwer")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
+		assertFalse(userService.isLoggedIn(3L));
+	}
+
+	@Test
+	void adminListingNeverSerializesTheSecurityAnswer() throws Exception {
+		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		when(userRepository.findAll()).thenReturn(List.of(persona(1, "ADMIN", "admin@flowershop.example")));
+
+		mockMvc.perform(get("/api/user").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].password").doesNotExist())
+			.andExpect(jsonPath("$[0].answer").doesNotExist());
+	}
+
+	@Test
+	void toStringNeverCarriesThePasswordOrTheAnswer() {
+		User user = persona(1, "ADMIN", "admin@flowershop.example");
+
+		assertFalse(user.toString().contains("1234qwer"));
+		assertFalse(user.toString().contains("$2a$"));
+		assertFalse(user.toString().contains("demo"));
+	}
+
+	@Test
 	void logoutWithAValidTokenEndsTheSession() throws Exception {
 		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
 
