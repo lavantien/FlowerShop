@@ -3,9 +3,10 @@
 // Deterministic: fixed seed from scripts/tools/qa.json (fuzz.seed) drives every
 // generated variant, the curated corpus is scripts/tools/fuzz-corpus.json.
 // Assertions per docs/api-v3.md: response status stays in the documented set for
-// the endpoint, application errors are problem+json with a known code, framework
-// errors (deserialization, method-not-allowed, unknown paths) are the Spring Boot
-// error JSON carrying the same status, and no response is ever 5xx or a hang.
+// the endpoint, and every error body is problem+json carrying a known code,
+// application errors and framework errors alike (deserialization 400 VALIDATION,
+// method-not-allowed 405 METHOD_NOT_ALLOWED, unknown paths 404 NOT_FOUND, per
+// the committed error advice). No response is ever 5xx or a hang.
 // The run boots target/flowershop-*.jar (newest first, same glob as make run) on a
 // scratch port against the compose MySQL, kills it afterwards, and writes
 // docs/qa/fuzz-report.md. Run via `make fuzz`, which provides JAVA_BIN and the
@@ -13,6 +14,7 @@
 
 import { createHmac } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
+import { request as httpRequest } from 'node:http';
 import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, statSync, writeFileSync, writeSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,10 +24,11 @@ const cfg = JSON.parse(readFileSync(join(ROOT, 'scripts/tools/qa.json'), 'utf8')
 const corpus = JSON.parse(readFileSync(join(ROOT, cfg.corpusPath), 'utf8'));
 const BASE = `http://localhost:${cfg.port}`;
 
-// Machine codes from docs/api-v3.md; every problem+json error must carry one.
+// Machine codes from docs/api-v3.md plus the framework advice codes the
+// committed handler emits; every problem+json error must carry one.
 const KNOWN_CODES = new Set(['VALIDATION', 'UNAUTHENTICATED', 'FORBIDDEN', 'NOT_FOUND', 'EMAIL_IN_USE',
 	'NAME_IN_USE', 'OUT_OF_STOCK', 'ILLEGAL_TRANSITION', 'PAYMENT_CANCELLED', 'PAYMENT_CONFIRMED',
-	'HAS_ORDERS', 'COUPON_INACTIVE', 'STOCK_ROWS_EXIST', 'WRONG_SECRET']);
+	'HAS_ORDERS', 'COUPON_INACTIVE', 'STOCK_ROWS_EXIST', 'WRONG_SECRET', 'METHOD_NOT_ALLOWED']);
 
 // Deterministic PRNG (mulberry32): same seed, same request sequence, same statuses.
 function mulberry32(seed) {
@@ -41,9 +44,13 @@ const rng = mulberry32(cfg.seed);
 const pick = (values) => values[Math.floor(rng() * values.length)];
 
 // The seed fixes the request sequence; the run tag namespaces the fresh users
-// each run registers, so a rerun of the same seed replays identical statuses
-// instead of tripping over the previous run's rotated passwords and deletions.
-// Set FUZZ_RUN_TAG to replay one specific run byte for byte.
+// each run registers and every credential the run rotates derives from it, so
+// a rerun of the same seed under a fresh tag replays identical statuses and a
+// replay of a completed run (FUZZ_RUN_TAG set to its tag) is green end to end:
+// statuses may flip where persistent state legitimately differs, for instance
+// setup login falling back to the already rotated password, but no assertion
+// may fail. The first run of a tag rotates user 1's password, which is why
+// setup retries the tag derived rotated form.
 const runTag = process.env.FUZZ_RUN_TAG ?? Date.now().toString(36);
 
 const failures = [];
@@ -110,22 +117,12 @@ async function call(name, template, method, path, {query, token, body, raw, stat
 		fail(name, `error body is not JSON (${contentType}): ${text.slice(0, 120)}`);
 		return response;
 	}
-	if (error === 'any') {
-		if (contentType.startsWith('application/problem+json')) {
-			assertProblem(name, parsed, response.status, codes);
-		} else if (contentType.startsWith('application/json')) {
-			assertBoot(name, parsed, response.status, path);
-		} else {
-			fail(name, `error body has unexpected content type ${contentType}`);
-		}
-	} else if (error === 'problem') {
+	// Every error body is problem+json per the contract and the committed
+	// error advice; application and framework errors share the shape.
+	if (error === 'any' || error === 'problem') {
 		contentType.startsWith('application/problem+json')
 			? assertProblem(name, parsed, response.status, codes)
 			: fail(name, `expected problem+json, got ${contentType}: ${text.slice(0, 120)}`);
-	} else if (error === 'boot') {
-		contentType.startsWith('application/json') && !contentType.startsWith('application/problem')
-			? assertBoot(name, parsed, response.status, path)
-			: fail(name, `expected boot error json, got ${contentType}: ${text.slice(0, 120)}`);
 	}
 	return response;
 }
@@ -136,12 +133,6 @@ function assertProblem(name, parsed, status, codes) {
 	if (codes && !codes.includes(parsed.code)) fail(name, `problem code ${parsed.code} outside [${codes.join(', ')}]`);
 }
 
-function assertBoot(name, parsed, status, path) {
-	if (parsed.status !== status) fail(name, `boot status ${parsed.status} != http ${status}`);
-	if (typeof parsed.error !== 'string') fail(name, 'boot error body missing the error field');
-	if (parsed.path !== path) fail(name, `boot path ${parsed.path} != ${path}`);
-}
-
 function json(response) {
 	if (!response || response.status === 204 || !response.fuzzBody) return null;
 	return JSON.parse(response.fuzzBody);
@@ -149,6 +140,13 @@ function json(response) {
 
 const sig = (paymentId, orderId, amount) =>
 	createHmac('sha256', cfg.paymentSecret).update(`${paymentId}:${orderId}:${amount}`).digest('hex');
+
+// Every fuzz user's password derives from the run tag: a replay of the same
+// tag computes the same passwords the previous run left in the database.
+const credential = (n) =>
+	createHmac('sha256', cfg.paymentSecret).update(`${runTag}:user${n}`).digest('hex').slice(0, 20);
+const rotatedCredential = (n) =>
+	createHmac('sha256', cfg.paymentSecret).update(`${runTag}:user${n}:rotated`).digest('hex').slice(0, 20);
 
 const bitFlip = (hex) => {
 	const byte = Number.parseInt(hex[0], 16) ^ 1;
@@ -177,7 +175,8 @@ function startServer() {
 		?? (process.env.JAVA_HOME ? join(process.env.JAVA_HOME, 'bin', process.platform === 'win32' ? 'java.exe' : 'java') : 'java');
 	console.log(`[server] ${javaBin} -jar ${jar.slice(ROOT.length + 1)} on port ${cfg.port}`);
 	// Keep the dev default payment secret so the sig vectors above stay computable.
-	const logFd = openSync(join(ROOT, cfg.serverLogPath), 'a');
+	// The log truncates per run so it cannot grow unboundedly across reruns.
+	const logFd = openSync(join(ROOT, cfg.serverLogPath), 'w');
 	const child = spawn(javaBin, ['-jar', jar, `--server.port=${cfg.port}`], {
 		cwd: ROOT,
 		env: {...process.env, FLOWERSHOP_PAYMENT_SECRET: cfg.paymentSecret},
@@ -245,6 +244,25 @@ function stopServer(server) {
 	});
 }
 
+// A plain fetch cannot probe path traversal: the URL parser collapses
+// /api/product/../user to /api/user before the socket opens, so the old
+// check certified nothing. This sends the raw path verbatim on the request
+// line and lets the server's own handling answer.
+function rawPathProbe(path) {
+	return new Promise((resolve, reject) => {
+		const outbound = httpRequest(
+			{host: 'localhost', port: cfg.port, path, method: 'GET', headers: {Accept: 'application/json'}, timeout: cfg.requestTimeoutMs},
+			(response) => {
+				let body = '';
+				response.on('data', (chunk) => { body += chunk; });
+				response.on('end', () => resolve({status: response.statusCode, contentType: response.headers['content-type'] ?? '', body}));
+			});
+		outbound.on('timeout', () => outbound.destroy(new Error('raw path probe timed out')));
+		outbound.on('error', reject);
+		outbound.end();
+	});
+}
+
 // --- scenario state, populated by setup()
 
 const facts = {};
@@ -255,10 +273,25 @@ async function login(email, password) {
 	return (await json(response)).token;
 }
 
+// User 1's password is rotated by the user walk, so logging in as user 1
+// tries the tag derived base form first and falls back to the rotated one on
+// a replay of a completed run; both candidates are pure functions of the tag.
+async function loginRegistered(n) {
+	const email = facts[`user${n}`];
+	for (const password of [credential(n), rotatedCredential(n)]) {
+		const response = await call('setup-login', 'POST /api/auth/login', 'POST', '/api/auth/login',
+			{body: {email, password}, status: [200, 401], error: 'problem', codes: ['UNAUTHENTICATED']});
+		if (response.status === 200) {
+			return {token: (await json(response)).token, password};
+		}
+	}
+	throw new Error(`login failed for ${email} under both tag derived passwords`);
+}
+
 async function registerUser(n) {
 	const email = `fz${cfg.seed}-${runTag}-${n}@fuzz.local`;
 	await call(`setup-register-${n}`, 'POST /api/user/create', 'POST', '/api/user/create', {
-		body: {name: `Fuzz ${n}`, email, password: 'pass1234', phone: '0900000000', address: '1 Le Loi',
+		body: {name: `Fuzz ${n}`, email, password: credential(n), phone: '0900000000', address: '1 Le Loi',
 			district: 'Bình Thạnh', city: 'Hồ Chí Minh', answer: 'blue'},
 		// A rerun of the same seed re-registers the same addresses: 201 first, 409 after.
 		status: [201, 409], error: 'any', codes: ['EMAIL_IN_USE'],
@@ -269,9 +302,11 @@ async function registerUser(n) {
 async function setup() {
 	facts.adminToken = await login('admin@flowershop.example', '1234qwer');
 	for (let n = 1; n <= 4; n++) facts[`user${n}`] = await registerUser(n);
-	facts.memberToken = await login(facts.user1, 'pass1234');
-	facts.buyerToken = await login(facts.user2, 'pass1234');
-	facts.editorToken = await login(facts.user3, 'pass1234');
+	const member = await loginRegistered(1);
+	facts.memberToken = member.token;
+	facts.user1Password = member.password;
+	facts.buyerToken = await login(facts.user2, credential(2));
+	facts.editorToken = await login(facts.user3, credential(3));
 	const product = (await json(await call('setup-product', 'GET /api/product', 'GET', '/api/product',
 		{query: {page: 0, size: 1}, status: [200]}))).content[0];
 	facts.productId = product.id;
@@ -307,6 +342,12 @@ async function authWalk() {
 		{body: {email: 'ghost@nowhere.x', password: 'nope'}, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
 	await call('login-missing-fields', 'POST /api/auth/login', 'POST', '/api/auth/login',
 		{body: {}, status: [400], error: 'problem', codes: ['VALIDATION']});
+	// The corpus email pool against login: every hostile address must stay
+	// inside the documented envelope, validation 400 or unauthenticated 401.
+	for (const [index, email] of corpus.emails.entries()) {
+		await call(`login-corpus-email-${index}`, 'POST /api/auth/login', 'POST', '/api/auth/login',
+			{body: {email, password: 'nope'}, status: [200, 400, 401], error: 'any', codes: ['VALIDATION', 'UNAUTHENTICATED']});
+	}
 	await call('logout-live', 'POST /api/auth/logout', 'POST', '/api/auth/logout',
 		{token: t, status: [204]});
 	await call('logout-dead-session', 'POST /api/auth/logout', 'POST', '/api/auth/logout',
@@ -320,7 +361,7 @@ async function authWalk() {
 	await call('reset-unknown-email', 'POST /api/user/resetPassword', 'POST', '/api/user/resetPassword',
 		{body: {email: 'ghost@nowhere.x', answer: 'blue', newPassword: 'pass5678'}, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
 	await call('reset-good-answer', 'POST /api/user/resetPassword', 'POST', '/api/user/resetPassword',
-		{body: {email: facts.user4, answer: 'blue', newPassword: 'pass5678'}, status: [200], error: 'problem', codes: ['UNAUTHENTICATED']});
+		{body: {email: facts.user4, answer: 'blue', newPassword: rotatedCredential(4)}, status: [200], error: 'problem', codes: ['UNAUTHENTICATED']});
 }
 
 async function userWalk() {
@@ -332,12 +373,15 @@ async function userWalk() {
 		{token: facts.memberToken, body: {name: 'Fuzz One', phone: '0912345678', address: '2 Hai Ba Trung',
 			district: 'Quận 1', city: 'Hồ Chí Minh'}, status: [200], error: 'problem', codes: ['VALIDATION']});
 	await call('me-password-wrong-current', 'POST /api/user/me/password', 'POST', '/api/user/me/password',
-		{token: facts.memberToken, body: {currentPassword: 'wrong', newPassword: 'pass9012'}, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
+		{token: facts.memberToken, body: {currentPassword: 'wrong', newPassword: rotatedCredential(1)}, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
+	// The rotated target derives from the run tag; on a replay of a completed
+	// run the current password already is the rotated one and the change is a
+	// same value no-op, still 204 with every session revoked.
 	await call('me-password-change', 'POST /api/user/me/password', 'POST', '/api/user/me/password',
-		{token: facts.memberToken, body: {currentPassword: 'pass1234', newPassword: 'pass9012'}, status: [204]});
+		{token: facts.memberToken, body: {currentPassword: facts.user1Password, newPassword: rotatedCredential(1)}, status: [204]});
 	await call('me-token-dead-after-rotate', 'GET /api/user/me', 'GET', '/api/user/me',
 		{token: facts.memberToken, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
-	facts.memberToken = await login(facts.user1, 'pass9012');
+	facts.memberToken = await login(facts.user1, rotatedCredential(1));
 	await call('create-duplicate-email', 'POST /api/user/create', 'POST', '/api/user/create',
 		{body: {name: 'Dup', email: 'admin@flowershop.example', password: 'x'}, status: [409], error: 'problem', codes: ['EMAIL_IN_USE']});
 	await call('create-missing-name', 'POST /api/user/create', 'POST', '/api/user/create',
@@ -388,7 +432,7 @@ async function catalogWalk() {
 	await call('product-by-id-unknown', 'GET /api/product/{id}', 'GET', '/api/product/99999999',
 		{status: [404], error: 'problem', codes: ['NOT_FOUND']});
 	await call('product-by-id-garbage', 'GET /api/product/{id}', 'GET', '/api/product/abc',
-		{status: [400], error: 'boot'});
+		{status: [400], error: 'problem', codes: ['VALIDATION']});
 	const t = facts.adminToken;
 	const created = await json(await call('product-create', 'POST /api/product/create', 'POST', '/api/product/create',
 		{token: t, body: {name: `Fuzz Bouquet ${cfg.seed}`, description: 'harness probe', imgUrl: 'https://x/y.png',
@@ -434,9 +478,10 @@ async function taxonomyWalk() {
 	const created = categories.find((c) => c.name === categoryName);
 	// Run-tagged rename target: the taxonomy PUT with an id-less body inserts
 	// a fresh row under the new name instead of renaming the addressed one,
-	// so a fixed target name would collide on the second run.
+	// so a fixed target name would collide on the second run. The inserted
+	// row outlives the run, so a same tag replay scores the 409 instead.
 	await call('category-update', 'PUT /api/category/{id}', 'PUT', `/api/category/${created.id}`,
-		{token: t, body: {name: `${categoryName}b-${runTag}`}, status: [200], error: 'problem', codes: ['NOT_FOUND', 'NAME_IN_USE']});
+		{token: t, body: {name: `${categoryName}b-${runTag}`}, status: [200, 409], error: 'problem', codes: ['NOT_FOUND', 'NAME_IN_USE']});
 	await call('category-update-unknown', 'PUT /api/category/{id}', 'PUT', '/api/category/99999999',
 		{token: t, body: {name: 'Ghost Cat'}, status: [404], error: 'problem', codes: ['NOT_FOUND']});
 	await call('category-delete', 'DELETE /api/category/{id}', 'DELETE', `/api/category/${created.id}`,
@@ -449,7 +494,7 @@ async function taxonomyWalk() {
 	const types = await json(await call('type-scan', 'GET /api/type', 'GET', '/api/type', {status: [200]}));
 	const createdType = types.find((ty) => ty.name === typeName);
 	await call('type-update', 'PUT /api/type/{id}', 'PUT', `/api/type/${createdType.id}`,
-		{token: t, body: {name: `${typeName}b-${runTag}`, categoryName: facts.categoryName}, status: [200], error: 'problem', codes: ['NOT_FOUND', 'NAME_IN_USE']});
+		{token: t, body: {name: `${typeName}b-${runTag}`, categoryName: facts.categoryName}, status: [200, 409], error: 'problem', codes: ['NOT_FOUND', 'NAME_IN_USE']});
 	await call('type-delete', 'DELETE /api/type/{id}', 'DELETE', `/api/type/${createdType.id}`,
 		{token: t, status: [204]});
 }
@@ -462,8 +507,13 @@ async function branchWalk() {
 			city: 'Hồ Chí Minh', lat: 10.78, lng: 106.7, active: false}, status: [200], error: 'problem', codes: ['VALIDATION']}));
 	await call('branch-update', 'PUT /api/branch/{id}', 'PUT', `/api/branch/${created.id}`,
 		{token: t, body: {...created, address: '4 Test St'}, status: [200], error: 'problem', codes: ['NOT_FOUND']});
+	// Body validation runs before the existence check: a body without the
+	// required coordinates scores 400 VALIDATION, a valid body on an unknown
+	// id scores the 404.
+	await call('branch-update-invalid-body', 'PUT /api/branch/{id}', 'PUT', '/api/branch/99999999',
+		{token: t, body: {name: 'Ghost'}, status: [400], error: 'problem', codes: ['VALIDATION']});
 	await call('branch-update-unknown', 'PUT /api/branch/{id}', 'PUT', '/api/branch/99999999',
-		{token: t, body: {name: 'Ghost'}, status: [404], error: 'problem', codes: ['NOT_FOUND']});
+		{token: t, body: {name: 'Ghost', lat: 10.7, lng: 106.7}, status: [404], error: 'problem', codes: ['NOT_FOUND']});
 	await call('stock-read-empty-branch', 'GET /api/branch/{id}/stock', 'GET', `/api/branch/${created.id}/stock`,
 		{token: t, status: [200]});
 	await call('stock-set-new-branch', 'PUT /api/branch/{id}/stock', 'PUT', `/api/branch/${created.id}/stock`,
@@ -519,6 +569,12 @@ async function orderAndPaymentWalk() {
 		{query: {sig: good.slice(0, 32)}, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
 	await call('payment-get-missing-sig', 'GET /api/payment/{id}', 'GET', `/api/payment/${payment.id}`,
 		{status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
+	// The corpus sig pool against a live payment: every hostile signature
+	// must draw the documented 401, never a 5xx or a body leak.
+	for (const [index, hostile] of corpus.sigs.entries()) {
+		await call(`payment-get-sig-corpus-${index}`, 'GET /api/payment/{id}', 'GET', `/api/payment/${payment.id}`,
+			{query: {sig: hostile}, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
+	}
 	await call('payment-get-unknown-id', 'GET /api/payment/{id}', 'GET', '/api/payment/deadbeef',
 		{query: {sig: good}, status: [404], error: 'problem', codes: ['NOT_FOUND']});
 	await call('payment-confirm', 'POST /api/payment/{id}/confirm', 'POST', `/api/payment/${payment.id}/confirm`,
@@ -594,13 +650,15 @@ async function couponWalk() {
 	await call('coupon-list-member-forbidden', 'GET /api/coupon', 'GET', '/api/coupon',
 		{token: facts.memberToken, status: [403], error: 'problem', codes: ['FORBIDDEN']});
 	const code = `FZ${cfg.seed % 10000}`;
-	const created = await json(await call('coupon-create', 'POST /api/coupon', 'POST', '/api/coupon',
+	const created = await call('coupon-create', 'POST /api/coupon', 'POST', '/api/coupon',
 		{token: t, body: {code, kind: 'PERCENT', value: 15, active: true, expiresAt: null},
-			status: [200, 409], error: 'any', codes: ['VALIDATION']}));
+			status: [200, 409], error: 'any', codes: ['VALIDATION', 'NAME_IN_USE']});
 	let couponId;
-	if (created) {
-		couponId = created.id;
+	if (created.status === 200) {
+		couponId = (await json(created)).id;
 	} else {
+		// 409 NAME_IN_USE from an earlier crashed run: resolve the existing
+		// coupon by its code instead of addressing an undefined id.
 		const list = await json(await call('coupon-scan', 'GET /api/coupon', 'GET', '/api/coupon', {token: t, status: [200]}));
 		couponId = list.find((c) => c.code === code).id;
 	}
@@ -662,9 +720,9 @@ async function reportWalk() {
 async function crossWalk() {
 	for (const raw of corpus.malformedBodies) {
 		await call(`login-malformed-${raw.length}-${raw.slice(0, 6)}`, 'POST /api/auth/login', 'POST', '/api/auth/login',
-			{raw, status: [400], error: 'boot'});
+			{raw, status: [400], error: 'problem', codes: ['VALIDATION']});
 		await call(`register-malformed-${raw.length}-${raw.slice(0, 6)}`, 'POST /api/user/create', 'POST', '/api/user/create',
-			{raw, status: [400], error: 'boot'});
+			{raw, status: [400], error: 'problem', codes: ['VALIDATION']});
 	}
 	for (const plaintext of corpus.tokenPlaintexts) {
 		const token = plaintext.length ? Buffer.from(plaintext).toString('base64') : '';
@@ -674,30 +732,43 @@ async function crossWalk() {
 	await call('tampered-token-member-on-admin', 'GET /api/user', 'GET', '/api/user',
 		{token: Buffer.from(`${facts.buyerOrderId}+ADMIN+deadbeef`).toString('base64'),
 			status: [401, 403], error: 'any', codes: ['UNAUTHENTICATED', 'FORBIDDEN']});
-	// Wrong methods on paths that exist for another verb: 405 before any
-	// interceptor or controller runs, so the boot error shape applies.
-	await call('wrong-method-get-login', 'GET /api/auth/login', 'GET', '/api/auth/login', {status: [405], error: 'boot'});
-	await call('wrong-method-delete-payment', 'DELETE /api/payment/x', 'DELETE', '/api/payment/x', {status: [405], error: 'boot'});
-	await call('wrong-method-put-order-me', 'PUT /api/order/me', 'PUT', '/api/order/me', {status: [405], error: 'boot'});
+	// Wrong methods on paths that exist for another verb: 405 problem+json
+	// METHOD_NOT_ALLOWED from the error advice.
+	await call('wrong-method-get-login', 'GET /api/auth/login', 'GET', '/api/auth/login', {status: [405], error: 'problem', codes: ['METHOD_NOT_ALLOWED']});
+	await call('wrong-method-delete-payment', 'DELETE /api/payment/x', 'DELETE', '/api/payment/x', {status: [405], error: 'problem', codes: ['METHOD_NOT_ALLOWED']});
+	await call('wrong-method-put-order-me', 'PUT /api/order/me', 'PUT', '/api/order/me', {status: [405], error: 'problem', codes: ['METHOD_NOT_ALLOWED']});
 	// DELETE /api/product is real and destructive with an empty body: hit it
 	// only with a member token, which the interceptor rejects before dispatch.
 	await call('wrong-method-delete-product-member', 'DELETE /api/product', 'DELETE', '/api/product',
 		{token: facts.memberToken, body: [], status: [403], error: 'problem', codes: ['FORBIDDEN']});
-	await call('unknown-api-path', 'GET /api/nosuch', 'GET', '/api/nosuch', {status: [404], error: 'boot'});
+	await call('unknown-api-path', 'GET /api/nosuch', 'GET', '/api/nosuch', {status: [404], error: 'problem', codes: ['NOT_FOUND']});
 	await call('unknown-api-post-path', 'POST /api/nosuch/deep/path', 'POST', '/api/nosuch/deep/path',
-		{body: {}, status: [404], error: 'boot'});
-	await call('traversal-path', 'GET /api/product/../user', 'GET', '/api/user',
-		{status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
+		{body: {}, status: [404], error: 'problem', codes: ['NOT_FOUND']});
+	// Path traversal over a raw socket: the dot segments must reach the server
+	// un-normalized and be refused as an unknown endpoint, with the problem
+	// instance echoing the raw path back as the proof it arrived intact.
+	const traversal = await rawPathProbe('/api/product/../user');
+	stat('GET /api/product/../user', traversal.status);
+	if (traversal.status !== 404) {
+		fail('traversal-path', `raw dot-segment path answered ${traversal.status}, expected the documented 404`);
+	} else {
+		const parsed = JSON.parse(traversal.body);
+		assertProblem('traversal-path', parsed, 404, ['NOT_FOUND']);
+		if (parsed.instance !== '/api/product/../user') {
+			fail('traversal-path', `problem instance ${parsed.instance} lost the raw dot segments`);
+		}
+	}
 }
 
 // --- seeded generated variants over mutating JSON templates
 
 function hostileValue() {
-	switch (Math.floor(rng() * 5)) {
+	switch (Math.floor(rng() * 6)) {
 		case 0: return pick(corpus.numbers);
 		case 1: return pick(corpus.strings);
 		case 2: return corpus.longString;
 		case 3: return pick(corpus.enums);
+		case 4: return pick(corpus.emails);
 		default: return pick(corpus.numbers);
 	}
 }
@@ -740,9 +811,9 @@ async function variantsWalk() {
 	// A few raw malformed swaps against the two most sensitive writers.
 	for (let i = 0; i < cfg.generatedVariantsPerEndpoint; i++) {
 		await call(`variant-raw-checkout-${i}`, 'POST /api/order', 'POST', '/api/order',
-			{token: facts.buyerToken, raw: pick(corpus.malformedBodies), status: [400], error: 'boot'});
+			{token: facts.buyerToken, raw: pick(corpus.malformedBodies), status: [400], error: 'problem', codes: ['VALIDATION']});
 		await call(`variant-raw-login-${i}`, 'POST /api/auth/login', 'POST', '/api/auth/login',
-			{raw: pick(corpus.malformedBodies), status: [400], error: 'boot'});
+			{raw: pick(corpus.malformedBodies), status: [400], error: 'problem', codes: ['VALIDATION']});
 	}
 }
 
@@ -765,12 +836,15 @@ function writeReport(jarName, durationMs) {
 	lines.push(`- assertion failures: ${failures.length}`);
 	lines.push('');
 	lines.push('Invariants asserted on every response: status inside the documented set for the endpoint,');
-	lines.push('application errors as problem+json carrying a code from the contract list, framework errors');
-	lines.push('(deserialization, method-not-allowed, unknown paths) as the Spring Boot error JSON with the');
-	lines.push('same status, and never a 5xx, hang, or run-budget breach. Status unions appear where persistent');
+	lines.push('and every error body, application and framework alike (deserialization, method-not-allowed,');
+	lines.push('unknown paths, traversal), is problem+json carrying a code from the contract list, and never');
+	lines.push('a 5xx, hang, or run-budget breach. Status unions appear where persistent');
 	lines.push('state can legitimately flip a case between two documented outcomes, for instance the register');
 	lines.push('template across tagged reruns (201 versus EMAIL_IN_USE 409) or a variant that may validate or');
-	lines.push('score a business 404 or 409 depending on which field the seeded mutation strikes.');
+	lines.push('score a business 404 or 409 depending on which field the seeded mutation strikes. Replaying a');
+	lines.push('completed run with FUZZ_RUN_TAG is green end to end: every credential derives from the tag, so');
+	lines.push('setup login falls back to the rotated password and the taxonomy rename scores NAME_IN_USE');
+	lines.push('against the previous run residue instead of failing.');
 	lines.push('');
 	lines.push('| endpoint | requests | statuses |');
 	lines.push('| --- | --- | --- |');
