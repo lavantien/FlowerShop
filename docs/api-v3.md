@@ -52,6 +52,8 @@ Role gates below: `public` needs no token, `USER` needs any valid session, `ADMI
 
 `GET /api/user` ADMIN. 200 `[{user}]`.
 
+`GET /api/user/{id}` own-or-admin. 200 `{user}`. 403. 404.
+
 `PUT /api/user/{id}` ADMIN. Body `{"name", "phone", "role", "enable"}`. 200 `{user}`. 404.
 
 `DELETE /api/user/{id}` ADMIN. 204. 404. 409 `HAS_ORDERS` when any order references the user.
@@ -76,7 +78,7 @@ Role gates below: `public` needs no token, `USER` needs any valid session, `ADMI
 
 `DELETE /api/product` ADMIN. Body `[ids]` or empty body for all. 204.
 
-Category and type mirror this shape. `GET /api/category` public, `[{id, name}]`. `POST /api/category/create` ADMIN `{"name"}` 200, 409 `NAME_IN_USE`. `PUT /api/category/{id}` ADMIN 200, 404, 409. `DELETE /api/category/{id}` ADMIN 204, 404. Type adds `categoryName`: `[{id, name, categoryName}]`, same codes, delete refuses 409 `NAME_IN_USE` when products still reference the name.
+Category and type mirror this shape. `GET /api/category` public, `[{id, name}]`. `POST /api/category/create` ADMIN `{"name"}` 200, 409 `NAME_IN_USE`. `PUT /api/category/{id}` ADMIN 200, 404, 409. `DELETE /api/category/{id}` ADMIN 204, 404. Type adds `categoryName`: `[{id, name, categoryName}]`, same codes, delete refuses 409 `NAME_IN_USE` when products still reference the name. Bulk delete mirrors the product route: `DELETE /api/category` and `DELETE /api/type` ADMIN take `[ids]` or no body for all, answer 200 with an empty body, and refuse 409 `NAME_IN_USE` when products still reference any addressed name.
 
 `GET /api/branch` public. `[{"id", "name", "address", "district", "city", "lat", "lng", "active"}]`.
 
@@ -130,11 +132,11 @@ Items non-empty, quantities at least 1, address fields required, `branchId` and 
   "phone": "...", "address": "...", "district": "...", "city": "...",
   "branchId": 3, "branchName": "Binh Thanh",
   "distanceKm": 4.2,
-  "deliveryFee": 40000,
+  "deliveryFee": 41000,
   "couponCode": "WELCOME10",
   "discountAmount": 25000,
   "subtotal": 250000,
-  "total": 265000,
+  "total": 266000,
   "items": [{"id", "productId", "productName", "unitPrice", "quantity", "lineTotal"}]
 }
 ```
