@@ -26,6 +26,11 @@ import {Product} from '../_models/product';
 import {Category} from '../_models/category';
 import {Type} from '../_models/type';
 
+export function buildExportFilename(lang: string, date: Date): string {
+	const name = lang === 'vi' ? 'sản_phẩm' : 'data';
+	return `${name}__${date.toLocaleDateString(lang)}__${date.toLocaleTimeString(lang)}.xlsx`;
+}
+
 @Component({
 	selector: 'app-admin',
 	imports: [
@@ -387,11 +392,12 @@ export class AdminComponent implements OnInit, OnDestroy {
 
 	onExportExcel() {
 		/* prepare data */
+		const isVi = this.translate.currentLang() === 'vi';
 		const tempDescriptions: string[] = [];
 		this.data().forEach((data, index) => {
 			tempDescriptions[index] = data.description;
 			data.description = this.productsOriginalDescription[index];
-			if (this.translate.currentLang() !== 'en-US') {
+			if (!isVi) {
 				data.price = this.dataTranslateService.getPrice(data.price, 'en');
 			}
 		});
@@ -401,15 +407,15 @@ export class AdminComponent implements OnInit, OnDestroy {
 
 		/* generate workbook and add the worksheet */
 		const wb: XLSX.WorkBook = XLSX.utils.book_new();
-		XLSX.utils.book_append_sheet(wb, ws, `${this.translate.currentLang() === 'en-US' ? 'Products' : 'Sản phẩm'}`);
+		XLSX.utils.book_append_sheet(wb, ws, isVi ? 'Sản phẩm' : 'Products');
 
 		/* save to file */
-		XLSX.writeFile(wb, `${this.translate.currentLang() === 'en-US' ? 'data' : 'sản_phẩm'}__${new Date().toLocaleDateString(this.translate.currentLang() ?? 'en')}__${new Date().toLocaleTimeString(this.translate.currentLang() ?? 'en')}.xlsx`);
+		XLSX.writeFile(wb, buildExportFilename(this.translate.currentLang() ?? 'en', new Date()));
 
 		/* restore data state */
 		this.data().forEach((data, index) => {
 			data.description = tempDescriptions[index];
-			if (this.translate.currentLang() !== 'en-US') {
+			if (!isVi) {
 				data.price = this.dataTranslateService.getPrice(data.price, 'vi');
 			}
 		});
