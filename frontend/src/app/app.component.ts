@@ -30,6 +30,7 @@ import {InputValidatorService} from './_services/input-validator.service';
 import {SharedService} from './_services/shared.service';
 import {SessionService} from './_services/session.service';
 import {TokenService} from './_services/token.service';
+import {DateFormatterService} from './_services/date-formatter.service';
 import {Product} from './_models/product';
 import {User} from './_models/user';
 import {Bill} from './_models/bill';
@@ -128,6 +129,7 @@ export class AppComponent implements OnInit, OnDestroy {
 	private readonly sharedService = inject(SharedService);
 	private readonly sessionService = inject(SessionService);
 	private readonly tokenService = inject(TokenService);
+	private readonly dateFormatter = inject(DateFormatterService);
 	readonly translate = inject(TranslateService);
 	private readonly subscriptions = new Subscription();
 
@@ -364,7 +366,7 @@ export class AppComponent implements OnInit, OnDestroy {
 	onSettle() {
 		const bills: Bill[] = [];
 		const today = new Date();
-		const todayStr = today.getUTCFullYear() + '-' + today.getUTCMonth() + '-' + today.getUTCDate() + ', ' + today.getUTCHours() + ':' + today.getUTCMinutes() + ':' + today.getUTCSeconds();
+		const todayStr = this.dateFormatter.formatLocalDateTime(today);
 		const userId = this.tokenService.userId();
 		for (let i = 0; i < this.addedProducts().length; ++i) {
 			const bill: Bill = {
