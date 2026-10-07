@@ -21,6 +21,7 @@ import {Subscription} from 'rxjs';
 import * as XLSX from 'xlsx';
 import {DataTranslateService} from '../_services/data-translate.service';
 import {SharedService} from '../_services/shared.service';
+import {TokenService} from '../_services/token.service';
 import {Product} from '../_models/product';
 import {Category} from '../_models/category';
 import {Type} from '../_models/type';
@@ -103,6 +104,7 @@ export class AdminComponent implements OnInit, OnDestroy {
 	private readonly modalService = inject(BsModalService);
 	private readonly dataTranslateService = inject(DataTranslateService);
 	private readonly sharedService = inject(SharedService);
+	private readonly tokenService = inject(TokenService);
 	readonly translate = inject(TranslateService);
 	private readonly subscriptions = new Subscription();
 
@@ -129,8 +131,7 @@ export class AdminComponent implements OnInit, OnDestroy {
 		this.getProducts();
 		this.getCategories();
 		this.getTypes();
-		const token = localStorage.getItem('token');
-		this.isAdmin = token !== null && atob(token).substring(atob(token).indexOf('+') + 1) === 'ADMIN';
+		this.isAdmin = this.tokenService.isAdmin();
 		if (!this.isAdmin) {
 			this.router.navigate(['/shop']);
 		}

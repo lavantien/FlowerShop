@@ -29,6 +29,7 @@ import {Subscription} from 'rxjs';
 import {InputValidatorService} from './_services/input-validator.service';
 import {SharedService} from './_services/shared.service';
 import {SessionService} from './_services/session.service';
+import {TokenService} from './_services/token.service';
 import {Product} from './_models/product';
 import {User} from './_models/user';
 import {Bill} from './_models/bill';
@@ -126,6 +127,7 @@ export class AppComponent implements OnInit, OnDestroy {
 	private readonly inputValidator = inject(InputValidatorService);
 	private readonly sharedService = inject(SharedService);
 	private readonly sessionService = inject(SessionService);
+	private readonly tokenService = inject(TokenService);
 	readonly translate = inject(TranslateService);
 	private readonly subscriptions = new Subscription();
 
@@ -176,9 +178,8 @@ export class AppComponent implements OnInit, OnDestroy {
 	ngOnInit() {
 		this.getCities();
 		this.getDistricts();
-		const token = localStorage.getItem('token');
-		this.isLoggedIn.set(token !== null && atob(token) !== '0+GUESS');
-		this.isAdmin.set(token !== null && atob(token).substring(atob(token).indexOf('+') + 1) === 'ADMIN');
+		this.isLoggedIn.set(this.tokenService.isLoggedIn());
+		this.isAdmin.set(this.tokenService.isAdmin());
 		if (this.isAdmin()) {
 			this.router.navigate(['/admin']);
 		}
@@ -239,8 +240,7 @@ export class AppComponent implements OnInit, OnDestroy {
 			localStorage.removeItem('detailAddress');
 			localStorage.setItem('detailAddress', rs.detailAddress);
 			this.isLoggedIn.set(true);
-			const token = localStorage.getItem('token');
-			this.isAdmin.set(token !== null && atob(token).substring(atob(token).indexOf('+') + 1) === 'ADMIN');
+			this.isAdmin.set(this.tokenService.isAdmin());
 		}, error => {
 			console.log(`Error: ${error}`);
 		}, () => {
@@ -365,8 +365,7 @@ export class AppComponent implements OnInit, OnDestroy {
 		const bills: Bill[] = [];
 		const today = new Date();
 		const todayStr = today.getUTCFullYear() + '-' + today.getUTCMonth() + '-' + today.getUTCDate() + ', ' + today.getUTCHours() + ':' + today.getUTCMinutes() + ':' + today.getUTCSeconds();
-		const token = localStorage.getItem('token') ?? '';
-		const userId = token !== '' ? parseInt(atob(token).substr(0, 1)) : 0;
+		const userId = this.tokenService.userId();
 		for (let i = 0; i < this.addedProducts().length; ++i) {
 			const bill: Bill = {
 				placementDate: todayStr,

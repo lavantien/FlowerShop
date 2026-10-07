@@ -18,6 +18,7 @@ import {Subscription} from 'rxjs';
 import {DataTranslateService} from '../_services/data-translate.service';
 import {SharedService} from '../_services/shared.service';
 import {SessionService} from '../_services/session.service';
+import {TokenService} from '../_services/token.service';
 import {Product} from '../_models/product';
 import {Category} from '../_models/category';
 import {Type} from '../_models/type';
@@ -70,13 +71,13 @@ export class StoreComponent implements OnInit, OnDestroy {
 	private readonly dataTranslateService = inject(DataTranslateService);
 	private readonly sharedService = inject(SharedService);
 	private readonly sessionService = inject(SessionService);
+	private readonly tokenService = inject(TokenService);
 	readonly translate = inject(TranslateService);
 	private readonly subscriptions = new Subscription();
 
 	ngOnInit() {
-		const token = localStorage.getItem('token');
-		this.isLoggedIn = token !== null && atob(token) !== '0+GUESS';
-		this.isAdmin = token !== null && atob(token).substring(atob(token).indexOf('+') + 1) === 'ADMIN';
+		this.isLoggedIn = this.tokenService.isLoggedIn();
+		this.isAdmin = this.tokenService.isAdmin();
 		if (this.isAdmin) {
 			this.router.navigate(['/admin']);
 		}
