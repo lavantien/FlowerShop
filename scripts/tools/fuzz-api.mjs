@@ -518,8 +518,10 @@ async function taxonomyWalk() {
 	await call('type-list', 'GET /api/type', 'GET', '/api/type', {status: [200]});
 	const t = facts.adminToken;
 	const categoryName = `Fuzz Cat ${cfg.seed}`;
+	// A run that died before teardown may have left the base row behind: the
+	// scan below adopts it either way, exactly like the coupon walk.
 	await call('category-create', 'POST /api/category/create', 'POST', '/api/category/create',
-		{token: t, body: {name: categoryName}, status: [200], error: 'problem', codes: ['VALIDATION']});
+		{token: t, body: {name: categoryName}, status: [200, 409], error: 'problem', codes: ['VALIDATION', 'NAME_IN_USE']});
 	await call('category-create-duplicate', 'POST /api/category/create', 'POST', '/api/category/create',
 		{token: t, body: {name: categoryName}, status: [409], error: 'problem', codes: ['NAME_IN_USE']});
 	const categories = await json(await call('category-scan', 'GET /api/category', 'GET', '/api/category', {status: [200]}));
@@ -569,7 +571,7 @@ async function taxonomyWalk() {
 		{token: t, status: [404], error: 'problem', codes: ['NOT_FOUND']});
 	const typeName = `Fuzz Type ${cfg.seed}`;
 	await call('type-create', 'POST /api/type/create', 'POST', '/api/type/create',
-		{token: t, body: {name: typeName, categoryName: facts.categoryName}, status: [200], error: 'problem', codes: ['VALIDATION']});
+		{token: t, body: {name: typeName, categoryName: facts.categoryName}, status: [200, 409], error: 'problem', codes: ['VALIDATION', 'NAME_IN_USE']});
 	const types = await json(await call('type-scan', 'GET /api/type', 'GET', '/api/type', {status: [200]}));
 	const createdType = types.find((ty) => ty.name === typeName);
 	await call('type-update', 'PUT /api/type/{id}', 'PUT', `/api/type/${createdType.id}`,
@@ -579,11 +581,22 @@ async function taxonomyWalk() {
 	// Root fix for fuzz residue: every taxonomy row this walk owns dies here
 	// through the admin API, including the phantom rows pre-teardown runs
 	// inserted, so the database stays clean across reruns and the run-tagged
-	// renames above always land in free space.
-	for (const [kind, prefix] of [['category', `Fuzz Cat ${cfg.seed}`], ['type', `Fuzz Type ${cfg.seed}`]]) {
+	// renames above always land in free space. A row products still reference
+	// answers 409 NAME_IN_USE: only fuzz walks ever put products under these
+	// names, so the referencing probes die first and the delete retries once.
+	for (const [kind, prefix, filter] of [['category', `Fuzz Cat ${cfg.seed}`, 'category'], ['type', `Fuzz Type ${cfg.seed}`, 'type']]) {
 		const rows = await json(await call(`taxonomy-teardown-scan-${kind}`, `GET /api/${kind}`, 'GET', `/api/${kind}`, {status: [200]}));
 		for (const row of rows.filter((candidate) => candidate.name.startsWith(prefix))) {
-			await call(`taxonomy-teardown-${kind}-${row.id}`, `DELETE /api/${kind}/{id}`, 'DELETE', `/api/${kind}/${row.id}`,
+			const stuck = await call(`taxonomy-teardown-${kind}-${row.id}`, `DELETE /api/${kind}/{id}`, 'DELETE', `/api/${kind}/${row.id}`,
+				{token: t, status: [204, 409], error: 'problem', codes: ['NAME_IN_USE']});
+			if (stuck.status !== 409) continue;
+			const referencing = await json(await call(`taxonomy-teardown-${kind}-${row.id}-probes`, 'GET /api/product', 'GET', '/api/product',
+				{query: {[filter]: row.name, size: 48}, status: [200]}));
+			for (const product of referencing.content) {
+				await call(`taxonomy-teardown-${kind}-${row.id}-probe-${product.id}`, 'DELETE /api/product/{id}', 'DELETE', `/api/product/${product.id}`,
+					{token: t, status: [204]});
+			}
+			await call(`taxonomy-teardown-${kind}-${row.id}-retry`, `DELETE /api/${kind}/{id}`, 'DELETE', `/api/${kind}/${row.id}`,
 				{token: t, status: [204]});
 		}
 	}
@@ -595,18 +608,19 @@ async function branchWalk() {
 	const created = await json(await call('branch-create', 'POST /api/branch', 'POST', '/api/branch',
 		{token: t, body: {name: `Fuzz Branch ${cfg.seed}`, address: '3 Test St', district: 'Bình Thạnh',
 			city: 'Hồ Chí Minh', lat: 10.78, lng: 106.7, active: false}, status: [200], error: 'problem', codes: ['VALIDATION']}));
-	// Coordinates are required and bounded (34ee4c4): a create without them or
-	// off the globe answers 400 VALIDATION with a field error on the offender.
+	// Coordinates are required and bounded (34ee4c4): a create without them,
+	// with them null, or off the globe answers 400 VALIDATION with a field
+	// error on the offender.
 	const coordinateless = [
-		{name: `Fuzz Lost A ${cfg.seed}`, address: '3 Test St', district: 'Bình Thạnh', city: 'Hồ Chí Minh', lng: 106.7},
-		{name: `Fuzz Lost B ${cfg.seed}`, address: '3 Test St', district: 'Bình Thạnh', city: 'Hồ Chí Minh', lat: 10.78},
+		{offender: 'lat', body: {name: `Fuzz Lost A ${cfg.seed}`, address: '3 Test St', district: 'Bình Thạnh', city: 'Hồ Chí Minh', lng: 106.7}},
+		{offender: 'lng', body: {name: `Fuzz Lost B ${cfg.seed}`, address: '3 Test St', district: 'Bình Thạnh', city: 'Hồ Chí Minh', lat: 10.78}},
+		{offender: 'lat', body: {name: `Fuzz Lost C ${cfg.seed}`, address: '3 Test St', district: 'Bình Thạnh', city: 'Hồ Chí Minh', lat: null, lng: 106.7}},
 	];
-	for (const [index, body] of coordinateless.entries()) {
+	for (const [index, {offender, body}] of coordinateless.entries()) {
 		const response = await call(`branch-create-missing-coordinates-${index}`, 'POST /api/branch', 'POST', '/api/branch',
 			{token: t, body, status: [400], error: 'problem', codes: ['VALIDATION']});
-		const missing = body.lat === undefined ? 'lat' : 'lng';
-		if (!json(response)?.errors?.[missing]) {
-			fail(`branch-create-missing-coordinates-${index}`, `no field error on ${missing}: ${response.fuzzBody.slice(0, 120)}`);
+		if (!json(response)?.errors?.[offender]) {
+			fail(`branch-create-missing-coordinates-${index}`, `no field error on ${offender}: ${response.fuzzBody.slice(0, 120)}`);
 		}
 	}
 	for (const [index, {lat, lng}] of corpus.offGlobeCoordinates.entries()) {
@@ -973,8 +987,9 @@ function writeReport(jarName, durationMs) {
 	lines.push('+ fee with line totals summing to the subtotal, the payment view amount equals the walked order');
 	lines.push('total, and the product page answers a content array with an integer totalElements. The taxonomy');
 	lines.push('walk pins the rename cascade: a category products reference carries its rows to the new name,');
-	lines.push('and the walk tears its own taxonomy rows down through the admin API so no residue survives the');
-	lines.push('run. Status unions appear where persistent');
+	lines.push('and the walk tears its own taxonomy rows down through the admin API, sweeping any probe');
+	lines.push('products a crashed run left referencing them, so no residue survives the run. Status unions');
+	lines.push('appear where persistent');
 	lines.push('state can legitimately flip a case between two documented outcomes, for instance the register');
 	lines.push('template across tagged reruns (201 versus EMAIL_IN_USE 409) or a variant that may validate or');
 	lines.push('score a business 404 or 409 depending on which field the seeded mutation strikes. Replaying a');
