@@ -103,34 +103,32 @@ public class UserController {
 		return ResponseEntity.ok().build();
 	}
 
-	@SuppressWarnings("null")
 	@PostMapping(value = "/login", consumes = "text/plain")
 	public ResponseEntity<TokenDto> doLogin(@RequestBody String info) {
-		String decodedInfo = new String(Base64.getDecoder().decode(info));
-		int index = decodedInfo.indexOf("j0z");
-		String email = decodedInfo.substring(0, index);
-		String password = decodedInfo.substring(index + 3);
-		User foundUser = userRepository.findByEmail(email);
-		TokenDto tokenDto = new TokenDto(guessToken(), "0", "A, Cau Giay, Hanoi");
-		if (foundUser != null && passwordService.matches(password, foundUser.getPassword())) {
-			markLoggedIn(foundUser);
-			tokenDto.setToken(userToken(foundUser));
-			tokenDto.setPhone(foundUser.getPhone());
-			tokenDto.setDetailAddress(foundUser.getAddress() + ", " + foundUser.getDistrict() + ", " + foundUser.getCity());
+		TokenDto tokenDto = guestDto();
+		String decodedInfo = decodeBase64(info);
+		int index = decodedInfo == null ? -1 : decodedInfo.indexOf("j0z");
+		if (index >= 0) {
+			String email = decodedInfo.substring(0, index);
+			String password = decodedInfo.substring(index + 3);
+			User foundUser = userRepository.findByEmail(email);
+			if (foundUser != null && passwordService.matches(password, foundUser.getPassword())) {
+				markLoggedIn(foundUser);
+				tokenDto.setToken(userToken(foundUser));
+				tokenDto.setPhone(foundUser.getPhone());
+				tokenDto.setDetailAddress(foundUser.getAddress() + ", " + foundUser.getDistrict() + ", " + foundUser.getCity());
+			}
 		}
 		return ResponseEntity.ok(tokenDto);
 	}
 
 	@PostMapping("/logout")
 	public ResponseEntity<TokenDto> doLogout(@RequestBody TokenDto tokenDto) {
-		String decodedInfo = new String(Base64.getDecoder().decode(tokenDto.getToken()));
-		int index = decodedInfo.indexOf("+");
-		Long id = Long.parseLong(decodedInfo.substring(0, index));
-//		String type = decodedInfo.substring(index + 1);
-		if (!userService.loggedInIds.isEmpty()) {
+		Long id = parseUserId(decodeBase64(tokenDto.getToken()));
+		if (id != null) {
 			userService.loggedInIds.remove(id);
 		}
-		return ResponseEntity.ok(new TokenDto(Base64.getEncoder().encodeToString("0+GUESS".getBytes()), "0", "A, Cau Giay, Hanoi"));
+		return ResponseEntity.ok(guestDto());
 	}
 
 	@PostMapping("/resetPassword")
@@ -139,7 +137,7 @@ public class UserController {
 		boolean answerMatches = foundUser != null && forgotDto.getPassword() != null
 			&& Objects.equals(foundUser.getAnswer(), forgotDto.getAnswer());
 		if (!answerMatches) {
-			return ResponseEntity.ok(new TokenDto(guessToken(), "0", "A, Cau Giay, Hanoi"));
+			return ResponseEntity.ok(guestDto());
 		}
 		foundUser.setPassword(passwordService.hash(forgotDto.getPassword()));
 		userRepository.save(foundUser);
@@ -163,8 +161,35 @@ public class UserController {
 		return Base64.getEncoder().encodeToString((user.getId() + "+" + user.getType()).getBytes());
 	}
 
+	private static TokenDto guestDto() {
+		return new TokenDto(guessToken(), "0", "A, Cau Giay, Hanoi");
+	}
+
 	private static String guessToken() {
 		return Base64.getEncoder().encodeToString("0+GUESS".getBytes());
+	}
+
+	private static String decodeBase64(String raw) {
+		if (raw == null) {
+			return null;
+		}
+		try {
+			return new String(Base64.getDecoder().decode(raw));
+		} catch (IllegalArgumentException e) {
+			return null;
+		}
+	}
+
+	private static Long parseUserId(String decoded) {
+		int index = decoded == null ? -1 : decoded.indexOf("+");
+		if (index <= 0) {
+			return null;
+		}
+		try {
+			return Long.parseLong(decoded.substring(0, index));
+		} catch (NumberFormatException e) {
+			return null;
+		}
 	}
 }
 

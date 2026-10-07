@@ -90,6 +90,38 @@ class UserControllerTest {
 	}
 
 	@Test
+	void loginAnswersTheGuestTokenForAMalformedBody() throws Exception {
+		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
+				.content("not base64 !!"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
+	}
+
+	@Test
+	void loginAnswersTheGuestTokenWithoutTheSeparator() throws Exception {
+		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
+				.content(Base64.getEncoder().encodeToString("no separator here".getBytes(StandardCharsets.UTF_8))))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
+	}
+
+	@Test
+	void logoutAnswersTheGuestTokenForAGarbageToken() throws Exception {
+		mockMvc.perform(post("/api/user/logout").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"token\":\"garbage\",\"phone\":\"0\",\"detailAddress\":\"x\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
+	}
+
+	@Test
+	void logoutAnswersTheGuestTokenForAMissingToken() throws Exception {
+		mockMvc.perform(post("/api/user/logout").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"phone\":\"0\",\"detailAddress\":\"x\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
+	}
+
+	@Test
 	void resetPasswordStoresABcryptHashAndLogsTheUserIn() throws Exception {
 		User user = persona(4, "USER", "member@flowershop.example");
 		when(userRepository.findByEmail("member@flowershop.example")).thenReturn(user);
