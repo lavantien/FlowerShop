@@ -1,8 +1,12 @@
 package com.lavantien.flowershop.api.user;
 
+import com.lavantien.flowershop.api.security.Auth;
+import com.lavantien.flowershop.api.security.RequireRole;
 import com.lavantien.flowershop.service.MailService;
 import com.lavantien.flowershop.service.PasswordService;
 import com.lavantien.flowershop.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,11 +32,13 @@ public class UserController {
 		this.passwordService = passwordService;
 	}
 
+	@RequireRole(Auth.ADMIN_TYPE)
 	@GetMapping
 	public ResponseEntity<List<User>> getAll() {
 		return ResponseEntity.ok(userRepository.findAll());
 	}
 
+	@RequireRole(Auth.ADMIN_TYPE)
 	@PostMapping
 	public ResponseEntity<List<User>> createMany(@RequestBody List<User> users) {
 		for (User user : users) {
@@ -41,6 +47,7 @@ public class UserController {
 		return ResponseEntity.ok(userRepository.saveAll(users));
 	}
 
+	@RequireRole(Auth.ADMIN_TYPE)
 	@DeleteMapping
 	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
 		if (ids == null) {
@@ -52,7 +59,10 @@ public class UserController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<User> getById(@PathVariable Long id) {
+	public ResponseEntity<User> getById(@PathVariable Long id, HttpServletRequest request) {
+		if (!Auth.ownIdOrAdmin(id, request)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		}
 		Optional<User> user = userRepository.findById(id);
 		if (user.isEmpty()) {
 			return ResponseEntity.badRequest().build();
@@ -62,18 +72,33 @@ public class UserController {
 
 	@PostMapping("/create")
 	public ResponseEntity<User> create(@RequestBody User user) {
+		user.setType(User.USER_TYPE);
 		hashPassword(user);
 		return ResponseEntity.ok(userRepository.save(user));
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User user) {
-		if (userRepository.findById(id).isEmpty()) {
+	public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User user, HttpServletRequest request) {
+		if (!Auth.ownIdOrAdmin(id, request)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		}
+		Optional<User> existing = userRepository.findById(id);
+		if (existing.isEmpty()) {
 			return ResponseEntity.badRequest().build();
 		}
-		return ResponseEntity.ok(userRepository.save(user));
+		User managed = existing.get();
+		managed.setName(user.getName());
+		managed.setPhone(user.getPhone());
+		managed.setAddress(user.getAddress());
+		managed.setAnswer(user.getAnswer());
+		if (Auth.isAdmin(request)) {
+			managed.setType(user.getType());
+			managed.setEnable(user.getEnable());
+		}
+		return ResponseEntity.ok(userRepository.save(managed));
 	}
 
+	@RequireRole(Auth.ADMIN_TYPE)
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> delete(@PathVariable Long id) {
 		if (userRepository.findById(id).isEmpty()) {
