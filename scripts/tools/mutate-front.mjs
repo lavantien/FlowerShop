@@ -503,7 +503,6 @@ async function main() {
 	const results = [];
 	const run = {
 		mutants: selected, results, survivors: [], head,
-		finishedAt: new Date().toISOString(),
 		command: 'make mutate-front',
 		controlSpecs: controlSpecs.length,
 	};
@@ -530,6 +529,9 @@ async function main() {
 		}
 	}
 	run.seconds = (Date.now() - started) / 1000;
+	// Stamped at sweep completion, not run start: the Run line must read the
+	// moment the last mutant finished, matching the runtime beside it.
+	run.finishedAt = new Date().toISOString();
 	run.killed = results.filter((result) => result.verdict !== 'survivor').length;
 	const operatorTable = [
 		['STRICT_EQ_TO_NE', '=== to !=='], ['STRICT_NE_TO_EQ', '!== to ==='],
