@@ -1,21 +1,39 @@
 // Captures the README screenshot set from the live app served by the packaged jar.
 // Run through `make screenshots`, which provides db-up, JAVA_BIN, and the MySQL env.
-// Each capture mirrors one 2019 screenshot: same page, same interaction state.
+// The walk mirrors a real v3 session: guest browse with server paging, register,
+// cart checkout with coupon, payment gateway confirm, order history with a member
+// cancel, wishlist, then the full admin back office and a 404.
 import {spawn} from 'node:child_process';
-import {readdir, readFile, mkdir} from 'node:fs/promises';
+import {readdir, mkdir} from 'node:fs/promises';
 import {existsSync, statSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright-core';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const STAMP = Date.now().toString(36);
 const CONFIG = {
 	baseUrl: process.env.FLOWERSHOP_BASE_URL ?? 'http://localhost:8080',
 	outDir: path.join(REPO_ROOT, 'project-pictures'),
 	viewport: {width: 1600, height: 900},
 	locale: 'en',
-	member: {email: 'member@flowershop.example', password: '12345678', userId: 4},
+	// a fresh member per run proves the register flow and dodges duplicate-email 409s
+	member: {
+		name: 'Capture Member',
+		email: `capture-${STAMP}@flowershop.example`,
+		password: 'capture-pass-123',
+		answer: 'capture',
+		phone: '0900000123',
+		address: '05 Capture Lane',
+		city: 'Hồ Chí Minh',
+		district: 'Bình Thạnh'
+	},
 	admin: {email: 'admin@flowershop.example', password: '1234qwer'},
+	couponCode: 'WELCOME10',
+	newCoupon: {code: `CAPTURE${STAMP}`, kind: 'PERCENT', value: 15},
+	stockQuantity: 42,
+	taxonomyName: `Capture${STAMP}`,
+	junkRoute: 'no-such-capture-route',
 	healthTimeoutMs: 180_000,
 	imageTimeoutMs: 45_000
 };
@@ -73,7 +91,7 @@ async function startServer() {
 			throw new Error(`jar exited with code ${child.exitCode}:\n${stderrTail}`);
 		}
 		try {
-			await fetchJson(`${CONFIG.baseUrl}/api/product`);
+			await fetchJson(`${CONFIG.baseUrl}/api/product?page=0&size=1`);
 			return {child, stderrTail: () => stderrTail};
 		} catch {
 			await new Promise(resolve => setTimeout(resolve, 1000));
@@ -99,37 +117,18 @@ async function stopServer(server) {
 	});
 }
 
-async function loginToken({email, password}) {
-	const response = await fetchJson(`${CONFIG.baseUrl}/api/auth/login`, {
-		method: 'POST',
-		headers: {'Content-Type': 'application/json'},
-		body: JSON.stringify({email, password})
-	});
-	return response.token;
-}
-
-async function seedData() {
-	const categories = await fetchJson(`${CONFIG.baseUrl}/api/category`);
-	if (!Array.isArray(categories) || categories.length === 0) {
-		throw new Error('category table is empty; run make db-seed first');
+// The seeds must already live in MySQL (make db-reset); the walker never
+// POSTs db/product.json anymore, it boots against the seeded database.
+async function verifySeeded() {
+	const firstPage = await fetchJson(`${CONFIG.baseUrl}/api/product?page=0&size=1`);
+	if (!Array.isArray(firstPage.content) || firstPage.content.length === 0 || firstPage.totalElements < 13) {
+		throw new Error('product table is empty or too small for the paging walk; run make db-reset first');
 	}
-	const products = await fetchJson(`${CONFIG.baseUrl}/api/product`);
-	if (products.length === 0) {
-		const payload = await readFile(path.join(REPO_ROOT, 'db/product.json'), 'utf8');
-		await fetchJson(`${CONFIG.baseUrl}/api/product`, {
-			method: 'POST',
-			headers: {'Content-Type': 'application/json', 'X-Auth-Token': await loginToken(CONFIG.admin)},
-			body: payload
-		});
-		console.log('[seed] products imported from db/product.json');
+	const branches = await fetchJson(`${CONFIG.baseUrl}/api/branch`);
+	if (!Array.isArray(branches) || branches.length === 0) {
+		throw new Error('branch table is empty; run make db-reset first');
 	}
-	// Bills drive the summary and account pages; placed through the real checkout below.
-	// The endpoint answers 200 with an empty list for a user with no bills.
-	const billsResponse = await fetch(`${CONFIG.baseUrl}/api/bill/user/${CONFIG.member.userId}`, {
-		headers: {'X-Auth-Token': await loginToken(CONFIG.member)}
-	});
-	const memberBills = billsResponse.ok ? await billsResponse.json() : [];
-	return memberBills.length === 0;
+	return firstPage.totalElements;
 }
 
 async function launchBrowser() {
@@ -144,7 +143,17 @@ async function launchBrowser() {
 	throw new Error(`no chromium channel found (tried ${channels.join(', ')})`);
 }
 
+// Toasts sit fixed in the top right corner for 4 s and would cover the shots.
+async function settleToasts(page) {
+	try {
+		await page.waitForFunction(() => document.querySelectorAll('app-toasts .toast').length === 0, null, {timeout: 6000});
+	} catch {
+		console.log('[warn] toasts still visible after timeout');
+	}
+}
+
 async function shot(page, name, fullPage = false) {
+	await settleToasts(page);
 	await page.screenshot({path: path.join(CONFIG.outDir, name), fullPage});
 	console.log(`[shot] ${name}`);
 }
@@ -192,55 +201,82 @@ async function closeModal(page) {
 	if (await close.count() > 0) {
 		await close.first().click();
 	} else {
+		// the store product modal has no header, ngx-bootstrap closes on Escape
 		await page.keyboard.press('Escape');
 	}
 	await page.waitForFunction(count => document.querySelectorAll('.modal.show').length < count, openCount, {timeout: 5000});
+	// ngx-bootstrap queues a new modal behind the previous fade-out, so the next
+	// open must find a clean stage.
+	await page.waitForFunction(() => document.querySelectorAll('.modal.show').length === 0, null, {timeout: 5000});
 }
 
-// Navbar button order per app.component.html: guest = [cart, login],
-// member = [cart, logout], admin = [logout].
+// The auth modal is a plain always-rendered div pair, not an ngx-bootstrap
+// dialog, so it never carries .show and needs its own waits.
+async function openAuthModal(page) {
+	await page.locator('.responsive-float button:not([data-test="nav-cart"])').click();
+	await page.waitForSelector('app-auth-modal .modal #inputEmail');
+}
+
 async function login(page, {email, password}) {
-	await page.locator('.responsive-float button').nth(1).click();
-	// ngx-bootstrap queues a new modal behind the previous fade-out; values filled
-	// before the container carries the show class do not survive, so gate on it.
-	await page.waitForSelector('.modal.show #inputEmail');
-	await page.fill('#inputEmail', email);
-	await page.fill('#inputPassword', password);
-	await page.locator('.modal.show .btn-success').click();
-	await page.waitForSelector('.modal.show', {state: 'detached', timeout: 10000});
+	await openAuthModal(page);
+	await page.fill('app-auth-modal #inputEmail', email);
+	await page.fill('app-auth-modal #inputPassword', password);
+	await page.locator('app-auth-modal .modal-footer .btn-success').click();
+	await page.waitForSelector('app-auth-modal .modal', {state: 'detached', timeout: 10_000});
 	// The app writes the token before the zoneless navbar re-renders, so gate
 	// on the DOM, not on localStorage, before any button-index click.
-	await page.waitForSelector('.responsive-float svg.fa-right-from-bracket', {timeout: 10000});
+	await page.waitForSelector('.responsive-float svg.fa-right-from-bracket', {timeout: 10_000});
+}
+
+async function register(page, member) {
+	await openAuthModal(page);
+	await page.locator('app-auth-modal .modal-footer .btn-primary').click(); // switch to the sign up form
+	await page.waitForSelector('app-auth-modal #inputNameS');
+	await page.fill('app-auth-modal #inputNameS', member.name);
+	await page.fill('app-auth-modal #inputEmailS', member.email);
+	await page.fill('app-auth-modal #inputReEmailS', member.email);
+	await page.fill('app-auth-modal #inputPasswordS', member.password);
+	await page.fill('app-auth-modal #inputRePasswordS', member.password);
+	await page.fill('app-auth-modal #inputAnswerS', member.answer);
+	await page.fill('app-auth-modal #inputReAnswerS', member.answer);
+	await page.fill('app-auth-modal #inputPhoneS', member.phone);
+	await page.fill('app-auth-modal #inputAddressS', member.address);
+	await page.locator('app-auth-modal .modal-footer .btn-success').click();
+	await page.waitForSelector('app-auth-modal .modal', {state: 'detached', timeout: 10_000});
+	// register auto-logs in on success, the navbar flips to logout right after
+	await page.waitForSelector('.responsive-float svg.fa-right-from-bracket', {timeout: 10_000});
 }
 
 async function logout(page) {
-	await page.locator('.responsive-float button').nth(1).click();
-	// Same race as login in reverse: the GUESS token lands while the stale
-	// member navbar still shows logout at nth(1).
-	await page.waitForSelector('.responsive-float svg.fa-right-to-bracket', {timeout: 10000});
+	await page.locator('.responsive-float button:not([data-test="nav-cart"])').click();
+	await page.waitForSelector('.responsive-float svg.fa-right-to-bracket', {timeout: 10_000});
 }
 
-async function addToCart(page, index) {
-	await page.locator('app-store .card-footer button').nth(index).click();
+async function waitForCartBadge(page, expected) {
+	await page.waitForFunction(value => {
+		const match = (document.querySelector('[data-test="nav-cart"]')?.textContent ?? '').match(/\((\d+)\)/);
+		return match !== null && Number(match[1]) === value;
+	}, expected, {timeout: 5000});
 }
 
-async function openCart(page) {
-	await page.locator('.responsive-float button').nth(0).click();
-	await page.waitForSelector('.modal.show .wrapper-cart-table');
-	await page.waitForFunction(() => /\([1-9]/.test(document.querySelector('.responsive-float button span')?.textContent ?? ''), null, {timeout: 5000});
+async function fillCheckoutForm(page) {
+	await page.fill('[data-test="cart-phone"]', CONFIG.member.phone);
+	await page.fill('[data-test="cart-address"]', CONFIG.member.address);
+	await page.selectOption('[data-test="cart-city"]', CONFIG.member.city);
+	await page.selectOption('[data-test="cart-district"]', CONFIG.member.district);
 }
 
 async function main() {
 	await mkdir(CONFIG.outDir, {recursive: true});
 	const server = await startServer();
+	const totalProducts = await verifySeeded();
+	console.log(`[seed] ${totalProducts} products, database is ready`);
 	let browser;
 	let page;
 	try {
-		const placeOrder = await seedData();
 		browser = await launchBrowser();
 		const context = await browser.newContext({viewport: CONFIG.viewport, locale: CONFIG.locale});
 		page = await context.newPage();
-		page.on('dialog', dialog => dialog.accept());
 		page.on('console', message => {
 			if (message.type() === 'error' || message.type() === 'warning') {
 				console.log(`[console.${message.type()}] ${message.text()}`);
@@ -253,119 +289,213 @@ async function main() {
 			}
 		});
 
-		// Guest: shop grid, product details modal, cart modal.
+		// Guest: shop grid with server paging, product modal, cart lines.
 		await page.goto(`${CONFIG.baseUrl}/`);
 		await page.waitForSelector('app-store .card');
 		await waitForImages(page);
-		// Viewport framing like the 2019 set; fullPage would float the fixed
-		// scroll buttons into the middle of the tall capture.
+		// Viewport framing like the 2019 set; fullPage would stretch the grid
+		// across three screens for no extra information.
 		await shot(page, '01-shop-page.png');
 
-		await page.locator('app-store .card-body img').first().click();
-		await page.waitForSelector('.modal.show img.img-fluid');
+		const pageSize = 12;
+		const pageTwoRange = `${pageSize + 1}-${Math.min(pageSize * 2, totalProducts)} / ${totalProducts}`;
+		const pageOneRange = `1-${pageSize} / ${totalProducts}`;
+		await page.locator('.store-pagination .page-item', {hasText: /^\s*2\s*$/}).click();
+		await page.waitForFunction(expected => document.querySelector('[data-test="store-range"]')?.textContent?.trim() === expected,
+			pageTwoRange, {timeout: 10_000});
+		await page.locator('.store-pagination .page-item', {hasText: /^\s*1\s*$/}).click();
+		await page.waitForFunction(expected => document.querySelector('[data-test="store-range"]')?.textContent?.trim() === expected,
+			pageOneRange, {timeout: 10_000});
+
+		await page.locator('[data-test="store-card-image"]').first().click();
+		await page.waitForSelector('.modal.show [data-test="modal-image"]');
 		await waitForImages(page);
 		await waitForModalSettled(page);
 		await shot(page, '11-product-details.png');
-		await closeModal(page);
+		await page.locator('[data-test="modal-qty-plus"]').click();
+		await page.waitForFunction(() => document.querySelector('[data-test="modal-qty"]')?.textContent?.trim() === '2',
+			null, {timeout: 5000});
+		await page.locator('[data-test="modal-add"]').click();
+		await page.waitForSelector('.modal.show', {state: 'detached', timeout: 5000});
+		await waitForCartBadge(page, 2);
+		await page.locator('[data-test="store-add"]').nth(2).click();
+		await waitForCartBadge(page, 3);
 
-		await addToCart(page, 0);
-		await addToCart(page, 2);
-		await openCart(page);
-		await waitForModalSettled(page);
+		// Member: register a fresh account, wishlist one product from the grid.
+		await register(page, CONFIG.member);
+		await page.locator('[data-test="store-heart"]').nth(1).click();
+		await page.waitForFunction(() => document.querySelectorAll('[data-test="store-heart"]')[1]
+			?.classList.contains('text-danger') === true, null, {timeout: 10_000});
+
+		// First checkout pays through the gateway and leaves one PAID order.
+		await page.locator('[data-test="nav-cart"]').click();
+		await page.waitForSelector('[data-test="cart-checkout"]');
+		await fillCheckoutForm(page);
 		await shot(page, '02-shopping-cart.png');
-		await closeModal(page);
+		await page.fill('[data-test="cart-coupon"]', CONFIG.couponCode);
+		await page.locator('[data-test="cart-coupon-apply"]').click();
+		await page.waitForSelector('[data-test="cart-coupon-preview"]');
+		await shot(page, '12-checkout-coupon.png');
+		await page.locator('[data-test="cart-checkout"]').click();
+		await page.waitForURL(/\/pay\//, {timeout: 20_000});
+		await page.waitForSelector('[data-test="pay-amount"]');
+		await page.waitForFunction(() => (document.querySelector('[data-test="pay-status"]')?.textContent ?? '').includes('PENDING'),
+			null, {timeout: 10_000});
+		await shot(page, '13-pay-gateway.png');
+		await page.locator('[data-test="pay-confirm"]').click();
+		await page.waitForURL(/\/info/, {timeout: 15_000});
+		await page.waitForSelector('[data-test="order-card"]');
+		await shot(page, '14-info-order-history.png');
 
-		// Member: place one order (only when the account has no bills yet), account details.
-		await login(page, CONFIG.member);
-		if (placeOrder) {
-			await addToCart(page, 1);
-			await openCart(page);
-			await page.locator('.modal.show .btn-success').click(); // confirm order, alert auto-accepted
-			await page.waitForSelector('.modal.show', {state: 'detached', timeout: 10000});
-			const bills = await fetchJson(`${CONFIG.baseUrl}/api/bill/user/${CONFIG.member.userId}`, {
-				headers: {'X-Auth-Token': await loginToken(CONFIG.member)}
-			});
-			if (bills.length === 0) {
-				throw new Error('checkout produced no bills');
-			}
-		}
+		// Second checkout stays PENDING so the member cancel has a live target.
+		await page.locator('a[href="/shop"]').click();
+		await page.waitForSelector('[data-test="store-range"]');
+		await page.locator('[data-test="store-add"]').first().click();
+		await waitForCartBadge(page, 1);
+		await page.locator('[data-test="nav-cart"]').click();
+		await page.waitForSelector('[data-test="cart-checkout"]');
+		await fillCheckoutForm(page);
+		await page.locator('[data-test="cart-checkout"]').click();
+		await page.waitForURL(/\/pay\//, {timeout: 20_000});
+		await page.waitForSelector('[data-test="pay-amount"]');
+		await page.waitForFunction(() => (document.querySelector('[data-test="pay-status"]')?.textContent ?? '').includes('PENDING'),
+			null, {timeout: 10_000});
 		await page.locator('a[href="/info"]').click();
-		await page.waitForFunction(() => (document.querySelector('#inputNameI')?.value ?? '').length > 0, null, {timeout: 10000});
-		// The empty state is also a tbody tr (td colspan=8); real bill rows
-		// carry a th[scope=row] index cell, so wait for one of those.
-		await page.waitForSelector('app-info tbody th[scope="row"]');
-		await page.waitForTimeout(500);
+		await page.waitForFunction(() => document.querySelectorAll('[data-test="order-card"]').length === 2,
+			null, {timeout: 10_000});
+		await page.locator('[data-test="order-cancel"]').first().click();
+		await page.waitForFunction(() => document.querySelectorAll('[data-test="order-cancel"]').length === 0,
+			null, {timeout: 10_000});
+
+		await page.locator('[data-test="info-tab-wishlist"]').click();
+		await page.waitForSelector('[data-test="wishlist-heart"]');
+		await waitForImages(page);
+		await shot(page, '15-info-wishlist.png');
+
+		await page.locator('[data-test="info-tab-profile"]').click();
+		await page.waitForFunction(() => (document.querySelector('[data-test="profile-name"]')?.value ?? '').length > 0,
+			null, {timeout: 10_000});
 		await shot(page, '03-member-account-details.png');
 
-		// Admin: product table, create, import, edit, batch delete, export, summary.
+		// Admin: product table, create, import, edit, batch delete, export.
 		await logout(page);
 		await login(page, CONFIG.admin);
 		await page.locator('a[href="/admin"]').click();
-		await page.waitForSelector('app-admin tbody tr th');
+		await page.waitForSelector('.table-product tbody tr');
 		await waitForImages(page);
 		await page.mouse.move(800, 450); // drop the navbar tooltip before shooting
 		await page.waitForTimeout(300);
 		await shot(page, '04-admin-products.png');
 
-		// Toolbar order in admin.component.html: create, import, export.
-		await page.locator('.btn-create').nth(0).click();
-		await page.waitForSelector('.modal.show #inputName');
+		await page.locator('[data-test="admin-products-create"]').click();
+		await page.waitForSelector('.modal.show [data-test="admin-product-name"]');
 		await waitForModalSettled(page);
 		await shot(page, '06-admin-create-product.png');
 		await closeModal(page);
 
-		await page.locator('.btn-create').nth(1).click();
+		await page.locator('[data-test="admin-products-import"]').click();
 		await page.waitForSelector('.modal.show #inputGroupFile');
 		await waitForModalSettled(page);
 		await shot(page, '07-admin-import-excel.png');
 		await closeModal(page);
 
-		await page.locator('app-admin tbody .btn-edit').first().click();
-		await page.waitForFunction(() => (document.querySelector('.modal.show #inputNameE')?.value ?? '').trim().length > 0, null, {timeout: 5000});
+		await page.locator('[data-test="admin-products-edit"]').first().click();
+		await page.waitForFunction(() => (document.querySelector('.modal.show [data-test="admin-product-name"]')?.value ?? '')
+			.trim().length > 0, null, {timeout: 5000});
 		await waitForModalSettled(page);
 		await shot(page, '09-admin-edit-product.png');
 		await closeModal(page);
 
-		// The first row click right after a modal close can race the app's
-		// re-render and get dropped, so verify the selection and top up missing rows.
-		const rows = page.locator('app-admin tbody tr');
-		for (let attempt = 0; attempt < 3; attempt++) {
-			for (const index of [0, 1, 2]) {
-				const selected = await rows.nth(index).evaluate(tr => tr.classList.contains('row-selected'));
-				if (!selected) {
-					await rows.nth(index).locator('th').click();
-					await page.waitForTimeout(300);
-				}
-			}
-			const count = await page.locator('app-admin tbody tr.row-selected').count();
-			console.log(`[select] attempt ${attempt}: ${count}/3 selected`);
-			if (count === 3) {
-				break;
-			}
-		}
-		await page.waitForFunction(() => document.querySelectorAll('app-admin tbody tr.row-selected').length === 3, null, {timeout: 5000});
-		// A normal click on the delete button bubbles to the row and deselects it,
-		// so open the modal with a non-bubbling event on the button itself.
-		await page.evaluate(() => document.querySelector('app-admin tbody .btn-warning')
-			.dispatchEvent(new MouseEvent('click', {bubbles: false})));
+		const productRows = page.locator('.table-product tbody tr');
+		await productRows.nth(0).locator('th').click();
+		await productRows.nth(1).locator('th').click();
+		await page.waitForFunction(() => document.querySelectorAll('[data-test="admin-products-delete"]').length === 2,
+			null, {timeout: 5000});
+		await page.locator('[data-test="admin-products-delete"]').first().click();
 		await page.waitForSelector('.modal.show .wrapper-delete-table');
-		// saleAmount is null in the seed data, so count rows with content, not cells.
-		await page.waitForFunction(() => Array.from(document.querySelectorAll('.modal.show .wrapper-delete-table tbody tr'))
-			.filter(tr => (tr.textContent ?? '').trim().length > 20).length >= 3, null, {timeout: 5000});
+		await page.waitForFunction(() => document.querySelectorAll('.modal.show .wrapper-delete-table tbody tr').length >= 2,
+			null, {timeout: 5000});
 		await waitForModalSettled(page);
 		await shot(page, '10-admin-batch-delete.png');
 		await closeModal(page);
 
-		await page.locator('.btn-create').nth(2).hover();
+		await page.locator('[data-test="admin-products-export"]').hover();
 		await page.waitForSelector('.tooltip.show', {timeout: 5000});
 		await shot(page, '08-admin-export-excel.png');
-
-		await page.locator('a[href="/summary"]').click();
-		// The empty-state row is also a tbody tr, so wait for real bill rows.
-		await page.waitForFunction(() => document.querySelectorAll('app-summary tbody tr').length >= 2, null, {timeout: 10000});
 		await page.mouse.move(800, 450);
-		await page.waitForTimeout(500);
+
+		// Admin orders: the list replaces the old transaction summary, then the
+		// capture member's PAID order ships.
+		await page.locator('[data-test="admin-tab-orders"]').click();
+		await page.waitForSelector('[data-test="admin-order-status"]');
 		await shot(page, '05-admin-transaction-summary.png');
+		await page.locator('[data-test="admin-orders-status"]').selectOption('PAID');
+		await page.waitForFunction(() => {
+			const badges = Array.from(document.querySelectorAll('[data-test="admin-order-status"]'));
+			return badges.length > 0 && badges.every(badge => (badge.textContent ?? '').trim() === 'PAID');
+		}, null, {timeout: 10_000});
+		await page.locator('[data-test="admin-order-transition"]').first().click();
+		await page.waitForFunction(() => (document.querySelector('[data-test="admin-order-status"]')?.textContent ?? '')
+			.trim() === 'SHIPPED', null, {timeout: 10_000});
+
+		// Coupons: create one, the table shows it next to the three seeds.
+		await page.locator('[data-test="admin-tab-coupons"]').click();
+		await page.waitForSelector('[data-test="admin-coupon-save"]');
+		await page.fill('[data-test="admin-coupon-code"]', CONFIG.newCoupon.code);
+		await page.locator('[data-test="admin-coupon-kind"]').selectOption(CONFIG.newCoupon.kind);
+		await page.fill('[data-test="admin-coupon-value"]', String(CONFIG.newCoupon.value));
+		await page.locator('[data-test="admin-coupon-save"]').click();
+		await page.waitForFunction(code => Array.from(document.querySelectorAll('tbody tr'))
+			.some(tr => (tr.textContent ?? '').includes(code)), CONFIG.newCoupon.code, {timeout: 10_000});
+		await shot(page, '16-admin-coupons.png');
+
+		// Branch stock editor: set an absolute quantity on the first branch.
+		await page.locator('[data-test="admin-tab-branches"]').click();
+		await page.waitForSelector('[data-test="admin-branch-stock"]');
+		await page.locator('[data-test="admin-branch-stock"]').first().click();
+		await page.waitForSelector('.modal.show .wrapper-stock-table');
+		await page.waitForFunction(() => Array.from(document.querySelectorAll('.modal.show [data-test="admin-stock-quantity"]'))
+			.some(input => Number(input.value) > 0), null, {timeout: 10_000});
+		const stockRow = page.locator('.modal.show .wrapper-stock-table tbody tr').first();
+		await stockRow.locator('[data-test="admin-stock-quantity"]').fill(String(CONFIG.stockQuantity));
+		await stockRow.locator('[data-test="admin-stock-save"]').click();
+		await page.waitForFunction(value => {
+			const save = document.querySelector('.modal.show [data-test="admin-stock-save"]');
+			const input = document.querySelector('.modal.show [data-test="admin-stock-quantity"]');
+			return save !== null && !save.disabled && input?.value === value;
+		}, String(CONFIG.stockQuantity), {timeout: 10_000});
+		await waitForModalSettled(page);
+		await shot(page, '17-admin-branch-stock.png');
+		await closeModal(page);
+
+		// Dashboard: tiles and CSS bars over the report aggregates.
+		await page.locator('[data-test="admin-tab-dashboard"]').click();
+		await page.waitForFunction(() => document.querySelectorAll('[data-test="admin-dashboard-tile"]').length === 3
+			&& document.querySelectorAll('[data-test="admin-status-bar"]').length > 0, null, {timeout: 10_000});
+		await shot(page, '18-admin-dashboard.png');
+
+		// Users: disable the capture member instead of deleting (they own orders).
+		await page.locator('[data-test="admin-tab-users"]').click();
+		await page.waitForSelector('[data-test="admin-user-enable"]');
+		const captureRow = page.locator('tbody tr', {hasText: CONFIG.member.email});
+		await captureRow.locator('[data-test="admin-user-enable"]').click();
+		await page.waitForFunction(email => Array.from(document.querySelectorAll('tbody tr'))
+			.find(tr => (tr.textContent ?? '').includes(email))
+			?.querySelector('[data-test="admin-user-enable"]')
+			?.classList.contains('btn-secondary') === true, CONFIG.member.email, {timeout: 10_000});
+
+		// Taxonomy: one new category row proves the create path.
+		await page.locator('[data-test="admin-tab-taxonomy"]').click();
+		await page.waitForSelector('[data-test="admin-category-name"]');
+		await page.fill('[data-test="admin-category-name"]', CONFIG.taxonomyName);
+		await page.locator('[data-test="admin-category-save"]').click();
+		await page.waitForFunction(name => Array.from(document.querySelectorAll('tbody tr'))
+			.some(tr => (tr.textContent ?? '').includes(`DATA.${name}`)), CONFIG.taxonomyName, {timeout: 10_000});
+
+		// Wildcard route: the SPA 404 page on a junk deep link.
+		await page.goto(`${CONFIG.baseUrl}/${CONFIG.junkRoute}`);
+		await page.waitForSelector('h1.display-1');
+		await shot(page, '19-not-found.png');
 
 		await context.close();
 	} catch (error) {
