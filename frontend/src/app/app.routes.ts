@@ -6,7 +6,6 @@ export const routes: Routes = [
 		redirectTo: 'shop',
 		pathMatch: 'full'
 	},
-	{path: 'test', loadComponent: () => import('./test/test.component').then(m => m.TestComponent)},
 	{path: 'shop', loadComponent: () => import('./store/store.component').then(m => m.StoreComponent)},
 	{path: 'contact', loadComponent: () => import('./contact/contact.component').then(m => m.ContactComponent)},
 	{path: 'admin', loadComponent: () => import('./admin/admin.component').then(m => m.AdminComponent)},

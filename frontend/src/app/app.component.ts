@@ -10,7 +10,6 @@ import {
 	faArrowLeft,
 	faArrowRight,
 	faChartLine,
-	faCubes,
 	faHandshake,
 	faMagnifyingGlass,
 	faMinus,
@@ -51,7 +50,6 @@ import {Bill} from './_models/bill';
 	styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit, OnDestroy {
-	isTest = false;
 	isAdmin = signal(false);
 	isLoggedIn = signal(false);
 	faAnglesUp = faAnglesUp;
@@ -62,7 +60,6 @@ export class AppComponent implements OnInit, OnDestroy {
 	faUser = faUser;
 	faWarehouse = faWarehouse;
 	faHandshake = faHandshake;
-	faCubes = faCubes;
 	faMagnifyingGlass = faMagnifyingGlass;
 	faRightToBracket = faRightToBracket;
 	faRightFromBracket = faRightFromBracket;
