@@ -1,6 +1,7 @@
 package com.lavantien.flowershop.api.branch;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
@@ -17,4 +18,11 @@ public interface StockLevelRepository extends JpaRepository<StockLevel, Long> {
 	// no rows as zero, never as unknown.
 	@Query("select coalesce(sum(s.quantity), 0) from StockLevel s where s.productId = :productId")
 	long sumQuantityByProductId(Long productId);
+
+	// The locked oversell guard: one conditional update per line, the
+	// affected-row check inside the caller's transaction decides, no version
+	// column, no retry loop.
+	@Modifying
+	@Query("update StockLevel s set s.quantity = s.quantity - :n where s.id = :id and s.quantity >= :n")
+	int decrementIfAvailable(Long id, int n);
 }
