@@ -1,0 +1,43 @@
+.cart-wrapper {
+	.empty-cart {
+		padding: 3rem 0;
+	}
+
+	.cart-thumb {
+		width: 48px;
+		height: 48px;
+		object-fit: cover;
+		margin-right: 0.5rem;
+		vertical-align: middle;
+	}
+
+	.qty-stepper {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+
+		.qty {
+			min-width: 1.5rem;
+			font-weight: 600;
+		}
+	}
+
+	.checkout-card {
+		.coupon-preview {
+			margin-top: 0.25rem;
+			font-weight: 600;
+		}
+
+		.checkout-totals {
+			div {
+				display: flex;
+				justify-content: space-between;
+			}
+
+			.payable {
+				font-weight: 700;
+				font-size: 1.1rem;
+			}
+		}
+	}
+}

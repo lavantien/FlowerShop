@@ -96,6 +96,21 @@
 		"WISHLIST_ADDED": "Added to wishlist!",
 		"WISHLIST_REMOVED": "Removed from wishlist!"
 	},
+	"CART": {
+		"EMPTY": "Your cart is empty.",
+		"BACK_TO_SHOP": "Browse the shop",
+		"SUBTOTAL": "Subtotal",
+		"DISCOUNT": "Coupon discount",
+		"PAYABLE": "Total before delivery fee",
+		"BRANCH": "Delivery branch",
+		"BRANCH_AUTO": "Nearest branch (recommended)",
+		"BRANCH_HINT": "Leave empty to ship from the branch nearest your address; the delivery fee is computed when the order is placed.",
+		"COUPON": "Coupon code",
+		"APPLY_COUPON": "Apply",
+		"COUPON_INVALID": "This coupon does not apply to your cart.",
+		"CHECKOUT_INVALID": "Please complete the delivery details.",
+		"ORDER_FAILED": "Order failed, please retry."
+	},
 	"DATA": {
 		"FLOWERS": "Flowers",
 		"PLANTS": "Plants",

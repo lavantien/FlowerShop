@@ -96,6 +96,21 @@
 		"WISHLIST_ADDED": "Đã thêm vào yêu thích!",
 		"WISHLIST_REMOVED": "Đã bỏ khỏi yêu thích!"
 	},
+	"CART": {
+		"EMPTY": "Giỏ hàng của bạn đang trống.",
+		"BACK_TO_SHOP": "Xem tiếp cửa hàng",
+		"SUBTOTAL": "Tạm tính",
+		"DISCOUNT": "Giảm giá từ mã",
+		"PAYABLE": "Tổng chưa gồm phí giao hàng",
+		"BRANCH": "Chi nhánh giao",
+		"BRANCH_AUTO": "Chi nhánh gần nhất (khuyên dùng)",
+		"BRANCH_HINT": "Để trống để giao từ chi nhánh gần địa chỉ của bạn nhất; phí giao hàng được tính khi đặt hàng.",
+		"COUPON": "Mã giảm giá",
+		"APPLY_COUPON": "Áp dụng",
+		"COUPON_INVALID": "Mã giảm giá không dùng được cho giỏ này.",
+		"CHECKOUT_INVALID": "Vui lòng điền đủ thông tin giao hàng.",
+		"ORDER_FAILED": "Đặt hàng thất bại, vui lòng thử lại."
+	},
 	"DATA": {
 		"FLOWERS": "Hoa",
 		"PLANTS": "Cây cảnh",

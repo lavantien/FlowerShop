@@ -1,0 +1,159 @@
+<div class="cart-wrapper container-fluid">
+	@if (cart.isEmpty()) {
+		<div class="text-center empty-cart">
+			<i>{{'CART.EMPTY' | translate}}</i>
+			<div class="mt-2">
+				<a class="btn btn-dark" routerLink="/shop">{{'CART.BACK_TO_SHOP' | translate}}</a>
+			</div>
+		</div>
+	} @else {
+		<div class="row">
+			<div class="col-xl-7 col-lg-7 col-md-12 col-sm-12 col-12">
+				<table class="table table-bordered table-striped table-sm table-hover text-center">
+					<thead>
+					<tr>
+						<th scope="col">{{'ADMIN.NAME' | translate}}</th>
+						<th scope="col">{{'ADMIN.PRICE' | translate}}</th>
+						<th scope="col">{{'ADMIN.QUANTITY_CART' | translate}}</th>
+						<th scope="col">{{'ADMIN.TOTAL_PRICE' | translate}}</th>
+						<th scope="col">{{'ADMIN.ACTION' | translate}}</th>
+					</tr>
+					</thead>
+					<tbody>
+					@for (line of cart.lines(); track line.product.id) {
+						<tr>
+							<td class="text-start">
+								<img [alt]="line.product.name" [src]="line.product.imgUrl" class="cart-thumb">
+								{{line.product.name}}
+							</td>
+							<td>{{line.product.price | currency:'VND':'symbol':'1.0-0':lang()}}</td>
+							<td>
+								<div class="qty-stepper">
+									<button (click)="dec(line.product.id)" [disabled]="line.quantity <= 1"
+									        class="btn btn-outline-dark btn-sm" data-test="cart-dec" type="button">
+										<fa-icon [icon]="faMinus"></fa-icon>
+									</button>
+									<span class="qty" data-test="cart-qty">{{line.quantity}}</span>
+									<button (click)="inc(line.product.id)" class="btn btn-outline-dark btn-sm"
+									        data-test="cart-inc" type="button">
+										<fa-icon [icon]="faPlus"></fa-icon>
+									</button>
+								</div>
+							</td>
+							<td>{{line.product.price * line.quantity | currency:'VND':'symbol':'1.0-0':lang()}}</td>
+							<td>
+								<button (click)="remove(line.product.id)" class="btn btn-outline-dark btn-sm"
+								        data-test="cart-remove" type="button">
+									<fa-icon [icon]="faTrashCan"></fa-icon>
+								</button>
+							</td>
+						</tr>
+					}
+					<tr>
+						<td colspan="3"><b>{{'CART.SUBTOTAL' | translate}}</b></td>
+						<td colspan="2"><b>{{cart.subtotal() | currency:'VND':'symbol':'1.0-0':lang()}}</b></td>
+					</tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="col-xl-5 col-lg-5 col-md-12 col-sm-12 col-12">
+				<div class="card checkout-card">
+					<div class="card-header bg-light text-dark"><b>{{'MAIN.CONFIRM_ORDER' | translate}}</b></div>
+					<div class="card-body">
+						<form (ngSubmit)="onCheckout()" [formGroup]="form">
+							<div class="mb-3">
+								<label class="form-label" for="inputPhoneC"><b>{{'MAIN.PHONE' | translate}}</b></label>
+								<input class="form-control" data-test="cart-phone" formControlName="phone"
+								       id="inputPhoneC" type="tel">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="inputAddressC"><b>{{'MAIN.ADDRESS' | translate}}</b></label>
+								<input class="form-control" data-test="cart-address" formControlName="address"
+								       id="inputAddressC" type="text">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="inputCityC"><b>{{'MAIN.CITY' | translate}}</b></label>
+								<select (change)="onCityChange()" class="form-control" data-test="cart-city"
+								        formControlName="city" id="inputCityC">
+									@for (city of geo.cities(); track city.name) {
+										<option [value]="city.name">{{city.name}}</option>
+									}
+								</select>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="inputDistrictC"><b>{{'MAIN.DISTRICT' | translate}}</b></label>
+								<select class="form-control" data-test="cart-district" formControlName="district"
+								        id="inputDistrictC">
+									@for (district of geo.districts(); track district.name) {
+										@if (district.cityName === form.controls.city.value) {
+											<option [value]="district.name">{{district.name}}</option>
+										}
+									}
+								</select>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="inputBranchC"><b>{{'CART.BRANCH' | translate}}</b></label>
+								<select #branchSelect (change)="onBranchChange(branchSelect.value)" class="form-control"
+								        data-test="cart-branch" id="inputBranchC">
+									<option [selected]="branchId() === 0" value="0">
+										{{'CART.BRANCH_AUTO' | translate}}
+									</option>
+									@for (branch of branches(); track branch.id) {
+										<option [selected]="branch.id === branchId()" [value]="branch.id">
+											{{branch.name}} ({{branch.district}}, {{branch.city}})
+										</option>
+									}
+								</select>
+								<div class="form-text">{{'CART.BRANCH_HINT' | translate}}</div>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="inputCouponC"><b>{{'CART.COUPON' | translate}}</b></label>
+								<div class="input-group">
+									<input #couponInput (change)="couponCode.set(couponInput.value)"
+									       (keyup.enter)="applyCoupon()" class="form-control" data-test="cart-coupon"
+									       id="inputCouponC" type="text">
+									<button (click)="applyCoupon()" class="btn btn-outline-dark"
+									        data-test="cart-coupon-apply" type="button">
+										{{'CART.APPLY_COUPON' | translate}}
+									</button>
+								</div>
+								@if (coupon(); as validation) {
+									<div class="coupon-preview text-success" data-test="cart-coupon-preview">
+										{{validation.code}}: -{{validation.discountAmount | currency:'VND':'symbol':'1.0-0':lang()}}
+										<button (click)="removeCoupon()" class="btn btn-link btn-sm"
+										        data-test="cart-coupon-remove" type="button">&times;</button>
+									</div>
+								}
+							</div>
+							<div class="mb-3 checkout-totals">
+								<div>
+									<span>{{'CART.SUBTOTAL' | translate}}:</span>
+									<span>{{cart.subtotal() | currency:'VND':'symbol':'1.0-0':lang()}}</span>
+								</div>
+								@if (discount() > 0) {
+									<div class="text-success">
+										<span>{{'CART.DISCOUNT' | translate}}:</span>
+										<span>-{{discount() | currency:'VND':'symbol':'1.0-0':lang()}}</span>
+									</div>
+								}
+								<div class="payable">
+									<span>{{'CART.PAYABLE' | translate}}:</span>
+									<span>{{payable() | currency:'VND':'symbol':'1.0-0':lang()}}</span>
+								</div>
+							</div>
+							@if (invalidCheckout()) {
+								<div class="text-danger mb-2" data-test="cart-invalid">
+									{{'CART.CHECKOUT_INVALID' | translate}}
+								</div>
+							}
+							<button [disabled]="submitting()" class="btn btn-dark w-100" data-test="cart-checkout"
+							        type="submit">
+								{{'MAIN.CONFIRM_ORDER' | translate}}
+							</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+</div>

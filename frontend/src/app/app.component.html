@@ -55,8 +55,8 @@
 							}
 						</select>
 						@if (!isAdmin()) {
-							<button class="btn btn-dark btn-lang" placement="bottom" tooltip="{{'MAIN.CART' | translate}}"
-							        type="button">
+							<button (click)="onCartClick()" class="btn btn-dark btn-lang" data-test="nav-cart"
+							        placement="bottom" tooltip="{{'MAIN.CART' | translate}}" type="button">
 								<fa-icon [icon]="faShoppingCart"></fa-icon>
 								@if (cartCount() > 0) {
 									<span> ({{cartCount()}})</span>

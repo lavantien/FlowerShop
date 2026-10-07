@@ -6,6 +6,7 @@ import {describe, expect, it} from 'vitest';
 import {routes} from './app.routes';
 import {appConfig} from './app.config';
 import {StoreComponent} from './store/store.component';
+import {CartComponent} from './cart/cart.component';
 import {ContactComponent} from './contact/contact.component';
 import {AdminComponent} from './admin/admin.component';
 import {InfoComponent} from './info/info.component';
@@ -25,6 +26,7 @@ describe('app routes', () => {
 		const loaded = await Promise.all(routes.slice(1).map(route => route.loadComponent!()));
 		expect(loaded).toEqual([
 			StoreComponent,
+			CartComponent,
 			ContactComponent,
 			AdminComponent,
 			InfoComponent,
@@ -36,6 +38,7 @@ describe('app routes', () => {
 	it('guards the member and admin surfaces', () => {
 		const byPath = new Map(routes.map(route => [route.path, route]));
 		expect(byPath.get('info')?.canActivate).toBeDefined();
+		expect(byPath.get('cart')?.canActivate).toBeDefined();
 		expect(byPath.get('admin')?.canActivate).toBeDefined();
 		expect(byPath.get('summary')?.canActivate).toBeDefined();
 		expect(byPath.get('shop')?.canActivate).toBeUndefined();

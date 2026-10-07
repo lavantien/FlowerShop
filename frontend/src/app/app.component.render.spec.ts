@@ -3,7 +3,7 @@ import {provideHttpClient} from '@angular/common/http';
 import {HttpTestingController, provideHttpClientTesting} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {provideNoopAnimations} from '@angular/platform-browser/animations';
-import {provideRouter} from '@angular/router';
+import {provideRouter, Router} from '@angular/router';
 import {provideTranslateService} from '@ngx-translate/core';
 import {beforeEach, afterEach, describe, expect, it, vi} from 'vitest';
 import {AppComponent} from './app.component';
@@ -44,6 +44,7 @@ describe('AppComponent shell', () => {
 				provideHttpClientTesting(),
 				provideRouter([
 					{path: 'shop', component: EmptyComponent},
+					{path: 'cart', component: EmptyComponent},
 					{path: 'admin', component: EmptyComponent},
 					{path: 'info', component: EmptyComponent},
 					{path: 'summary', component: EmptyComponent},
@@ -144,5 +145,23 @@ describe('AppComponent shell', () => {
 	it('hosts the toast container', () => {
 		createShell();
 		expect(element().querySelector('app-toasts')).not.toBeNull();
+	});
+
+	it('navigates a member to the cart page from the navbar button', () => {
+		session.login('token-1', member);
+		createShell();
+		const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
+		(element().querySelector('[data-test="nav-cart"]') as HTMLButtonElement).click();
+		expect(navigate).toHaveBeenCalledWith(['/cart']);
+	});
+
+	it('opens the login modal instead when a guest taps the cart', () => {
+		createShell();
+		(element().querySelector('[data-test="nav-cart"]') as HTMLButtonElement).click();
+		fixture.detectChanges();
+		httpMock.expectOne('../assets/data/cities.json').flush([]);
+		httpMock.expectOne('../assets/data/districts.json').flush([]);
+		fixture.detectChanges();
+		expect(element().querySelector('app-auth-modal .modal')).not.toBeNull();
 	});
 });
