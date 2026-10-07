@@ -69,7 +69,7 @@ function readDistrictPoint(district) {
 function readSeedCoupon(code) {
 	const line = readFileSync(path.join(REPO_ROOT, 'db/run.sql'), 'utf8')
 		.split('\n').find(row => row.includes(`'${code}',`));
-	const hit = line?.match(/^\(\d+,\s*'[^']+',\s*'([A-Z]+)',\s*(\d+),\s*(true|false)/);
+	const hit = line?.match(/^\s*\(\d+,\s*'[^']+',\s*'([A-Z]+)',\s*(\d+),\s*(true|false)/);
 	if (!hit) {
 		throw new Error(`seed coupon ${code} not found in db/run.sql`);
 	}
