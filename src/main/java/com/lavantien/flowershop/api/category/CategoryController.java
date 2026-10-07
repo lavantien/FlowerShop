@@ -6,6 +6,7 @@ import com.lavantien.flowershop.api.product.ProductRepository;
 import com.lavantien.flowershop.api.security.RequireRole;
 import com.lavantien.flowershop.api.user.Role;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,11 +36,16 @@ public class CategoryController {
 	@RequireRole(Role.ADMIN)
 	@DeleteMapping
 	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
+		// The bulk path must honor the same NAME_IN_USE wall the single delete
+		// enforces: any referenced candidate name refuses the whole batch.
 		if (ids == null) {
+			requireUnreferenced(categoryRepository.findAll());
 			categoryRepository.deleteAll();
 			return ResponseEntity.ok().build();
 		}
-		categoryRepository.deleteAll(categoryRepository.findAllById(ids));
+		List<Category> doomed = categoryRepository.findAllById(ids);
+		requireUnreferenced(doomed);
+		categoryRepository.deleteAll(doomed);
 		return ResponseEntity.ok().build();
 	}
 
@@ -57,6 +63,7 @@ public class CategoryController {
 	}
 
 	@RequireRole(Role.ADMIN)
+	@Transactional
 	@PutMapping("/{id}")
 	public ResponseEntity<Category> update(@PathVariable Long id, @RequestBody Category category) {
 		// The documented body carries no id, so the addressed row must be
@@ -64,8 +71,16 @@ public class CategoryController {
 		Category target = categoryRepository.findById(id)
 			.orElseThrow(() -> new NotFoundException("no category with id " + id));
 		requireFreeName(category.getName(), id);
-		target.setName(category.getName());
-		return ResponseEntity.ok(categoryRepository.save(target));
+		String from = target.getName();
+		String to = category.getName();
+		target.setName(to);
+		categoryRepository.save(target);
+		// Products reference the name, not the id, so a rename must carry the
+		// reference columns along in the same transaction.
+		if (!to.equals(from)) {
+			productRepository.renameCategory(from, to);
+		}
+		return ResponseEntity.ok(target);
 	}
 
 	@RequireRole(Role.ADMIN)
@@ -87,6 +102,15 @@ public class CategoryController {
 			: categoryRepository.existsByNameAndIdNot(name, ownedBy);
 		if (taken) {
 			throw new ConflictException("NAME_IN_USE", "category name " + name + " is already in use");
+		}
+	}
+
+	private void requireUnreferenced(List<Category> candidates) {
+		for (Category category : candidates) {
+			if (productRepository.existsByCategoryName(category.getName())) {
+				throw new ConflictException("NAME_IN_USE",
+					"products still reference category " + category.getName());
+			}
 		}
 	}
 }

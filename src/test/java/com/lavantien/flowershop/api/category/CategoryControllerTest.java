@@ -21,6 +21,7 @@ import static com.lavantien.flowershop.api.security.AuthTestSupport.prime;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.tokenOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
@@ -186,6 +187,84 @@ class CategoryControllerTest {
 		verify(categoryRepository).save(saved.capture());
 		assertEquals(3L, saved.getValue().getId());
 		assertTrue(saved.getValue().getName().equals("POTTED"));
+	}
+
+	@Test
+	void updateCascadesTheRenameOntoProductRows() throws Exception {
+		when(categoryRepository.findById(3L)).thenReturn(Optional.of(bouquet()));
+		when(categoryRepository.existsByNameAndIdNot("POTTED", 3L)).thenReturn(false);
+		when(productRepository.renameCategory("BOUQUET", "POTTED")).thenReturn(2);
+		when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		mockMvc.perform(put("/api/category/3").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"POTTED\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.name").value("POTTED"));
+
+		verify(productRepository).renameCategory("BOUQUET", "POTTED");
+	}
+
+	@Test
+	void anUnchangedNameLeavesTheProductRowsAlone() throws Exception {
+		when(categoryRepository.findById(3L)).thenReturn(Optional.of(bouquet()));
+		when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		mockMvc.perform(put("/api/category/3").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"BOUQUET\"}"))
+			.andExpect(status().isOk());
+
+		verify(productRepository, never()).renameCategory(any(), any());
+	}
+
+	@Test
+	void aRenamedCategoryDeletesCleanlyAfterwards() throws Exception {
+		when(categoryRepository.findById(3L)).thenReturn(Optional.of(bouquet()));
+		when(categoryRepository.existsByNameAndIdNot("POTTED", 3L)).thenReturn(false);
+		when(productRepository.renameCategory("BOUQUET", "POTTED")).thenReturn(2);
+		when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(productRepository.existsByCategoryName("POTTED")).thenReturn(false);
+
+		mockMvc.perform(put("/api/category/3").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"POTTED\"}"))
+			.andExpect(status().isOk());
+
+		// The old name was the referenced one; after the cascade the delete
+		// guard sees the new name free and the delete succeeds.
+		mockMvc.perform(delete("/api/category/3").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
+			.andExpect(status().isNoContent());
+
+		verify(productRepository).renameCategory("BOUQUET", "POTTED");
+		verify(categoryRepository).deleteById(3L);
+	}
+
+	@Test
+	void bulkDeleteRefusesANameProductsStillReference() throws Exception {
+		when(categoryRepository.findAllById(List.of(3L))).thenReturn(List.of(bouquet()));
+		when(productRepository.existsByCategoryName("BOUQUET")).thenReturn(true);
+
+		mockMvc.perform(delete("/api/category").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("[3]"))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("NAME_IN_USE"))
+			.andExpect(jsonPath("$.detail").value(containsString("BOUQUET")));
+
+		verify(categoryRepository, never()).deleteAll(anyList());
+	}
+
+	@Test
+	void bulkDeleteWithoutABodyRefusesWhenAnyRowIsReferenced() throws Exception {
+		when(categoryRepository.findAll()).thenReturn(List.of(bouquet()));
+		when(productRepository.existsByCategoryName("BOUQUET")).thenReturn(true);
+
+		mockMvc.perform(delete("/api/category").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("NAME_IN_USE"));
+
+		verify(categoryRepository, never()).deleteAll();
 	}
 
 	@Test

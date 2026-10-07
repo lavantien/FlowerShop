@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.type;
 
+import com.lavantien.flowershop.api.category.CategoryRepository;
 import com.lavantien.flowershop.api.error.ApiExceptionHandler;
 import com.lavantien.flowershop.api.product.ProductRepository;
 import com.lavantien.flowershop.api.security.TokenInterceptor;
@@ -21,6 +22,7 @@ import static com.lavantien.flowershop.api.security.AuthTestSupport.prime;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.tokenOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
@@ -37,16 +39,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class TypeControllerTest {
 	private TypeRepository typeRepository;
+	private CategoryRepository categoryRepository;
 	private ProductRepository productRepository;
 	private MockMvc mockMvc;
 
 	@BeforeEach
 	void setUp() {
 		typeRepository = mock(TypeRepository.class);
+		categoryRepository = mock(CategoryRepository.class);
 		productRepository = mock(ProductRepository.class);
 		UserRepository userRepository = mock(UserRepository.class);
 		UserService userService = new UserService();
-		mockMvc = MockMvcBuilders.standaloneSetup(new TypeController(typeRepository, productRepository))
+		mockMvc = MockMvcBuilders
+			.standaloneSetup(new TypeController(typeRepository, categoryRepository, productRepository))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
 			.setControllerAdvice(new ApiExceptionHandler())
 			.build();
@@ -147,6 +152,7 @@ class TypeControllerTest {
 	@Test
 	void adminCreatesASinglePersistedType() throws Exception {
 		when(typeRepository.existsByName("FLOWER")).thenReturn(false);
+		when(categoryRepository.existsByName("BOUQUET")).thenReturn(true);
 		when(typeRepository.save(any(Type.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		mockMvc.perform(post("/api/type/create").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
@@ -177,6 +183,7 @@ class TypeControllerTest {
 	@Test
 	void updateRenamesTheAddressedRowEvenWhenTheBodyCarriesNoId() throws Exception {
 		when(typeRepository.findById(5L)).thenReturn(Optional.of(flower()));
+		when(categoryRepository.existsByName("PLANT")).thenReturn(true);
 		when(typeRepository.save(any(Type.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		// The documented body and the frontend both send no id.
@@ -191,6 +198,80 @@ class TypeControllerTest {
 		assertEquals(5L, saved.getValue().getId());
 		assertTrue(saved.getValue().getName().equals("POTTED"));
 		assertTrue(saved.getValue().getCategoryName().equals("PLANT"));
+	}
+
+	@Test
+	void updateCascadesTheRenameOntoProductRows() throws Exception {
+		when(typeRepository.findById(5L)).thenReturn(Optional.of(flower()));
+		when(typeRepository.existsByNameAndIdNot("IRISES", 5L)).thenReturn(false);
+		when(categoryRepository.existsByName("BOUQUET")).thenReturn(true);
+		when(productRepository.renameType("FLOWER", "IRISES")).thenReturn(3);
+		when(typeRepository.save(any(Type.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		mockMvc.perform(put("/api/type/5").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"IRISES\",\"categoryName\":\"BOUQUET\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.name").value("IRISES"));
+
+		verify(productRepository).renameType("FLOWER", "IRISES");
+	}
+
+	@Test
+	void updateRejectsACategoryNameMatchingNoRow() throws Exception {
+		when(typeRepository.findById(5L)).thenReturn(Optional.of(flower()));
+		when(typeRepository.existsByNameAndIdNot("IRISES", 5L)).thenReturn(false);
+		when(categoryRepository.existsByName("GHOST")).thenReturn(false);
+
+		mockMvc.perform(put("/api/type/5").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"IRISES\",\"categoryName\":\"GHOST\"}"))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"))
+			.andExpect(jsonPath("$.detail").value(containsString("GHOST")));
+
+		verify(typeRepository, never()).save(any(Type.class));
+	}
+
+	@Test
+	void createRejectsACategoryNameMatchingNoRow() throws Exception {
+		when(typeRepository.existsByName("IRISES")).thenReturn(false);
+		when(categoryRepository.existsByName("GHOST")).thenReturn(false);
+
+		mockMvc.perform(post("/api/type/create").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"IRISES\",\"categoryName\":\"GHOST\"}"))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
+
+		verify(typeRepository, never()).save(any(Type.class));
+	}
+
+	@Test
+	void bulkDeleteRefusesANameProductsStillReference() throws Exception {
+		when(typeRepository.findAllById(List.of(5L))).thenReturn(List.of(flower()));
+		when(productRepository.existsByTypeName("FLOWER")).thenReturn(true);
+
+		mockMvc.perform(delete("/api/type").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("[5]"))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("NAME_IN_USE"))
+			.andExpect(jsonPath("$.detail").value(containsString("FLOWER")));
+
+		verify(typeRepository, never()).deleteAll(anyList());
+	}
+
+	@Test
+	void bulkDeleteWithoutABodyRefusesWhenAnyRowIsReferenced() throws Exception {
+		when(typeRepository.findAll()).thenReturn(List.of(flower()));
+		when(productRepository.existsByTypeName("FLOWER")).thenReturn(true);
+
+		mockMvc.perform(delete("/api/type").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("NAME_IN_USE"));
+
+		verify(typeRepository, never()).deleteAll();
 	}
 
 	@Test

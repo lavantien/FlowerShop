@@ -11,6 +11,17 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
 	boolean existsByCategoryName(String categoryName);
 
+	// Renames must carry the products' reference columns along, or every
+	// product pointing at the old name strands. Runs in the caller's
+	// transaction so the row rename and this update commit or roll back as one.
+	@Modifying
+	@Query("update Product p set p.categoryName = :to where p.categoryName = :from")
+	int renameCategory(String from, String to);
+
+	@Modifying
+	@Query("update Product p set p.typeName = :to where p.typeName = :from")
+	int renameType(String from, String to);
+
 	// Hibernate 7 merge no longer inserts a detached entity whose row is absent,
 	// so explicit-id seeding needs a native insert that honors the given id.
 	// Runs inside the caller's transaction: a repo-level @Transactional here would
