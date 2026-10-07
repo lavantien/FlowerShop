@@ -166,14 +166,35 @@ async function waitForImages(page) {
 	}
 }
 
+// ngx-bootstrap fades opacity over 150 ms and the dialog transform over 300 ms,
+// so `.modal.show` alone fires mid-fade and the shot captures a half-transparent
+// modal. Settled means opacity 1 and both opacity and transform unchanged across
+// two consecutive animation frames.
+async function waitForModalSettled(page) {
+	await page.waitForFunction(() => {
+		const modal = document.querySelector('.modal.show');
+		if (!modal) {
+			return false;
+		}
+		const dialog = modal.querySelector('.modal-dialog');
+		const snapshot = `${getComputedStyle(modal).opacity}|${dialog ? getComputedStyle(dialog).transform : ''}`;
+		const settled = window.__modalSnapshot === snapshot && getComputedStyle(modal).opacity === '1';
+		window.__modalSnapshot = snapshot;
+		return settled;
+	}, null, {timeout: 5000});
+}
+
 async function closeModal(page) {
+	// Pin the count before clicking: a locator re-query for detachment could match
+	// a modal queued behind this one, while the count dropping proves this one died.
+	const openCount = await page.locator('.modal.show').count();
 	const close = page.locator('.modal.show .btn-close');
 	if (await close.count() > 0) {
 		await close.first().click();
 	} else {
 		await page.keyboard.press('Escape');
 	}
-	await page.waitForSelector('.modal.show', {state: 'detached', timeout: 5000});
+	await page.waitForFunction(count => document.querySelectorAll('.modal.show').length < count, openCount, {timeout: 5000});
 }
 
 // Navbar button order per app.component.html: guest = [cart, login],
@@ -243,12 +264,14 @@ async function main() {
 		await page.locator('app-store .card-body img').first().click();
 		await page.waitForSelector('.modal.show img.img-fluid');
 		await waitForImages(page);
+		await waitForModalSettled(page);
 		await shot(page, '11-product-details.png');
 		await closeModal(page);
 
 		await addToCart(page, 0);
 		await addToCart(page, 2);
 		await openCart(page);
+		await waitForModalSettled(page);
 		await shot(page, '02-shopping-cart.png');
 		await closeModal(page);
 
@@ -259,7 +282,9 @@ async function main() {
 			await openCart(page);
 			await page.locator('.modal.show .btn-success').click(); // confirm order, alert auto-accepted
 			await page.waitForSelector('.modal.show', {state: 'detached', timeout: 10000});
-			const bills = await fetchJson(`${CONFIG.baseUrl}/api/bill/user/${CONFIG.member.userId}`);
+			const bills = await fetchJson(`${CONFIG.baseUrl}/api/bill/user/${CONFIG.member.userId}`, {
+				headers: {'X-Auth-Token': await loginToken(CONFIG.member)}
+			});
 			if (bills.length === 0) {
 				throw new Error('checkout produced no bills');
 			}
@@ -285,16 +310,19 @@ async function main() {
 		// Toolbar order in admin.component.html: create, import, export.
 		await page.locator('.btn-create').nth(0).click();
 		await page.waitForSelector('.modal.show #inputName');
+		await waitForModalSettled(page);
 		await shot(page, '06-admin-create-product.png');
 		await closeModal(page);
 
 		await page.locator('.btn-create').nth(1).click();
 		await page.waitForSelector('.modal.show #inputGroupFile');
+		await waitForModalSettled(page);
 		await shot(page, '07-admin-import-excel.png');
 		await closeModal(page);
 
 		await page.locator('app-admin tbody .btn-edit').first().click();
 		await page.waitForFunction(() => (document.querySelector('.modal.show #inputNameE')?.value ?? '').trim().length > 0, null, {timeout: 5000});
+		await waitForModalSettled(page);
 		await shot(page, '09-admin-edit-product.png');
 		await closeModal(page);
 
@@ -324,6 +352,7 @@ async function main() {
 		// saleAmount is null in the seed data, so count rows with content, not cells.
 		await page.waitForFunction(() => Array.from(document.querySelectorAll('.modal.show .wrapper-delete-table tbody tr'))
 			.filter(tr => (tr.textContent ?? '').trim().length > 20).length >= 3, null, {timeout: 5000});
+		await waitForModalSettled(page);
 		await shot(page, '10-admin-batch-delete.png');
 		await closeModal(page);
 
