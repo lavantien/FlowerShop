@@ -17,5 +17,13 @@
 		"corpusPath": "scripts/tools/fuzz-corpus.json",
 		"reportPath": "docs/qa/fuzz-report.md",
 		"serverLogPath": ".tools/fuzz-server.log"
+	},
+	"mutate": {
+		"mapPath": "scripts/tools/mutation-map.json",
+		"reportPath": "docs/qa/mutation-report.md",
+		"logPath": ".tools/mutate-run.log",
+		"perMutantTimeoutMs": 420000,
+		"mavenArgs": ["-Dfrontend.skip=true", "-Djacoco.skip=true", "-DfailIfNoTests=false"],
+		"mavenOpts": "-Xmx512m -XX:+UseSerialGC -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m -XX:-UsePerfData"
 	}
 }

@@ -1,0 +1,130 @@
+{
+	"bdCollectionReceivers": ["lines", "predicates", "failing", "items", "saved"],
+	"reportNotes": [
+		"First full run at 8baa09e: 129 mutants, 122 killed, 7 survivors. Six were missing tests, closed by the kill tests of commit b4c78d5 (GeoServiceTest tie orders, OrderControllerTest view branchName, cancel without payment session, admin CANCELLED on PENDING, ProductCatalogIntegrationTest zero-filter query). The seventh was the equivalent branch-id tie-break mutant, culled through lineOpExcludes. This run is the confirmation sweep over the culled map."
+	],
+	"targets": [
+		{
+			"name": "GeoService",
+			"file": "src/main/java/com/lavantien/flowershop/service/GeoService.java",
+			"tests": ["GeoServiceTest", "GeoServicePropertyTest", "DeliveryFeePropertyTest"],
+			"lineOpExcludes": [
+				{
+					"line": 120,
+					"ops": ["LT_TO_LE"],
+					"reason": "branch ids are unique per row, so < and <= on ids are equivalent for every reachable input"
+				}
+			]
+		},
+		{
+			"name": "ShopProperties.Delivery",
+			"file": "src/main/java/com/lavantien/flowershop/service/ShopProperties.java",
+			"tests": ["GeoServiceTest", "DeliveryFeePropertyTest", "CheckoutMoneyPropertyTest"]
+		},
+		{
+			"name": "Coupon.discountOn",
+			"file": "src/main/java/com/lavantien/flowershop/api/coupon/Coupon.java",
+			"tests": ["CouponTest", "CouponDiscountPropertyTest"],
+			"skipMethods": ["toString"]
+		},
+		{
+			"name": "CouponService.resolve",
+			"file": "src/main/java/com/lavantien/flowershop/service/CouponService.java",
+			"tests": ["CouponControllerTest", "OrderControllerTest"]
+		},
+		{
+			"name": "StockLevelRepository.decrementIfAvailable",
+			"file": "src/main/java/com/lavantien/flowershop/api/branch/StockLevelRepository.java",
+			"tests": ["OversellIntegrationTest"],
+			"explicit": [
+				{
+					"line": 26,
+					"from": "s.quantity >= :n",
+					"to": "s.quantity > :n",
+					"op": "QUERY_BOUNDARY",
+					"note": "oversell guard boundary off-by-one"
+				},
+				{
+					"line": 26,
+					"from": "s.quantity - :n",
+					"to": "s.quantity + :n",
+					"op": "QUERY_ARITH",
+					"note": "decrement becomes increment"
+				}
+			]
+		},
+		{
+			"name": "OrderStatus.canTransitionTo",
+			"file": "src/main/java/com/lavantien/flowershop/api/order/OrderStatus.java",
+			"tests": ["OrderStatusTest", "OrderTest"]
+		},
+		{
+			"name": "PaymentService",
+			"file": "src/main/java/com/lavantien/flowershop/service/PaymentService.java",
+			"tests": ["PaymentServiceTest", "PaymentControllerTest"],
+			"explicit": [
+				{
+					"line": 28,
+					"from": "\":\"",
+					"to": "\";\"",
+					"occurrence": 1,
+					"op": "LIT_SEPARATOR",
+					"note": "payload separator paymentId:orderId"
+				},
+				{
+					"line": 28,
+					"from": "\":\"",
+					"to": "\";\"",
+					"occurrence": 2,
+					"op": "LIT_SEPARATOR",
+					"note": "payload separator orderId:amount"
+				}
+			]
+		},
+		{
+			"name": "OrderService",
+			"file": "src/main/java/com/lavantien/flowershop/service/OrderService.java",
+			"tests": ["OrderControllerTest", "PaymentControllerTest"]
+		},
+		{
+			"name": "ProductController catalog query",
+			"file": "src/main/java/com/lavantien/flowershop/api/product/ProductController.java",
+			"tests": ["ProductControllerTest", "ProductCatalogIntegrationTest"]
+		},
+		{
+			"name": "PageQuery",
+			"file": "src/main/java/com/lavantien/flowershop/api/PageQuery.java",
+			"tests": ["PageQueryTest"]
+		},
+		{
+			"name": "Auth token mint and parse",
+			"file": "src/main/java/com/lavantien/flowershop/api/security/Auth.java",
+			"tests": ["TokenInterceptorTest", "AuthControllerTest", "TokenTamperPropertyTest"],
+			"skipMethods": ["ownIdOrAdmin"],
+			"lineExcludes": ["first <= 0 \\|\\| second < 0"],
+			"explicit": [
+				{
+					"line": 37,
+					"from": "\"+\"",
+					"to": "\"-\"",
+					"occurrence": 1,
+					"op": "LIT_SEPARATOR",
+					"note": "mint separator id:role"
+				},
+				{
+					"line": 37,
+					"from": "\"+\"",
+					"to": "\"-\"",
+					"occurrence": 2,
+					"op": "LIT_SEPARATOR",
+					"note": "mint separator role:secret"
+				}
+			]
+		},
+		{
+			"name": "UserService session burn",
+			"file": "src/main/java/com/lavantien/flowershop/service/UserService.java",
+			"tests": ["TokenInterceptorTest", "AuthControllerTest"]
+		}
+	]
+}
