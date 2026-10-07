@@ -40,7 +40,9 @@
 	.fixed-bottom-2 {
 		position: fixed;
 		bottom: 0;
-		left: 40px;
+		// 46px = the scroll-top button's full width (20px icon + padding + border),
+		// so the second button abuts it instead of overlapping by 6px.
+		left: 46px;
 		right: auto;
 	}
 
