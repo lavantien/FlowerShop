@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
 import static com.lavantien.flowershop.api.security.AuthTestSupport.persona;
@@ -20,9 +21,11 @@ import static com.lavantien.flowershop.api.security.AuthTestSupport.tokenOf;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -214,5 +217,207 @@ class UserControllerTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"Hijacked\"}"))
 			.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void adminListsEveryAccountWithoutThePasswordField() throws Exception {
+		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		when(userRepository.findAll()).thenReturn(List.of(
+			persona(1, "ADMIN", "admin@flowershop.example"),
+			persona(4, "USER", "member@flowershop.example")));
+
+		mockMvc.perform(get("/api/user").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].email").value("admin@flowershop.example"))
+			.andExpect(jsonPath("$[0].password").doesNotExist())
+			.andExpect(jsonPath("$[1].email").value("member@flowershop.example"));
+	}
+
+	@Test
+	void adminCreatesManyAccountsHashingOnlyThePasswordsThatExist() throws Exception {
+		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		when(userRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		mockMvc.perform(post("/api/user").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("[{\"name\":\"Ada\",\"password\":\"secret123\",\"email\":\"ada@flowershop.example\"},"
+					+ "{\"name\":\"Bob\",\"email\":\"bob@flowershop.example\"}]"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].email").value("ada@flowershop.example"))
+			.andExpect(jsonPath("$[1].email").value("bob@flowershop.example"));
+
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<User>> saved = ArgumentCaptor.forClass(List.class);
+		verify(userRepository).saveAll(saved.capture());
+		assertTrue(passwordService.matches("secret123", saved.getValue().get(0).getPassword()),
+			"a submitted password must be stored as a bcrypt hash");
+		assertTrue(saved.getValue().get(1).getPassword() == null, "a null password must stay null, not fail the batch");
+		assertTrue(saved.getValue().get(0).getType().equals("USER"));
+		assertTrue(saved.getValue().get(0).toString().contains("email='ada@flowershop.example'"),
+			"toString must render the persisted fields");
+	}
+
+	@Test
+	void createForcesTheMemberTypeAndHashesThePassword() throws Exception {
+		when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		mockMvc.perform(post("/api/user/create").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Eve\",\"password\":\"pw123456\",\"email\":\"eve@flowershop.example\",\"type\":\"ADMIN\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.email").value("eve@flowershop.example"));
+
+		ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+		verify(userRepository).save(saved.capture());
+		assertTrue(saved.getValue().getType().equals("USER"), "self registration must never mint an ADMIN");
+		assertTrue(passwordService.matches("pw123456", saved.getValue().getPassword()));
+		assertTrue(saved.getValue().getName().equals("Eve"));
+	}
+
+	@Test
+	void deleteManyWithoutABodyWipesEveryAccount() throws Exception {
+		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+
+		mockMvc.perform(delete("/api/user").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+			.andExpect(status().isOk());
+
+		verify(userRepository).deleteAll();
+	}
+
+	@Test
+	void deleteManyWithIdsDeletesOnlyThoseAccounts() throws Exception {
+		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		when(userRepository.findAllById(List.of(4L, 5L)))
+			.thenReturn(List.of(persona(4, "USER", "member@flowershop.example")));
+
+		mockMvc.perform(delete("/api/user").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("[4,5]"))
+			.andExpect(status().isOk());
+
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<User>> deleted = ArgumentCaptor.forClass(List.class);
+		verify(userRepository).deleteAll(deleted.capture());
+		assertTrue(deleted.getValue().size() == 1, "only the accounts resolved from the submitted ids are deleted");
+		assertTrue(deleted.getValue().get(0).getId().equals(4L));
+	}
+
+	@Test
+	void getByIdAnswersBadRequestForAMissingAccount() throws Exception {
+		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+		mockMvc.perform(get("/api/user/99").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+			.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void updateAnswersBadRequestForAMissingAccount() throws Exception {
+		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+		mockMvc.perform(put("/api/user/99").header("X-Auth-Token", tokenOf(1, "ADMIN"))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Ghost\"}"))
+			.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void adminDeletesAnExistingAccount() throws Exception {
+		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		when(userRepository.findById(4L)).thenReturn(Optional.of(persona(4, "USER", "member@flowershop.example")));
+
+		mockMvc.perform(delete("/api/user/4").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+			.andExpect(status().isOk());
+
+		verify(userRepository).deleteById(4L);
+	}
+
+	@Test
+	void deleteAnswersBadRequestForAMissingAccount() throws Exception {
+		prime(userRepository, userService, persona(1, "ADMIN", "admin@flowershop.example"));
+		when(userRepository.findById(9L)).thenReturn(Optional.empty());
+
+		mockMvc.perform(delete("/api/user/9").header("X-Auth-Token", tokenOf(1, "ADMIN")))
+			.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void logoutWithAValidTokenEndsTheSession() throws Exception {
+		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+
+		mockMvc.perform(post("/api/user/logout").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"token\":\"" + tokenOf(4, "USER") + "\",\"phone\":\"0\",\"detailAddress\":\"x\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
+		assertFalse(userService.loggedInIds.contains(4L), "a valid logout must drop the session id");
+	}
+
+	@Test
+	void logoutLeavesTheSessionUntouchedForAnUnparsableId() throws Exception {
+		prime(userRepository, userService, persona(4, "USER", "member@flowershop.example"));
+		String unparsable = Base64.getEncoder().encodeToString("x+USER".getBytes(StandardCharsets.UTF_8));
+
+		mockMvc.perform(post("/api/user/logout").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"token\":\"" + unparsable + "\",\"phone\":\"0\",\"detailAddress\":\"x\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
+		assertTrue(userService.loggedInIds.contains(4L), "a garbage token must not log anybody out");
+	}
+
+	@Test
+	void loginIsIdempotentWhileAlreadyLoggedIn() throws Exception {
+		User user = persona(1, "ADMIN", "admin@flowershop.example");
+		when(userRepository.findByEmail("admin@flowershop.example")).thenReturn(user);
+
+		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
+				.content(loginBody("admin@flowershop.example", "1234qwer")))
+			.andExpect(status().isOk());
+		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
+				.content(loginBody("admin@flowershop.example", "1234qwer")))
+			.andExpect(status().isOk());
+
+		assertTrue(userService.loggedInIds.size() == 1, "repeat logins must not duplicate the session id");
+	}
+
+	@Test
+	void loginComposesTheDetailAddressFromTheStoredFields() throws Exception {
+		User user = persona(2, "USER", "editor@flowershop.example");
+		user.setEmail("editor@flowershop.example");
+		user.setDistrict("Cau Giay");
+		user.setCity("Hanoi");
+		when(userRepository.findByEmail("editor@flowershop.example")).thenReturn(user);
+
+		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
+				.content(loginBody("editor@flowershop.example", "1234qwer")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.token").value(tokenOf(2, "USER")))
+			.andExpect(jsonPath("$.detailAddress").value("01 Demo Lane, Cau Giay, Hanoi"));
+	}
+
+	@Test
+	void forgotDtoBuildsAnIdenticalPayloadThroughEitherConstructionPath() {
+		ForgotDto allAtOnce = new ForgotDto("editor@flowershop.example", "demo", "pw123456");
+		ForgotDto fieldByField = new ForgotDto();
+		fieldByField.setEmail("editor@flowershop.example");
+		fieldByField.setAnswer("demo");
+		fieldByField.setPassword("pw123456");
+
+		assertTrue(allAtOnce.getEmail().equals(fieldByField.getEmail())
+			&& allAtOnce.getAnswer().equals(fieldByField.getAnswer())
+			&& allAtOnce.getPassword().equals(fieldByField.getPassword()),
+			"both construction paths must describe the same reset request");
+	}
+
+	@Test
+	void tokenDtoCarriesEveryFieldThroughItsDefaultConstruction() {
+		TokenDto dto = new TokenDto();
+		dto.setToken("t");
+		dto.setPhone("0900000004");
+		dto.setDetailAddress("04 Demo Lane");
+
+		assertTrue("t".equals(dto.getToken())
+			&& "0900000004".equals(dto.getPhone())
+			&& "04 Demo Lane".equals(dto.getDetailAddress()),
+			"the default construction must keep every populated field readable");
 	}
 }
