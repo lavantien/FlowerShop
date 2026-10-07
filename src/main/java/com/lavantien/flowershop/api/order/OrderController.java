@@ -11,6 +11,7 @@ import com.lavantien.flowershop.service.OrderService;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -47,10 +48,10 @@ public class OrderController {
 	}
 
 	@PostMapping
-	public ResponseEntity<OrderView> checkout(@Valid @RequestBody CheckoutRequest request,
+	public ResponseEntity<CheckoutResponse> checkout(@Valid @RequestBody CheckoutRequest request,
 		HttpServletRequest httpRequest) {
-		OrderView view = orderService.checkout(Auth.userId(httpRequest), request);
-		return ResponseEntity.status(HttpStatus.CREATED).body(view);
+		return ResponseEntity.status(HttpStatus.CREATED)
+			.body(orderService.checkout(Auth.userId(httpRequest), request));
 	}
 
 	@GetMapping("/me")
@@ -85,6 +86,21 @@ public class OrderController {
 		}
 		return orderService.view(order);
 	}
+
+	// The owner may cancel while PENDING, an admin while any legal arc to
+	// CANCELLED is open; both restore stock and kill the pending payment.
+	@PostMapping("/{id}/cancel")
+	public OrderView cancel(@PathVariable Long id, HttpServletRequest request) {
+		return orderService.cancel(id, Auth.userId(request), Auth.isAdmin(request));
+	}
+
+	@RequireRole(Role.ADMIN)
+	@PostMapping("/{id}/status")
+	public OrderView changeStatus(@PathVariable Long id, @Valid @RequestBody StatusRequest body) {
+		return orderService.changeStatus(id, body.status());
+	}
+
+	public record StatusRequest(@NotNull(message = "is required") OrderStatus status) {}
 
 	static Specification<Order> adminSpecification(OrderStatus status, Instant from, Instant to) {
 		return (root, _, builder) -> {

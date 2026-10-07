@@ -25,4 +25,9 @@ public interface StockLevelRepository extends JpaRepository<StockLevel, Long> {
 	@Modifying
 	@Query("update StockLevel s set s.quantity = s.quantity - :n where s.id = :id and s.quantity >= :n")
 	int decrementIfAvailable(Long id, int n);
+
+	// Restores run as one atomic increment per line, no read-modify-write.
+	@Modifying
+	@Query("update StockLevel s set s.quantity = s.quantity + :n where s.id = :id")
+	int increment(Long id, int n);
 }

@@ -5,13 +5,19 @@ import com.lavantien.flowershop.api.branch.BranchRepository;
 import com.lavantien.flowershop.api.branch.StockLevel;
 import com.lavantien.flowershop.api.branch.StockLevelRepository;
 import com.lavantien.flowershop.api.error.ApiExceptionHandler;
+import com.lavantien.flowershop.api.payment.PaymentSession;
+import com.lavantien.flowershop.api.payment.PaymentSessionRepository;
+import com.lavantien.flowershop.api.payment.PaymentStatus;
 import com.lavantien.flowershop.api.product.Product;
 import com.lavantien.flowershop.api.product.ProductRepository;
 import com.lavantien.flowershop.api.security.TokenInterceptor;
 import com.lavantien.flowershop.api.user.Role;
 import com.lavantien.flowershop.api.user.UserRepository;
+import com.jayway.jsonpath.JsonPath;
 import com.lavantien.flowershop.service.GeoService;
 import com.lavantien.flowershop.service.OrderService;
+import com.lavantien.flowershop.service.PaymentService;
+import com.lavantien.flowershop.service.ShopProperties;
 import com.lavantien.flowershop.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,12 +59,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class OrderControllerTest {
+	private static final ShopProperties PROPERTIES = new ShopProperties(
+		new ShopProperties.Delivery(20000, 5000, 200000, 1000),
+		new ShopProperties.Payment("dev-only-secret", "/pay"));
+
 	private OrderRepository orderRepository;
 	private OrderItemRepository orderItemRepository;
 	private ProductRepository productRepository;
 	private BranchRepository branchRepository;
 	private StockLevelRepository stockLevelRepository;
 	private GeoService geoService;
+	private PaymentSessionRepository paymentSessionRepository;
+	private PaymentService paymentService;
 	private UserRepository userRepository;
 	private UserService userService;
 	private MockMvc mockMvc;
@@ -71,10 +83,12 @@ class OrderControllerTest {
 		branchRepository = mock(BranchRepository.class);
 		stockLevelRepository = mock(StockLevelRepository.class);
 		geoService = mock(GeoService.class);
+		paymentSessionRepository = mock(PaymentSessionRepository.class);
+		paymentService = new PaymentService(PROPERTIES);
 		userRepository = mock(UserRepository.class);
 		userService = new UserService();
 		OrderService orderService = new OrderService(orderRepository, orderItemRepository, productRepository,
-			branchRepository, stockLevelRepository, geoService);
+			branchRepository, stockLevelRepository, paymentSessionRepository, paymentService, geoService);
 		mockMvc = MockMvcBuilders.standaloneSetup(new OrderController(orderRepository, orderService))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
 			.setControllerAdvice(new ApiExceptionHandler())
@@ -140,6 +154,8 @@ class OrderControllerTest {
 			return order;
 		});
 		when(orderItemRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(paymentSessionRepository.save(any(PaymentSession.class)))
+			.thenAnswer(invocation -> invocation.getArgument(0));
 	}
 
 	private String memberCheckoutBody() {
@@ -163,37 +179,63 @@ class OrderControllerTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(memberCheckoutBody()))
 			.andExpect(status().isCreated())
-			.andExpect(jsonPath("$.id").value(77))
-			.andExpect(jsonPath("$.userId").value(4))
-			.andExpect(jsonPath("$.status").value("PENDING"))
-			.andExpect(jsonPath("$.placedAt").isNotEmpty())
-			.andExpect(jsonPath("$.paidAt").value(nullValue()))
-			.andExpect(jsonPath("$.phone").value("0900000001"))
-			.andExpect(jsonPath("$.address").value("01 Demo Lane"))
-			.andExpect(jsonPath("$.district").value("Quận 1"))
-			.andExpect(jsonPath("$.city").value("Hồ Chí Minh"))
-			.andExpect(jsonPath("$.branchId").value(3))
-			.andExpect(jsonPath("$.branchName").value("Binh Thanh Hub"))
-			.andExpect(jsonPath("$.distanceKm").value(4.2))
-			.andExpect(jsonPath("$.deliveryFee").value(40000))
-			.andExpect(jsonPath("$.couponCode").value(nullValue()))
-			.andExpect(jsonPath("$.discountAmount").value(0))
-			.andExpect(jsonPath("$.subtotal").value(350000))
-			.andExpect(jsonPath("$.total").value(390000))
-			.andExpect(jsonPath("$.items.length()").value(2))
-			.andExpect(jsonPath("$.items[0].productId").value(1))
-			.andExpect(jsonPath("$.items[0].productName").value("Red Rose"))
-			.andExpect(jsonPath("$.items[0].unitPrice").value(100000))
-			.andExpect(jsonPath("$.items[0].quantity").value(2))
-			.andExpect(jsonPath("$.items[0].lineTotal").value(200000))
-			.andExpect(jsonPath("$.items[1].productId").value(2))
-			.andExpect(jsonPath("$.items[1].lineTotal").value(150000));
+			.andExpect(jsonPath("$.order.id").value(77))
+			.andExpect(jsonPath("$.order.userId").value(4))
+			.andExpect(jsonPath("$.order.status").value("PENDING"))
+			.andExpect(jsonPath("$.order.placedAt").isNotEmpty())
+			.andExpect(jsonPath("$.order.paidAt").value(nullValue()))
+			.andExpect(jsonPath("$.order.phone").value("0900000001"))
+			.andExpect(jsonPath("$.order.address").value("01 Demo Lane"))
+			.andExpect(jsonPath("$.order.district").value("Quận 1"))
+			.andExpect(jsonPath("$.order.city").value("Hồ Chí Minh"))
+			.andExpect(jsonPath("$.order.branchId").value(3))
+			.andExpect(jsonPath("$.order.branchName").value("Binh Thanh Hub"))
+			.andExpect(jsonPath("$.order.distanceKm").value(4.2))
+			.andExpect(jsonPath("$.order.deliveryFee").value(40000))
+			.andExpect(jsonPath("$.order.couponCode").value(nullValue()))
+			.andExpect(jsonPath("$.order.discountAmount").value(0))
+			.andExpect(jsonPath("$.order.subtotal").value(350000))
+			.andExpect(jsonPath("$.order.total").value(390000))
+			.andExpect(jsonPath("$.order.items.length()").value(2))
+			.andExpect(jsonPath("$.order.items[0].productId").value(1))
+			.andExpect(jsonPath("$.order.items[0].productName").value("Red Rose"))
+			.andExpect(jsonPath("$.order.items[0].unitPrice").value(100000))
+			.andExpect(jsonPath("$.order.items[0].quantity").value(2))
+			.andExpect(jsonPath("$.order.items[0].lineTotal").value(200000))
+			.andExpect(jsonPath("$.order.items[1].productId").value(2))
+			.andExpect(jsonPath("$.order.items[1].lineTotal").value(150000));
 
 		ArgumentCaptor<Order> saved = ArgumentCaptor.forClass(Order.class);
 		verify(orderRepository).save(saved.capture());
 		assertEquals(OrderStatus.PENDING, saved.getValue().getStatus());
 		assertNotNull(saved.getValue().getPlacedAt());
 		assertEquals(0, saved.getValue().getTotal().scale());
+
+		// The payment block is signed over the session this transaction saved.
+		ArgumentCaptor<PaymentSession> session = ArgumentCaptor.forClass(PaymentSession.class);
+		verify(paymentSessionRepository).save(session.capture());
+		assertEquals(PaymentStatus.PENDING, session.getValue().getStatus());
+		assertEquals(77L, session.getValue().getOrderId());
+		assertEquals(0, session.getValue().getAmount().scale());
+	}
+
+	@Test
+	void checkoutOpensThePaymentSessionAndReturnsTheSignedRedirect() throws Exception {
+		stubHappyCheckout();
+
+		String body = mockMvc.perform(post("/api/order").header("X-Auth-Token", tokenOf(4, Role.USER))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(memberCheckoutBody()))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.payment.id").isNotEmpty())
+			.andReturn().getResponse().getContentAsString();
+
+		String paymentId = JsonPath.read(body, "$.payment.id");
+		String redirectUrl = JsonPath.read(body, "$.payment.redirectUrl");
+		ArgumentCaptor<PaymentSession> session = ArgumentCaptor.forClass(PaymentSession.class);
+		verify(paymentSessionRepository).save(session.capture());
+		assertEquals(paymentId, session.getValue().getId());
+		assertEquals("/pay/" + paymentId + "?sig=" + paymentService.sign(session.getValue()), redirectUrl);
 	}
 
 	@Test
@@ -214,9 +256,9 @@ class OrderControllerTest {
 					}
 					"""))
 			.andExpect(status().isCreated())
-			.andExpect(jsonPath("$.items.length()").value(1))
-			.andExpect(jsonPath("$.items[0].quantity").value(3))
-			.andExpect(jsonPath("$.items[0].lineTotal").value(300000));
+			.andExpect(jsonPath("$.order.items.length()").value(1))
+			.andExpect(jsonPath("$.order.items[0].quantity").value(3))
+			.andExpect(jsonPath("$.order.items[0].lineTotal").value(300000));
 
 		verify(stockLevelRepository, times(1)).decrementIfAvailable(anyLong(), eq(3));
 	}
@@ -239,9 +281,9 @@ class OrderControllerTest {
 					}
 					"""))
 			.andExpect(status().isCreated())
-			.andExpect(jsonPath("$.couponCode").value("WELCOME10"))
-			.andExpect(jsonPath("$.discountAmount").value(0))
-			.andExpect(jsonPath("$.total").value(240000));
+			.andExpect(jsonPath("$.order.couponCode").value("WELCOME10"))
+			.andExpect(jsonPath("$.order.discountAmount").value(0))
+			.andExpect(jsonPath("$.order.total").value(240000));
 	}
 
 	@Test
@@ -265,8 +307,8 @@ class OrderControllerTest {
 					}
 					"""))
 			.andExpect(status().isCreated())
-			.andExpect(jsonPath("$.branchId").value(9))
-			.andExpect(jsonPath("$.branchName").value("District 1 Kiosk"));
+			.andExpect(jsonPath("$.order.branchId").value(9))
+			.andExpect(jsonPath("$.order.branchName").value("District 1 Kiosk"));
 
 		verify(geoService).resolve("Quận 1", "Hồ Chí Minh");
 	}
@@ -506,5 +548,162 @@ class OrderControllerTest {
 		mockMvc.perform(get("/api/order/404").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isNotFound())
 			.andExpect(jsonPath("$.code").value("NOT_FOUND"));
+	}
+
+	private Order stubCancellableOrder(OrderStatus status, PaymentStatus paymentStatus) {
+		Order order = order(12, 4, status);
+		when(orderRepository.lockById(12L)).thenReturn(Optional.of(order));
+		PaymentSession session = new PaymentSession("pid-1", 12L, BigDecimal.valueOf(390000));
+		if (paymentStatus == PaymentStatus.CONFIRMED) {
+			session.confirm(Instant.parse("2026-10-07T05:00:00Z"));
+		} else if (paymentStatus == PaymentStatus.CANCELLED) {
+			session.cancel(Instant.now());
+		}
+		when(paymentSessionRepository.lockByOrderId(12L)).thenReturn(Optional.of(session));
+		when(orderItemRepository.findByOrderId(12L))
+			.thenReturn(List.of(item(501, 12, 1, "Red Rose", 100000, 2)));
+		when(branchRepository.findById(3L)).thenReturn(Optional.of(branch(3, "Binh Thanh Hub")));
+		when(stockLevelRepository.findByBranchIdAndProductId(3L, 1L))
+			.thenReturn(Optional.of(stockLevel(3, 1, 5)));
+		when(stockLevelRepository.increment(anyLong(), anyInt())).thenReturn(1);
+		return order;
+	}
+
+	@Test
+	void theOwnerCancelsAPendingOrderRestoringStockAndKillingThePayment() throws Exception {
+		Order order = stubCancellableOrder(OrderStatus.PENDING, PaymentStatus.PENDING);
+
+		mockMvc.perform(post("/api/order/12/cancel").header("X-Auth-Token", tokenOf(4, Role.USER)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("CANCELLED"))
+			.andExpect(jsonPath("$.cancelledAt").isNotEmpty());
+
+		assertEquals(OrderStatus.CANCELLED, order.getStatus());
+		assertEquals(PaymentStatus.CANCELLED,
+			paymentSessionRepository.lockByOrderId(12L).orElseThrow().getStatus());
+		verify(stockLevelRepository).increment(3001L, 2);
+	}
+
+	@Test
+	void theOwnerCannotCancelAPaidOrder() throws Exception {
+		stubCancellableOrder(OrderStatus.PAID, PaymentStatus.CONFIRMED);
+
+		mockMvc.perform(post("/api/order/12/cancel").header("X-Auth-Token", tokenOf(4, Role.USER)))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("ILLEGAL_TRANSITION"));
+
+		verify(stockLevelRepository, never()).increment(anyLong(), anyInt());
+	}
+
+	@Test
+	void anAdminCancelsAPaidOrderAndRestoresTheStock() throws Exception {
+		Order order = stubCancellableOrder(OrderStatus.PAID, PaymentStatus.CONFIRMED);
+
+		mockMvc.perform(post("/api/order/12/cancel").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("CANCELLED"));
+
+		assertEquals(OrderStatus.CANCELLED, order.getStatus());
+		verify(stockLevelRepository).increment(3001L, 2);
+	}
+
+	@Test
+	void neitherRoleMayCancelAShippedOrTerminalOrder() throws Exception {
+		stubCancellableOrder(OrderStatus.SHIPPED, PaymentStatus.CONFIRMED);
+		mockMvc.perform(post("/api/order/12/cancel").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("ILLEGAL_TRANSITION"));
+
+		stubCancellableOrder(OrderStatus.COMPLETED, PaymentStatus.CONFIRMED);
+		mockMvc.perform(post("/api/order/12/cancel").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
+			.andExpect(status().isConflict());
+
+		stubCancellableOrder(OrderStatus.CANCELLED, PaymentStatus.CANCELLED);
+		mockMvc.perform(post("/api/order/12/cancel").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
+			.andExpect(status().isConflict());
+	}
+
+	@Test
+	void aStrangerCannotCancelSomeoneElsesOrder() throws Exception {
+		prime(userRepository, userService, persona(5, Role.USER, "stranger@flowershop.example"));
+		stubCancellableOrder(OrderStatus.PENDING, PaymentStatus.PENDING);
+
+		mockMvc.perform(post("/api/order/12/cancel").header("X-Auth-Token", tokenOf(5, Role.USER)))
+			.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void cancellingAnUnknownOrderIsANotFound() throws Exception {
+		when(paymentSessionRepository.lockByOrderId(404L)).thenReturn(Optional.empty());
+		when(orderRepository.lockById(404L)).thenReturn(Optional.empty());
+
+		mockMvc.perform(post("/api/order/404/cancel").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
+			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void theAdminShipsAPaidOrderWithoutTouchingStock() throws Exception {
+		Order order = stubCancellableOrder(OrderStatus.PAID, PaymentStatus.CONFIRMED);
+
+		mockMvc.perform(post("/api/order/12/status").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"status\": \"SHIPPED\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SHIPPED"))
+			.andExpect(jsonPath("$.shippedAt").isNotEmpty());
+
+		assertEquals(OrderStatus.SHIPPED, order.getStatus());
+		verify(stockLevelRepository, never()).increment(anyLong(), anyInt());
+	}
+
+	@Test
+	void theAdminCompletesAShippedOrder() throws Exception {
+		Order order = stubCancellableOrder(OrderStatus.SHIPPED, PaymentStatus.CONFIRMED);
+
+		mockMvc.perform(post("/api/order/12/status").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"status\": \"COMPLETED\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("COMPLETED"));
+
+		assertEquals(OrderStatus.COMPLETED, order.getStatus());
+	}
+
+	@Test
+	void theAdminCannotForceAnOrderToPaidOrRepeatATerminalStatus() throws Exception {
+		stubCancellableOrder(OrderStatus.PENDING, PaymentStatus.PENDING);
+		mockMvc.perform(post("/api/order/12/status").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"status\": \"PAID\"}"))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("ILLEGAL_TRANSITION"));
+
+		stubCancellableOrder(OrderStatus.COMPLETED, PaymentStatus.CONFIRMED);
+		mockMvc.perform(post("/api/order/12/status").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"status\": \"SHIPPED\"}"))
+			.andExpect(status().isConflict());
+	}
+
+	@Test
+	void theAdminCancelsAPaidOrderThroughTheStatusEndpointAndRestoresStock() throws Exception {
+		Order order = stubCancellableOrder(OrderStatus.PAID, PaymentStatus.CONFIRMED);
+
+		mockMvc.perform(post("/api/order/12/status").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"status\": \"CANCELLED\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("CANCELLED"));
+
+		assertEquals(OrderStatus.CANCELLED, order.getStatus());
+		verify(stockLevelRepository).increment(3001L, 2);
+	}
+
+	@Test
+	void membersCannotDriveTheStatusEndpoint() throws Exception {
+		mockMvc.perform(post("/api/order/12/status").header("X-Auth-Token", tokenOf(4, Role.USER))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"status\": \"SHIPPED\"}"))
+			.andExpect(status().isForbidden());
 	}
 }

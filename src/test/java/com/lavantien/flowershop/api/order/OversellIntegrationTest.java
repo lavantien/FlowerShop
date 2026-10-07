@@ -103,7 +103,7 @@ class OversellIntegrationTest {
 			branchId, null);
 	}
 
-	private record Outcome(OrderView order, String conflictCode) {
+	private record Outcome(CheckoutResponse order, String conflictCode) {
 		boolean won() {
 			return order != null;
 		}

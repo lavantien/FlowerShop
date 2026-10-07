@@ -5,13 +5,23 @@ import com.lavantien.flowershop.api.branch.BranchRepository;
 import com.lavantien.flowershop.api.branch.StockLevel;
 import com.lavantien.flowershop.api.branch.StockLevelRepository;
 import com.lavantien.flowershop.api.error.ConflictException;
+import com.lavantien.flowershop.api.error.ForbiddenException;
 import com.lavantien.flowershop.api.error.NotFoundException;
+import com.lavantien.flowershop.api.error.UnauthenticatedException;
 import com.lavantien.flowershop.api.order.CheckoutRequest;
+import com.lavantien.flowershop.api.order.CheckoutResponse;
 import com.lavantien.flowershop.api.order.Order;
 import com.lavantien.flowershop.api.order.OrderItem;
 import com.lavantien.flowershop.api.order.OrderItemRepository;
 import com.lavantien.flowershop.api.order.OrderRepository;
+import com.lavantien.flowershop.api.order.OrderStatus;
 import com.lavantien.flowershop.api.order.OrderView;
+import com.lavantien.flowershop.api.payment.PaymentOutcome;
+import com.lavantien.flowershop.api.payment.PaymentRedirect;
+import com.lavantien.flowershop.api.payment.PaymentSession;
+import com.lavantien.flowershop.api.payment.PaymentStatus;
+import com.lavantien.flowershop.api.payment.PaymentSessionRepository;
+import com.lavantien.flowershop.api.payment.PaymentView;
 import com.lavantien.flowershop.api.product.Product;
 import com.lavantien.flowershop.api.product.ProductRepository;
 import org.springframework.stereotype.Service;
@@ -24,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -36,24 +47,30 @@ public class OrderService {
 	private final ProductRepository productRepository;
 	private final BranchRepository branchRepository;
 	private final StockLevelRepository stockLevelRepository;
+	private final PaymentSessionRepository paymentSessionRepository;
+	private final PaymentService paymentService;
 	private final GeoService geoService;
 
 	public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
 		ProductRepository productRepository, BranchRepository branchRepository,
-		StockLevelRepository stockLevelRepository, GeoService geoService) {
+		StockLevelRepository stockLevelRepository, PaymentSessionRepository paymentSessionRepository,
+		PaymentService paymentService, GeoService geoService) {
 		this.orderRepository = orderRepository;
 		this.orderItemRepository = orderItemRepository;
 		this.productRepository = productRepository;
 		this.branchRepository = branchRepository;
 		this.stockLevelRepository = stockLevelRepository;
+		this.paymentSessionRepository = paymentSessionRepository;
+		this.paymentService = paymentService;
 		this.geoService = geoService;
 	}
 
 	// One transaction prices every line from the database, snapshots name and
 	// price into order_item, resolves the branch, decrements stock through the
-	// single conditional update, and writes the order PENDING.
+	// single conditional update, writes the order PENDING, and opens the
+	// payment session whose signed redirect the response carries.
 	@Transactional
-	public OrderView checkout(Long userId, CheckoutRequest request) {
+	public CheckoutResponse checkout(Long userId, CheckoutRequest request) {
 		Map<Long, Integer> quantities = mergedQuantities(request.items());
 		Map<Long, Product> products = productsById(quantities.keySet());
 		GeoService.Point target = geoService.resolve(request.district(), request.city());
@@ -92,7 +109,8 @@ public class OrderService {
 		Order order = new Order(userId, request.phone(), request.address(), request.district(), request.city(),
 			branch.getId(), distanceKm, deliveryFee, blankToNull(request.couponCode()), discountAmount,
 			subtotal, total);
-		order.setPlacedAt(Instant.now());
+		Instant now = Instant.now();
+		order.setPlacedAt(now);
 		order = orderRepository.save(order);
 
 		Long orderId = order.getId();
@@ -100,7 +118,12 @@ public class OrderService {
 			.map(line -> new OrderItem(orderId, line.product().getId(), line.product().getName(),
 				line.product().getPrice(), line.quantity(), line.lineTotal()))
 			.toList());
-		return OrderView.of(order, items, branch.getName());
+
+		PaymentSession session = new PaymentSession(UUID.randomUUID().toString(), orderId, total);
+		session.start(now);
+		paymentSessionRepository.save(session);
+		return new CheckoutResponse(OrderView.of(order, items, branch.getName()),
+			new PaymentRedirect(session.getId(), paymentService.redirectUrl(session)));
 	}
 
 	public OrderView view(Order order) {
@@ -108,6 +131,128 @@ public class OrderService {
 		String branchName = order.getBranchId() == null ? null
 			: branchRepository.findById(order.getBranchId()).map(Branch::getName).orElse(null);
 		return OrderView.of(order, items, branchName);
+	}
+
+	@Transactional(readOnly = true)
+	public PaymentView paymentView(String paymentId, String sig) {
+		PaymentSession session = paymentSessionRepository.findById(paymentId)
+			.orElseThrow(() -> new NotFoundException("no payment with id " + paymentId));
+		requireSignature(session, sig);
+		return PaymentView.of(session);
+	}
+
+	@Transactional
+	public PaymentOutcome confirmPayment(String paymentId, String sig) {
+		PaymentSession session = paymentSessionRepository.lockById(paymentId)
+			.orElseThrow(() -> new NotFoundException("no payment with id " + paymentId));
+		requireSignature(session, sig);
+		return switch (session.getStatus()) {
+			case CONFIRMED -> new PaymentOutcome(session.getOrderId(), PaymentStatus.CONFIRMED);
+			case CANCELLED -> throw new ConflictException("PAYMENT_CANCELLED",
+				"payment " + paymentId + " was cancelled and can no longer be confirmed");
+			case PENDING -> {
+				Order order = orderRepository.lockById(session.getOrderId())
+					.orElseThrow(() -> new NotFoundException("no order with id " + session.getOrderId()));
+				Instant now = Instant.now();
+				session.confirm(now);
+				// The payment row lock already serialized the replays; the
+				// transition guard is the second wall.
+				if (order.getStatus() == OrderStatus.PENDING) {
+					order.transitionTo(OrderStatus.PAID, now);
+				}
+				yield new PaymentOutcome(session.getOrderId(), PaymentStatus.CONFIRMED);
+			}
+		};
+	}
+
+	@Transactional
+	public PaymentOutcome cancelPayment(String paymentId, String sig) {
+		PaymentSession session = paymentSessionRepository.lockById(paymentId)
+			.orElseThrow(() -> new NotFoundException("no payment with id " + paymentId));
+		requireSignature(session, sig);
+		return switch (session.getStatus()) {
+			case CANCELLED -> new PaymentOutcome(session.getOrderId(), PaymentStatus.CANCELLED);
+			case CONFIRMED -> throw new ConflictException("PAYMENT_CONFIRMED",
+				"payment " + paymentId + " is already confirmed and cannot be cancelled");
+			case PENDING -> {
+				Order order = orderRepository.lockById(session.getOrderId())
+					.orElseThrow(() -> new NotFoundException("no order with id " + session.getOrderId()));
+				Instant now = Instant.now();
+				session.cancel(now);
+				if (order.getStatus() == OrderStatus.PENDING) {
+					order.transitionTo(OrderStatus.CANCELLED, now);
+					restoreStock(order);
+				}
+				yield new PaymentOutcome(session.getOrderId(), PaymentStatus.CANCELLED);
+			}
+		};
+	}
+
+	@Transactional
+	public OrderView cancel(Long orderId, Long actingUserId, boolean admin) {
+		PaymentSession payment = paymentSessionRepository.lockByOrderId(orderId).orElse(null);
+		Order order = orderRepository.lockById(orderId)
+			.orElseThrow(() -> new NotFoundException("no order with id " + orderId));
+		if (!admin && !actingUserId.equals(order.getUserId())) {
+			throw new ForbiddenException("only the owner or an admin may cancel this order");
+		}
+		// The owner may cancel while PENDING, an admin while any legal arc to
+		// CANCELLED is open; the enum table is the only definition.
+		if (!order.getStatus().canTransitionTo(OrderStatus.CANCELLED)
+				|| (!admin && order.getStatus() != OrderStatus.PENDING)) {
+			throw new ConflictException("ILLEGAL_TRANSITION",
+				"an order in " + order.getStatus() + " cannot be cancelled");
+		}
+		Instant now = Instant.now();
+		order.transitionTo(OrderStatus.CANCELLED, now);
+		if (payment != null && payment.getStatus() == PaymentStatus.PENDING) {
+			payment.cancel(now);
+		}
+		restoreStock(order);
+		return view(order);
+	}
+
+	@Transactional
+	public OrderView changeStatus(Long orderId, OrderStatus next) {
+		// Taken for the row lock only: this path never mutates the payment,
+		// but concurrent confirms on the same order must not interleave.
+		paymentSessionRepository.lockByOrderId(orderId);
+		Order order = orderRepository.lockById(orderId)
+			.orElseThrow(() -> new NotFoundException("no order with id " + orderId));
+		if (!order.getStatus().canTransitionTo(next)) {
+			throw new ConflictException("ILLEGAL_TRANSITION",
+				"an order in " + order.getStatus() + " cannot move to " + next);
+		}
+		// PENDING to PAID belongs to payment confirm alone, never to an admin
+		// pushing the status by hand.
+		if (order.getStatus() == OrderStatus.PENDING && next == OrderStatus.PAID) {
+			throw new ConflictException("ILLEGAL_TRANSITION",
+				"an order only turns PAID through the payment confirm flow");
+		}
+		if (next == OrderStatus.CANCELLED) {
+			restoreStock(order);
+		}
+		order.transitionTo(next, Instant.now());
+		return view(order);
+	}
+
+	private void requireSignature(PaymentSession session, String sig) {
+		if (!paymentService.matches(session, sig)) {
+			throw new UnauthenticatedException("the payment signature is invalid");
+		}
+	}
+
+	private void restoreStock(Order order) {
+		for (OrderItem item : orderItemRepository.findByOrderId(order.getId())) {
+			StockLevel row = stockLevelRepository
+				.findByBranchIdAndProductId(order.getBranchId(), item.getProductId()).orElse(null);
+			if (row == null) {
+				stockLevelRepository.save(new StockLevel(order.getBranchId(), item.getProductId(),
+					item.getQuantity()));
+			} else {
+				stockLevelRepository.increment(row.getId(), item.getQuantity());
+			}
+		}
 	}
 
 	private static Map<Long, Integer> mergedQuantities(List<CheckoutRequest.Item> items) {
