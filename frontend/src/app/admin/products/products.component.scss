@@ -1,0 +1,124 @@
+.products-wrapper {
+	$lap-inner-width: 1313px;
+	$pc-inner-width: 1868px;
+	margin: 10px;
+
+	.wrapper-filter {
+		width: $lap-inner-width;
+		@media only screen and (min-width: 1920px) {
+			width: $pc-inner-width;
+		}
+
+		.product-filter {
+			margin-bottom: 10px;
+
+			.mb-3 {
+				height: 43px;
+			}
+
+			// Three toolbar buttons must share one col-2 line; default Bootstrap 5
+			// padding makes them a few px too wide and wraps the last button.
+			.btn-tool {
+				padding-left: 0.45rem;
+				padding-right: 0.45rem;
+
+				& + .btn-tool {
+					margin-left: 10px;
+				}
+			}
+		}
+	}
+
+	table {
+		th, td {
+			text-align: center;
+			vertical-align: middle;
+		}
+
+		.btn-edit {
+			margin: 5px;
+		}
+	}
+
+	.cell-description {
+		text-align: left;
+	}
+
+	.product-img {
+		max-height: 50px;
+	}
+
+	.table-product {
+		width: $lap-inner-width;
+		@media only screen and (min-width: 1920px) {
+			width: $pc-inner-width;
+		}
+
+		.row-selected {
+			background-color: #007bff;
+			color: white;
+
+			&:hover {
+				background-color: #007bff;
+				opacity: 0.85;
+				color: white;
+			}
+		}
+
+		.col-sortable {
+			&:hover {
+				color: #212529;
+				background-color: rgba(0, 0, 0, .075);
+				cursor: pointer;
+			}
+		}
+
+		.col-index {
+			width: 4%;
+		}
+
+		.col-name {
+			width: 12%;
+		}
+
+		.col-description {
+			width: 26%;
+		}
+
+		.col-price {
+			width: 10%;
+		}
+
+		.col-image {
+			width: 8%;
+		}
+
+		.col-stock {
+			width: 6%;
+		}
+
+		.col-type {
+			width: 11%;
+		}
+
+		.col-category {
+			width: 9%;
+		}
+
+		.col-actions {
+			width: 10%;
+		}
+	}
+}
+
+.wrapper-delete-table {
+	max-height: 600px;
+	overflow: auto;
+}
+
+@media only screen and (min-width: 1920px) {
+	.wrapper-delete-table {
+		max-height: 800px;
+		overflow: auto;
+	}
+}

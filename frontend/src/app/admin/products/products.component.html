@@ -1,0 +1,274 @@
+<div class="products-wrapper table-responsive">
+	<div class="wrapper-filter">
+		<div class="product-filter row">
+			<div class="mb-3 col-2">
+				<input (input)="searchText.set($any($event.target).value)" (keyup.enter)="onSearch()" [value]="searchText()"
+				       class="form-control" data-test="admin-products-search"
+				       placeholder="{{'ADMIN.PRODUCT_NAME' | translate}}" type="text">
+			</div>
+			<div class="mb-3 col-2">
+				<select #categorySelect (change)="onCategoryChange(categorySelect.value)" class="form-control"
+				        data-test="admin-products-category">
+					<option value="">{{'SHOP.ALL_CATEGORIES' | translate}}</option>
+					@for (categoryOption of categories(); track categoryOption.name) {
+						<option [selected]="categoryOption.name === category()"
+						        [value]="categoryOption.name">{{'DATA.' + categoryOption.name | translate}}</option>
+					}
+				</select>
+			</div>
+			<div class="mb-3 col-2">
+				<select #typeSelect (change)="onTypeChange(typeSelect.value)" class="form-control"
+				        data-test="admin-products-type">
+					<option value="">{{'SHOP.ALL_TYPES' | translate}}</option>
+					@for (typeOption of typesForFilter(); track typeOption.name) {
+						<option [selected]="typeOption.name === type()"
+						        [value]="typeOption.name">{{'DATA.' + typeOption.name | translate}}</option>
+					}
+				</select>
+			</div>
+			<div class="mb-3 col-2">
+				<button (click)="openCreateModal(formTemplate)" class="btn btn-dark btn-tool" data-test="admin-products-create"
+				        placement="bottom" tooltip="{{'ADMIN.CREATE_PRODUCT' | translate}}" type="button">
+					<fa-icon [icon]="faSquarePlus"></fa-icon>
+				</button>
+				<button (click)="openImportExcelModal(importExcelTemplate)" class="btn btn-dark btn-tool"
+				        data-test="admin-products-import" placement="bottom" tooltip="{{'ADMIN.IMPORT_EXCEL' | translate}}"
+				        type="button">
+					<fa-icon [icon]="faFileArrowUp"></fa-icon>
+				</button>
+				<button (click)="onExportExcel()" class="btn btn-dark btn-tool" data-test="admin-products-export"
+				        placement="bottom" tooltip="{{'ADMIN.EXPORT_EXCEL' | translate}}" type="button">
+					<fa-icon [icon]="faFileArrowDown"></fa-icon>
+				</button>
+			</div>
+			<div class="mb-3 col-4">
+				<pagination (pageChanged)="onPageChanged($event)"
+				            [boundaryLinks]="true"
+				            [itemsPerPage]="size()"
+				            [maxSize]="maxSize"
+				            [pageBtnClass]="'pagination-style'"
+				            [totalItems]="totalElements()"
+				            class="float-end" data-test="admin-products-pagination" firstText="&laquo;" lastText="&raquo;"
+				            nextText="&rsaquo;" previousText="&lsaquo;">
+				</pagination>
+			</div>
+			<div class="mb-3 col-12">
+				<select #sizeSelect (change)="onSizeChange(sizeSelect.value)" class="btn btn-outline-dark"
+				        data-test="admin-products-size" placement="bottom"
+				        tooltip="{{'ADMIN.ITEMS_PER_PAGE' | translate}}">
+					@for (option of sizeOptions; track option) {
+						<option [selected]="option === size()" [value]="option">{{option}}</option>
+					}
+				</select>
+			</div>
+		</div>
+	</div>
+	<table class="table table-bordered table-striped table-hover table-sm table-product">
+		<thead class="bg-light text-dark">
+		<tr>
+			<th class="col-index" data-test="admin-products-sort-id" scope="col">#</th>
+			<th (click)="onSortToggle('name')" class="col-name col-sortable" scope="col">{{'ADMIN.NAME' | translate}}
+				@if (sortDirection('name') === 'asc') {
+					<fa-icon [icon]="faArrowUpShortWide"></fa-icon>
+				}
+				@if (sortDirection('name') === 'desc') {
+					<fa-icon [icon]="faArrowDownShortWide"></fa-icon>
+				}
+			</th>
+			<th class="col-description" scope="col">{{'ADMIN.DESCRIPTION' | translate}}</th>
+			<th (click)="onSortToggle('price')" class="col-price col-sortable" scope="col">{{'ADMIN.PRICE' | translate}}
+				@if (sortDirection('price') === 'asc') {
+					<fa-icon [icon]="faArrowUpShortWide"></fa-icon>
+				}
+				@if (sortDirection('price') === 'desc') {
+					<fa-icon [icon]="faArrowDownShortWide"></fa-icon>
+				}
+			</th>
+			<th class="col-image" scope="col">{{'ADMIN.IMAGE' | translate}}</th>
+			<th class="col-stock" scope="col">{{'ADMIN.STOCK' | translate}}</th>
+			<th class="col-category" scope="col">{{'ADMIN.CATEGORY' | translate}}</th>
+			<th class="col-type" scope="col">{{'ADMIN.TYPE' | translate}}</th>
+			<th class="col-actions" scope="col">{{'ADMIN.ACTION' | translate}}</th>
+		</tr>
+		</thead>
+		<tbody>
+		@if (content().length !== 0) {
+			@for (product of content(); track product.id; let i = $index) {
+				<tr (click)="selectRow(i)" [class.row-selected]="isSelected()[i]">
+					<th scope="row">{{product.id}}</th>
+					<td>{{product.name}}</td>
+					<td class="cell-description">{{product.description}}</td>
+					<td>{{product.price | currency:'VND':'symbol':'1.0-0':lang()}}</td>
+					<td>
+						<img (click)="onOpenImage(product, imageTemplate); $event.stopPropagation()" [alt]="product.name"
+						     [src]="product.imgUrl" class="product-img">
+					</td>
+					<td>{{product.stock}}</td>
+					<td>{{'DATA.' + product.categoryName | translate}}</td>
+					<td>{{'DATA.' + product.typeName | translate}}</td>
+					<td>
+						<button (click)="openEditModal(formTemplate, product); $event.stopPropagation()" class="btn btn-info btn-edit"
+						        data-test="admin-products-edit" placement="bottom"
+						        tooltip="{{'ADMIN.EDIT_PRODUCT' | translate}}" type="button">
+							<fa-icon [icon]="faPen"></fa-icon>
+						</button>
+						@if (isSelected()[i]) {
+							<button (click)="openDeleteModal(deleteTemplate); $event.stopPropagation()" class="btn btn-warning btn-edit"
+							        data-test="admin-products-delete" placement="bottom"
+							        tooltip="{{'ADMIN.DELETE_PRODUCT' | translate}}" type="button">
+								<fa-icon [icon]="faTrash"></fa-icon>
+							</button>
+						}
+					</td>
+				</tr>
+			}
+		}
+		@if (content().length === 0) {
+			<tr>
+				<td colspan="9"><i>{{'ADMIN.NO_PRODUCT_FOUND' | translate}}</i></td>
+			</tr>
+		}
+		</tbody>
+	</table>
+</div>
+
+<ng-template #imageTemplate>
+	@if (lightboxProduct(); as product) {
+		<div class="modal-body text-center">
+			<img [alt]="product.name" [src]="product.imgUrl" class="img-fluid">
+			<div class="text-center">
+				<b>{{product.name}}</b>
+				- ({{'DATA.' + product.categoryName | translate}} - {{'DATA.' + product.typeName | translate}}).
+				<br>
+				<i>{{product.description}}</i>
+			</div>
+		</div>
+	}
+</ng-template>
+
+<ng-template #formTemplate>
+	<div class="modal-header bg-light text-dark">
+		<h4 class="modal-title float-start">
+			{{(editId() === null ? 'ADMIN.CREATE_PRODUCT' : 'ADMIN.EDIT_PRODUCT') | translate}}
+		</h4>
+		<button (click)="modalRef?.hide()" class="btn-close float-end" type="button" aria-label="Close"></button>
+	</div>
+	<form (ngSubmit)="onSubmit()" [formGroup]="form">
+		<div class="modal-body">
+			<div class="mb-3 row">
+				<label class="col-sm-3 col-form-label" for="inputName"><b>{{'ADMIN.NAME' | translate}}</b></label>
+				<div class="col-sm-9">
+					<input class="form-control" data-test="admin-product-name" formControlName="name" id="inputName"
+					       type="text">
+				</div>
+			</div>
+			<div class="mb-3 row">
+				<label class="col-sm-3 col-form-label" for="inputDescription"><b>{{'ADMIN.DESCRIPTION' | translate}}</b></label>
+				<div class="col-sm-9">
+					<textarea class="form-control" data-test="admin-product-description" formControlName="description"
+					          id="inputDescription" rows="3"></textarea>
+				</div>
+			</div>
+			<div class="mb-3 row">
+				<label class="col-sm-3 col-form-label" for="inputPrice"><b>{{'ADMIN.PRICE' | translate}}</b></label>
+				<div class="col-sm-9">
+					<input class="form-control" data-test="admin-product-price" formControlName="price" id="inputPrice"
+					       min="0" type="number">
+				</div>
+			</div>
+			<div class="mb-3 row">
+				<label class="col-sm-3 col-form-label" for="inputImage"><b>{{'ADMIN.IMAGE' | translate}}</b></label>
+				<div class="col-sm-9">
+					<input class="form-control" data-test="admin-product-image" formControlName="imgUrl" id="inputImage"
+					       type="text">
+				</div>
+			</div>
+			<div class="mb-3 row">
+				<label class="col-sm-3 col-form-label" for="inputCategory"><b>{{'ADMIN.CATEGORY' | translate}}</b></label>
+				<div class="col-sm-9">
+					<select (change)="onFormCategoryChange()" class="form-control" data-test="admin-product-category"
+					        formControlName="categoryName" id="inputCategory">
+						@for (categoryOption of categories(); track categoryOption.name) {
+							<option [value]="categoryOption.name">{{'DATA.' + categoryOption.name | translate}}</option>
+						}
+					</select>
+				</div>
+			</div>
+			<div class="mb-3 row">
+				<label class="col-sm-3 col-form-label" for="inputType"><b>{{'ADMIN.TYPE' | translate}}</b></label>
+				<div class="col-sm-9">
+					<select class="form-control" data-test="admin-product-type" formControlName="typeName" id="inputType">
+						@for (typeOption of typesForCategory(); track typeOption.name) {
+							<option [value]="typeOption.name">{{'DATA.' + typeOption.name | translate}}</option>
+						}
+					</select>
+				</div>
+			</div>
+		</div>
+		<div class="modal-footer bg-light">
+			<button (click)="onSubmit()" [disabled]="form.invalid || saving()" class="btn btn-success float-end"
+			        data-test="admin-product-save" type="button">
+				{{'ADMIN.SAVE' | translate}}
+			</button>
+		</div>
+	</form>
+</ng-template>
+
+<ng-template #deleteTemplate>
+	<div class="modal-header bg-light text-dark">
+		<h4 class="modal-title float-start">{{'ADMIN.DELETE_PRODUCT' | translate}}?</h4>
+		<button (click)="modalRef?.hide()" class="btn-close float-end" type="button" aria-label="Close"></button>
+	</div>
+	<div class="modal-body table-responsive wrapper-delete-table">
+		<table class="table table-bordered table-striped table-sm">
+			<thead class="bg-light text-dark">
+			<tr>
+				<th scope="col">#</th>
+				<th scope="col">{{'ADMIN.NAME' | translate}}</th>
+				<th scope="col">{{'ADMIN.PRICE' | translate}}</th>
+				<th scope="col">{{'ADMIN.STOCK' | translate}}</th>
+				<th scope="col">{{'ADMIN.CATEGORY' | translate}}</th>
+				<th scope="col">{{'ADMIN.TYPE' | translate}}</th>
+			</tr>
+			</thead>
+			<tbody>
+			@for (product of selectedProducts(); track product.id) {
+				<tr>
+					<th scope="row">{{product.id}}</th>
+					<td>{{product.name}}</td>
+					<td>{{product.price | currency:'VND':'symbol':'1.0-0':lang()}}</td>
+					<td>{{product.stock}}</td>
+					<td>{{'DATA.' + product.categoryName | translate}}</td>
+					<td>{{'DATA.' + product.typeName | translate}}</td>
+				</tr>
+			}
+			</tbody>
+		</table>
+	</div>
+	<div class="modal-footer bg-light">
+		<button (click)="onDelete()" class="btn btn-danger float-end" data-test="admin-product-confirm-delete"
+		        placement="bottom" tooltip="{{'ADMIN.DELETE_PRODUCT' | translate}}" type="button">
+			<fa-icon [icon]="faTrash"></fa-icon>
+		</button>
+	</div>
+</ng-template>
+
+<ng-template #importExcelTemplate>
+	<div class="modal-header bg-light text-dark">
+		<h4 class="modal-title float-start">{{'ADMIN.IMPORT_EXCEL' | translate}}</h4>
+		<button (click)="modalRef?.hide()" class="btn-close float-end" type="button" aria-label="Close"></button>
+	</div>
+	<div class="modal-body">
+		<div class="mb-3">
+			<label class="form-label" for="inputGroupFile">{{'ADMIN.BROWSE_EXCEL' | translate}}</label>
+			<input (change)="onFileChange($event)" accept=".xlsx" class="form-control" id="inputGroupFile" type="file">
+		</div>
+		<span><i>{{'ADMIN.IMPORT_EXCEL_NOTE' | translate}}</i></span>
+	</div>
+	<div class="modal-footer bg-light">
+		<button (click)="onImportExcel(excelRows())" [disabled]="excelRows().length === 0"
+		        class="btn btn-success float-end" data-test="admin-product-import-button" type="button">
+			{{'ADMIN.IMPORT_BUTTON' | translate}}
+		</button>
+	</div>
+</ng-template>

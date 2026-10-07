@@ -10,6 +10,7 @@ import {CartComponent} from './cart/cart.component';
 import {ContactComponent} from './contact/contact.component';
 import {PayComponent} from './pay/pay.component';
 import {AdminComponent} from './admin/admin.component';
+import {ProductsComponent} from './admin/products/products.component';
 import {InfoComponent} from './info/info.component';
 import {ProfileComponent} from './info/profile/profile.component';
 import {OrdersComponent} from './info/orders/orders.component';
@@ -61,6 +62,16 @@ describe('app routes', () => {
 		expect(info?.children?.[0]).toEqual({path: '', pathMatch: 'full', redirectTo: 'orders'});
 		const loaded = await Promise.all(info!.children!.slice(1).map(child => child.loadComponent!()));
 		expect(loaded).toEqual([ProfileComponent, OrdersComponent, WishlistComponent]);
+	});
+
+	it('splits the admin surface into guarded children starting at products', async () => {
+		const byPath = new Map(routes.map(route => [route.path, route]));
+		const adminRoute = byPath.get('admin');
+		expect(adminRoute?.canActivate).toBeDefined();
+		expect(adminRoute?.children?.length).toBe(2);
+		expect(adminRoute?.children?.[0]).toEqual({path: '', pathMatch: 'full', redirectTo: 'products'});
+		const loaded = await Promise.all(adminRoute!.children!.slice(1).map(child => child.loadComponent!()));
+		expect(loaded).toEqual([ProductsComponent]);
 	});
 });
 

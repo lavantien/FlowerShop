@@ -55,6 +55,7 @@
 		"PRICE": "Price (đ)",
 		"IMAGE": "Image",
 		"QUANTITY": "Quantity",
+		"STOCK": "Stock",
 		"SALE_AMOUNT": "Sold",
 		"TYPE": "Type",
 		"CATEGORY": "Category",
@@ -76,7 +77,14 @@
 		"TOTAL_PRICE": "Total price",
 		"QUANTITY_CART": "Quantity",
 		"ORDER_DATE": "Order date",
-		"USER_ID": "Account ID"
+		"USER_ID": "Account ID",
+		"TAB_PRODUCTS": "Products",
+		"PRODUCT_SAVED": "Product saved.",
+		"PRODUCT_DELETED": "Product deleted.",
+		"SAVE_FAILED": "Could not save the product.",
+		"DELETE_FAILED": "Could not delete the product.",
+		"IMPORT_FAILED": "Import failed.",
+		"EXPORT_FAILED": "Export failed."
 	},
 	"SHOP": {
 		"DETAILS": "Details",

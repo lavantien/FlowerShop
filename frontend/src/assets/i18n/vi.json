@@ -55,6 +55,7 @@
 		"PRICE": "Giá (đ)",
 		"IMAGE": "Ảnh",
 		"QUANTITY": "Tồn kho",
+		"STOCK": "Tồn kho",
 		"SALE_AMOUNT": "Đã bán",
 		"TYPE": "Dạng",
 		"CATEGORY": "Loại",
@@ -76,7 +77,14 @@
 		"TOTAL_PRICE": "Tổng giá",
 		"QUANTITY_CART": "Số lượng",
 		"ORDER_DATE": "Ngày đặt",
-		"USER_ID": "ID tài khoản"
+		"USER_ID": "ID tài khoản",
+		"TAB_PRODUCTS": "Sản phẩm",
+		"PRODUCT_SAVED": "Đã lưu sản phẩm.",
+		"PRODUCT_DELETED": "Đã xóa sản phẩm.",
+		"SAVE_FAILED": "Không lưu được sản phẩm.",
+		"DELETE_FAILED": "Không xóa được sản phẩm.",
+		"IMPORT_FAILED": "Nhập dữ liệu thất bại.",
+		"EXPORT_FAILED": "Xuất dữ liệu thất bại."
 	},
 	"SHOP": {
 		"DETAILS": "Chi tiết",

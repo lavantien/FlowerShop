@@ -106,4 +106,27 @@ describe('CatalogService', () => {
 		httpMock.expectOne('/api/product/404')
 			.flush({title: 'Not Found', status: 404}, {status: 404, statusText: 'Not Found'});
 	});
+
+	it('walks every page of a filtered query at the size ceiling', () => {
+		const collected: ProductView[][] = [];
+		catalog.all({search: 'rose'}).subscribe(rows => collected.push(rows));
+		const first = httpMock.expectOne(req => req.method === 'GET' && req.url === '/api/product');
+		expect(first.request.params.get('search')).toBe('rose');
+		expect(first.request.params.get('size')).toBe('48');
+		expect(first.request.params.get('page')).toBe('0');
+		first.flush({content: [view], totalElements: 3, totalPages: 2, page: 0, size: 48});
+		const second = httpMock.expectOne(req => req.method === 'GET' && req.url === '/api/product');
+		expect(second.request.params.get('page')).toBe('1');
+		second.flush({content: [{...view, id: 2}, {...view, id: 3}], totalElements: 3, totalPages: 2, page: 1, size: 48});
+		expect(collected).toEqual([[view, {...view, id: 2}, {...view, id: 3}]]);
+	});
+
+	it('walks a single page without a follow up request', () => {
+		const collected: ProductView[][] = [];
+		catalog.all({}).subscribe(rows => collected.push(rows));
+		httpMock.expectOne(req => req.method === 'GET' && req.url === '/api/product')
+			.flush({content: [view], totalElements: 1, totalPages: 1, page: 0, size: 48});
+		expect(collected).toEqual([[view]]);
+		expect(httpMock.match(() => true).length).toBe(0);
+	});
 });
