@@ -1,10 +1,11 @@
 package com.lavantien.flowershop.api.product;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
 
 	// Hibernate 7 merge no longer inserts a detached entity whose row is absent,
 	// so explicit-id seeding needs a native insert that honors the given id.

@@ -10,16 +10,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 import static com.lavantien.flowershop.api.security.AuthTestSupport.persona;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.prime;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.tokenOf;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -52,26 +60,88 @@ class ProductControllerTest {
 
 	private static Product rose() {
 		Product product = new Product("Rose", "A dozen red roses", "https://cdn.example/rose.jpg",
-			12.5, 40L, 3L, "FLOWER", "BOUQUET");
+			BigDecimal.valueOf(288000), 40L, 3L, "ROSES", "BOUQUET");
 		product.setId(2L);
 		return product;
 	}
 
 	@Test
-	void anonymousBrowsesTheCatalogWithoutAToken() throws Exception {
-		when(productRepository.findAll()).thenReturn(List.of(rose()));
+	void anonymousBrowsesTheFirstPageOfTheCatalog() throws Exception {
+		when(productRepository.findAll(any(Specification.class), any(Pageable.class)))
+			.thenReturn(new PageImpl<>(List.of(rose()), PageRequest.of(0, 12), 1));
 
 		mockMvc.perform(get("/api/product"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].id").value(2))
-			.andExpect(jsonPath("$[0].name").value("Rose"))
-			.andExpect(jsonPath("$[0].description").value("A dozen red roses"))
-			.andExpect(jsonPath("$[0].imgUrl").value("https://cdn.example/rose.jpg"))
-			.andExpect(jsonPath("$[0].price").value(12.5))
-			.andExpect(jsonPath("$[0].quantity").value(40))
-			.andExpect(jsonPath("$[0].saleAmount").value(3))
-			.andExpect(jsonPath("$[0].typeName").value("FLOWER"))
-			.andExpect(jsonPath("$[0].categoryName").value("BOUQUET"));
+			.andExpect(jsonPath("$.content[0].id").value(2))
+			.andExpect(jsonPath("$.content[0].name").value("Rose"))
+			.andExpect(jsonPath("$.content[0].description").value("A dozen red roses"))
+			.andExpect(jsonPath("$.content[0].imgUrl").value("https://cdn.example/rose.jpg"))
+			.andExpect(jsonPath("$.content[0].price").value(288000))
+			.andExpect(jsonPath("$.content[0].typeName").value("ROSES"))
+			.andExpect(jsonPath("$.content[0].categoryName").value("BOUQUET"))
+			.andExpect(jsonPath("$.content[0].stock").value(40))
+			.andExpect(jsonPath("$.content[0].quantity").doesNotExist())
+			.andExpect(jsonPath("$.content[0].saleAmount").doesNotExist())
+			.andExpect(jsonPath("$.totalElements").value(1))
+			.andExpect(jsonPath("$.totalPages").value(1))
+			.andExpect(jsonPath("$.page").value(0))
+			.andExpect(jsonPath("$.size").value(12));
+
+		ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+		verify(productRepository).findAll(any(Specification.class), pageable.capture());
+		assertEquals(0, pageable.getValue().getPageNumber());
+		assertEquals(12, pageable.getValue().getPageSize());
+		assertEquals(Sort.by(Sort.Direction.ASC, "name"), pageable.getValue().getSort());
+	}
+
+	@Test
+	void filterParamsReachTheRepositoryWithTheDefaultPage() throws Exception {
+		when(productRepository.findAll(any(Specification.class), any(Pageable.class)))
+			.thenReturn(Page.empty());
+
+		mockMvc.perform(get("/api/product").param("search", "rose").param("category", "BOUQUET")
+				.param("type", "ROSES").param("sort", "price-desc").param("page", "3").param("size", "24"))
+			.andExpect(status().isOk());
+
+		ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+		verify(productRepository).findAll(any(Specification.class), pageable.capture());
+		assertEquals(3, pageable.getValue().getPageNumber());
+		assertEquals(24, pageable.getValue().getPageSize());
+		assertEquals(Sort.by(Sort.Direction.DESC, "price"), pageable.getValue().getSort());
+	}
+
+	@Test
+	void catalogQueryClampsPageAndSizeSilently() {
+		var query = ProductController.CatalogQuery.of(null, null, null, null, null, null);
+		assertEquals(0, query.page());
+		assertEquals(12, query.size());
+		assertEquals(Sort.by(Sort.Direction.ASC, "name"), query.sort());
+
+		assertEquals(0, ProductController.CatalogQuery.of(null, null, null, null, -5, -3).page());
+		assertEquals(1, ProductController.CatalogQuery.of(null, null, null, null, 0, 0).size());
+		assertEquals(48, ProductController.CatalogQuery.of(null, null, null, null, 9, 500).size());
+		assertEquals(48, ProductController.CatalogQuery.of(null, null, null, null, 9, 48).size());
+		assertEquals(1, ProductController.CatalogQuery.of(null, null, null, null, 9, 1).size());
+		assertEquals(7, ProductController.CatalogQuery.of(null, null, null, null, 7, 20).page());
+	}
+
+	@Test
+	void sortWhitelistMapsOnlyKnownValues() {
+		assertEquals(Sort.by(Sort.Direction.ASC, "name"), ProductController.CatalogQuery.of(null, null, null, null, null, null).sort());
+		assertEquals(Sort.by(Sort.Direction.DESC, "name"), ProductController.CatalogQuery.of(null, null, null, "name-desc", null, null).sort());
+		assertEquals(Sort.by(Sort.Direction.ASC, "price"), ProductController.CatalogQuery.of(null, null, null, "price-asc", null, null).sort());
+		assertEquals(Sort.by(Sort.Direction.DESC, "price"), ProductController.CatalogQuery.of(null, null, null, "price-desc", null, null).sort());
+		assertEquals(Sort.by(Sort.Direction.ASC, "name"), ProductController.CatalogQuery.of(null, null, null, "name-asc", null, null).sort());
+		assertEquals(Sort.by(Sort.Direction.ASC, "name"), ProductController.CatalogQuery.of(null, null, null, "DROP TABLE", null, null).sort());
+	}
+
+	@Test
+	void catalogQueryStripsAndBlanksFilters() {
+		var query = ProductController.CatalogQuery.of("  rose ", "  ", "", "  price-asc ", null, null);
+		assertEquals("rose", query.search());
+		assertEquals(null, query.category());
+		assertEquals(null, query.type());
+		assertEquals(Sort.by(Sort.Direction.ASC, "price"), query.sort());
 	}
 
 	@Test
@@ -81,34 +151,9 @@ class ProductControllerTest {
 		mockMvc.perform(get("/api/product/2"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.name").value("Rose"))
+			.andExpect(jsonPath("$.price").value(288000))
+			.andExpect(jsonPath("$.stock").value(40))
 			.andExpect(jsonPath("$.categoryName").value("BOUQUET"));
-	}
-
-	@Test
-	void everyProductFieldSurvivesTheCatalogRoundTrip() throws Exception {
-		Product product = new Product();
-		product.setId(6L);
-		product.setName("Tulip");
-		product.setDescription("Fresh cut");
-		product.setImgUrl("https://cdn.example/tulip.jpg");
-		product.setPrice(9.0);
-		product.setQuantity(25L);
-		product.setSaleAmount(1L);
-		product.setTypeName("FLOWER");
-		product.setCategoryName("POTTED");
-		when(productRepository.findAll()).thenReturn(List.of(product));
-
-		mockMvc.perform(get("/api/product"))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].id").value(6))
-			.andExpect(jsonPath("$[0].name").value("Tulip"))
-			.andExpect(jsonPath("$[0].description").value("Fresh cut"))
-			.andExpect(jsonPath("$[0].imgUrl").value("https://cdn.example/tulip.jpg"))
-			.andExpect(jsonPath("$[0].price").value(9.0))
-			.andExpect(jsonPath("$[0].quantity").value(25))
-			.andExpect(jsonPath("$[0].saleAmount").value(1))
-			.andExpect(jsonPath("$[0].typeName").value("FLOWER"))
-			.andExpect(jsonPath("$[0].categoryName").value("POTTED"));
 	}
 
 	@Test
@@ -126,14 +171,30 @@ class ProductControllerTest {
 
 		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("[{\"name\":\"Rose\",\"price\":12.5,\"quantity\":40}]"))
+				.content("[{\"name\":\"Rose\",\"price\":288000}]"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].name").value("Rose"));
 
 		ArgumentCaptor<Product> saved = ArgumentCaptor.forClass(Product.class);
 		verify(productRepository).save(saved.capture());
 		assertTrue(saved.getValue().getId() == null, "a row without an id must go through the save merge path");
+		assertEquals(BigDecimal.valueOf(288000), saved.getValue().getPrice());
 		assertTrue(saved.getValue().toString().contains("name='Rose'"), "toString must render the persisted fields");
+	}
+
+	@Test
+	void bulkUpsertNormalizesPricesToWholeDong() throws Exception {
+		when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("[{\"name\":\"Rose\",\"price\":288499.9}]"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].price").value(288500));
+
+		ArgumentCaptor<Product> saved = ArgumentCaptor.forClass(Product.class);
+		verify(productRepository).save(saved.capture());
+		assertEquals(BigDecimal.valueOf(288500), saved.getValue().getPrice());
 	}
 
 	@Test
@@ -143,9 +204,9 @@ class ProductControllerTest {
 
 		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("[{\"id\":2,\"name\":\"Rose\",\"price\":15.0}]"))
+				.content("[{\"id\":2,\"name\":\"Rose\",\"price\":350000}]"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].price").value(15.0));
+			.andExpect(jsonPath("$[0].price").value(350000));
 
 		verify(productRepository).save(any(Product.class));
 		verify(productRepository, never()).insertWithId(any(Product.class));
@@ -158,7 +219,7 @@ class ProductControllerTest {
 
 		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("[{\"id\":9,\"name\":\"Rose\",\"price\":12.5}]"))
+				.content("[{\"id\":9,\"name\":\"Rose\",\"price\":288000}]"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].name").value("Rose"));
 
@@ -174,7 +235,7 @@ class ProductControllerTest {
 
 		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("[{\"id\":9,\"name\":\"Rose\",\"price\":12.5}]"))
+				.content("[{\"id\":9,\"name\":\"Rose\",\"price\":288000}]"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].name").value("Rose"))
 			.andExpect(jsonPath("$[0].id").value(9));
@@ -189,7 +250,7 @@ class ProductControllerTest {
 
 		mockMvc.perform(post("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("[{\"id\":2,\"name\":\"Rose\",\"price\":12.5}]"))
+				.content("[{\"id\":2,\"name\":\"Rose\",\"price\":288000}]"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].name").value("Rose"));
 
@@ -200,7 +261,7 @@ class ProductControllerTest {
 	@Test
 	void deleteManyWithoutABodyWipesTheCatalog() throws Exception {
 		mockMvc.perform(delete("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
-			.andExpect(status().isOk());
+			.andExpect(status().isNoContent());
 
 		verify(productRepository).deleteAll();
 	}
@@ -212,7 +273,7 @@ class ProductControllerTest {
 		mockMvc.perform(delete("/api/product").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[2,3]"))
-			.andExpect(status().isOk());
+			.andExpect(status().isNoContent());
 
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Product>> deleted = ArgumentCaptor.forClass(List.class);
@@ -227,10 +288,11 @@ class ProductControllerTest {
 
 		mockMvc.perform(post("/api/product/create").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"name\":\"Rose\",\"price\":12.5,\"quantity\":40}"))
+				.content("{\"name\":\"Rose\",\"price\":288000,\"typeName\":\"ROSES\",\"categoryName\":\"BOUQUET\"}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.name").value("Rose"))
-			.andExpect(jsonPath("$.price").value(12.5));
+			.andExpect(jsonPath("$.price").value(288000))
+			.andExpect(jsonPath("$.stock").value(0));
 
 		ArgumentCaptor<Product> saved = ArgumentCaptor.forClass(Product.class);
 		verify(productRepository).save(saved.capture());
@@ -238,26 +300,41 @@ class ProductControllerTest {
 	}
 
 	@Test
-	void updateSavesTheSubmittedProductWhenTheRowExists() throws Exception {
+	void createRejectsAMissingNameOrPrice() throws Exception {
+		mockMvc.perform(post("/api/product/create").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"price\":288000}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("VALIDATION"))
+			.andExpect(jsonPath("$.errors.name").value("must not be blank"));
+		mockMvc.perform(post("/api/product/create").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"Rose\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors.price").value("must not be null"));
+	}
+
+	@Test
+	void updateReplacesTheRowWithThePathId() throws Exception {
 		when(productRepository.findById(2L)).thenReturn(Optional.of(rose()));
 		when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		mockMvc.perform(put("/api/product/2").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"id\":2,\"name\":\"Tulip\",\"description\":\"Fresh cut\",\"imgUrl\":\"https://cdn.example/tulip.jpg\","
-					+ "\"price\":9.0,\"quantity\":25,\"saleAmount\":1,\"typeName\":\"FLOWER\",\"categoryName\":\"BOUQUET\"}"))
+				.content("{\"id\":77,\"name\":\"Tulip\",\"description\":\"Fresh cut\",\"imgUrl\":\"https://cdn.example/tulip.jpg\","
+					+ "\"price\":199000,\"typeName\":\"TULIPS\",\"categoryName\":\"POTTED\"}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.name").value("Tulip"));
 
 		ArgumentCaptor<Product> saved = ArgumentCaptor.forClass(Product.class);
 		verify(productRepository).save(saved.capture());
+		assertTrue(saved.getValue().getId().equals(2L), "the path id must win over any body id");
 		assertTrue(saved.getValue().getName().equals("Tulip"));
 		assertTrue(saved.getValue().getDescription().equals("Fresh cut"));
 		assertTrue(saved.getValue().getImgUrl().equals("https://cdn.example/tulip.jpg"));
-		assertTrue(saved.getValue().getQuantity().equals(25L));
-		assertTrue(saved.getValue().getSaleAmount().equals(1L));
-		assertTrue(saved.getValue().getTypeName().equals("FLOWER"));
-		assertTrue(saved.getValue().getCategoryName().equals("BOUQUET"));
+		assertEquals(BigDecimal.valueOf(199000), saved.getValue().getPrice());
+		assertTrue(saved.getValue().getTypeName().equals("TULIPS"));
+		assertTrue(saved.getValue().getCategoryName().equals("POTTED"));
 	}
 
 	@Test
@@ -266,7 +343,7 @@ class ProductControllerTest {
 
 		mockMvc.perform(put("/api/product/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"name\":\"Tulip\"}"))
+				.content("{\"name\":\"Tulip\",\"price\":199000}"))
 			.andExpect(status().isNotFound());
 	}
 
@@ -275,7 +352,7 @@ class ProductControllerTest {
 		when(productRepository.findById(2L)).thenReturn(Optional.of(rose()));
 
 		mockMvc.perform(delete("/api/product/2").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
-			.andExpect(status().isOk());
+			.andExpect(status().isNoContent());
 
 		verify(productRepository).deleteById(2L);
 	}
@@ -286,5 +363,15 @@ class ProductControllerTest {
 
 		mockMvc.perform(delete("/api/product/99").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void theSeedColumnsStayReadableForTheNativeInsert() {
+		// The insertWithId SpEL reads quantity and saleAmount through
+		// property access, so the getters must keep answering.
+		Product product = rose();
+		assertEquals(BigDecimal.valueOf(288000), product.getPrice());
+		assertEquals(40L, product.getQuantity());
+		assertEquals(3L, product.getSaleAmount());
 	}
 }

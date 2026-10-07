@@ -2,10 +2,13 @@ package com.lavantien.flowershop.api.product;
 
 import org.hibernate.validator.constraints.Length;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+
+import java.math.BigDecimal;
 
 @Entity
 public class Product {
@@ -17,7 +20,8 @@ public class Product {
 	private String description;
 	@Length(max = 2000)
 	private String imgUrl;
-	private Double price;
+	@Column(precision = 12, scale = 0)
+	private BigDecimal price;
 	private Long quantity;
 	private Long saleAmount = 0L;
 	private String typeName;
@@ -26,7 +30,7 @@ public class Product {
 	public Product() {
 	}
 
-	public Product(String name, @Length(max = 2000) String description, @Length(max = 2000) String imgUrl, Double price, Long quantity, Long saleAmount, String typeName, String categoryName) {
+	public Product(String name, String description, String imgUrl, BigDecimal price, Long quantity, Long saleAmount, String typeName, String categoryName) {
 		this.name = name;
 		this.description = description;
 		this.imgUrl = imgUrl;
@@ -84,28 +88,22 @@ public class Product {
 		this.imgUrl = imgUrl;
 	}
 
-	public Double getPrice() {
+	public BigDecimal getPrice() {
 		return price;
 	}
 
-	public void setPrice(Double price) {
+	public void setPrice(BigDecimal price) {
 		this.price = price;
 	}
 
+	// quantity and saleAmount keep getters only: the input DTO never writes
+	// them and the stock_level sum plus the legacy-field sweep replace both.
 	public Long getQuantity() {
 		return quantity;
 	}
 
-	public void setQuantity(Long quantity) {
-		this.quantity = quantity;
-	}
-
 	public Long getSaleAmount() {
 		return saleAmount;
-	}
-
-	public void setSaleAmount(Long saleAmount) {
-		this.saleAmount = saleAmount;
 	}
 
 	public String getTypeName() {
