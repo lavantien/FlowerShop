@@ -3,6 +3,7 @@ target/
 src/main/resources/public/
 frontend/node/
 /node_modules/
+scripts/screenshots/node_modules/
 
 ### STS ###
 .apt_generated

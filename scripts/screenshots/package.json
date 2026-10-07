@@ -1,0 +1,12 @@
+{
+  "name": "flowershop-screenshots",
+  "private": true,
+  "type": "module",
+  "description": "Captures README screenshots of the running FlowerShop UI through the packaged jar",
+  "scripts": {
+    "capture": "node capture.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "1.63.0"
+  }
+}
