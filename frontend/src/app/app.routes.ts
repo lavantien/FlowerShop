@@ -98,12 +98,6 @@ export const routes: Routes = [
 		]
 	},
 	{
-		path: 'summary',
-		title: 'Summary',
-		canActivate: [adminGuard],
-		loadComponent: () => import('./summary/summary.component').then(m => m.SummaryComponent)
-	},
-	{
 		path: '**',
 		title: 'Not found',
 		loadComponent: () => import('./not-found/not-found.component').then(m => m.NotFoundComponent)

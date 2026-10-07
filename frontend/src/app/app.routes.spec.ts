@@ -21,7 +21,6 @@ import {InfoComponent} from './info/info.component';
 import {ProfileComponent} from './info/profile/profile.component';
 import {OrdersComponent} from './info/orders/orders.component';
 import {WishlistComponent} from './info/wishlist/wishlist.component';
-import {SummaryComponent} from './summary/summary.component';
 import {NotFoundComponent} from './not-found/not-found.component';
 
 @Component({selector: 'app-empty', template: ''})
@@ -42,7 +41,6 @@ describe('app routes', () => {
 			PayComponent,
 			AdminComponent,
 			InfoComponent,
-			SummaryComponent,
 			NotFoundComponent
 		]);
 	});
@@ -52,7 +50,6 @@ describe('app routes', () => {
 		expect(byPath.get('info')?.canActivate).toBeDefined();
 		expect(byPath.get('cart')?.canActivate).toBeDefined();
 		expect(byPath.get('admin')?.canActivate).toBeDefined();
-		expect(byPath.get('summary')?.canActivate).toBeDefined();
 		expect(byPath.get('shop')?.canActivate).toBeUndefined();
 		expect(byPath.get('pay/:paymentId')?.canActivate).toBeUndefined();
 	});

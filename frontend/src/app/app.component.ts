@@ -3,7 +3,6 @@ import {Router, RouterLink, RouterLinkActive, RouterOutlet} from '@angular/route
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
-	faChartLine,
 	faHandshake,
 	faRightFromBracket,
 	faRightToBracket,
@@ -43,7 +42,6 @@ export class AppComponent {
 	readonly faHandshake = faHandshake;
 	readonly faRightToBracket = faRightToBracket;
 	readonly faRightFromBracket = faRightFromBracket;
-	readonly faChartLine = faChartLine;
 	readonly faShoppingCart = faShoppingCart;
 
 	private readonly auth = inject(AuthService);

@@ -31,13 +31,6 @@
 								</a>
 							</li>
 						}
-						@if (isAdmin()) {
-							<li class="nav-item" placement="bottom" tooltip="{{'MAIN.SUMMARY' | translate}}">
-								<a class="nav-link" routerLink="/summary" routerLinkActive="active">
-									<fa-icon [icon]="faChartLine"></fa-icon>
-								</a>
-							</li>
-						}
 						<li class="nav-item" placement="bottom" tooltip="{{'MAIN.CONTACT' | translate}}">
 							<a class="nav-link" routerLink="/contact" routerLinkActive="active">
 								<fa-icon [icon]="faHandshake"></fa-icon>

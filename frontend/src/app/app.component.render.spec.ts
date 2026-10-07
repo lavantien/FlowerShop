@@ -47,7 +47,6 @@ describe('AppComponent shell', () => {
 					{path: 'cart', component: EmptyComponent},
 					{path: 'admin', component: EmptyComponent},
 					{path: 'info', component: EmptyComponent},
-					{path: 'summary', component: EmptyComponent},
 					{path: 'contact', component: EmptyComponent}
 				]),
 				provideTranslateService()
