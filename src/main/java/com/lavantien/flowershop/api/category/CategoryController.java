@@ -48,9 +48,10 @@ public class CategoryController {
 		return ResponseEntity.ok(category.get());
 	}
 
+	@RequireRole(Auth.ADMIN_TYPE)
 	@PostMapping("/create")
 	public ResponseEntity<Category> create(@RequestBody Category category) {
-		return ResponseEntity.ok(category);
+		return ResponseEntity.ok(categoryRepository.save(category));
 	}
 
 	@RequireRole(Auth.ADMIN_TYPE)

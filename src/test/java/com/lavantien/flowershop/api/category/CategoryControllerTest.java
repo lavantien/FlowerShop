@@ -124,12 +124,26 @@ class CategoryControllerTest {
 	}
 
 	@Test
-	void memberCreatesASingleCategory() throws Exception {
+	void memberCannotCreateASingleCategory() throws Exception {
 		mockMvc.perform(post("/api/category/create").header("X-Auth-Token", tokenOf(4, "USER"))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"name\":\"BOUQUET\"}"))
+			.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void adminCreatesASinglePersistedCategory() throws Exception {
+		when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		mockMvc.perform(post("/api/category/create").header("X-Auth-Token", tokenOf(1, "ADMIN"))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"BOUQUET\"}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.name").value("BOUQUET"));
+
+		ArgumentCaptor<Category> saved = ArgumentCaptor.forClass(Category.class);
+		verify(categoryRepository).save(saved.capture());
+		assertTrue(saved.getValue().getName().equals("BOUQUET"));
 	}
 
 	@Test

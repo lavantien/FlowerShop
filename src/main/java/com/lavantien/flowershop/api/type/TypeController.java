@@ -48,9 +48,10 @@ public class TypeController {
 		return ResponseEntity.ok(type.get());
 	}
 
+	@RequireRole(Auth.ADMIN_TYPE)
 	@PostMapping("/create")
 	public ResponseEntity<Type> create(@RequestBody Type type) {
-		return ResponseEntity.ok(type);
+		return ResponseEntity.ok(typeRepository.save(type));
 	}
 
 	@RequireRole(Auth.ADMIN_TYPE)
