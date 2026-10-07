@@ -1,29 +1,9 @@
 import {Injectable, inject} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {Observable, tap} from 'rxjs';
-import {SessionService, SessionUser} from './session.service';
-
-export interface LoginResponse {
-	token: string;
-	user: SessionUser;
-}
-
-export interface RegisterInput {
-	name: string;
-	email: string;
-	password: string;
-	phone: string;
-	address: string;
-	district: string;
-	city: string;
-	answer: string;
-}
-
-export interface ResetPasswordInput {
-	email: string;
-	answer: string;
-	newPassword: string;
-}
+import {API} from '../services/api';
+import {LoginRequest, LoginResponse, RegisterRequest, ResetPasswordRequest, User} from '../models';
+import {SessionService} from './session.service';
 
 @Injectable({providedIn: 'root'})
 export class AuthService {
@@ -31,24 +11,25 @@ export class AuthService {
 	private readonly session = inject(SessionService);
 
 	login(email: string, password: string): Observable<LoginResponse> {
-		return this.http.post<LoginResponse>('/api/auth/login', {email, password}).pipe(
+		const body: LoginRequest = {email, password};
+		return this.http.post<LoginResponse>(API.auth.login, body).pipe(
 			tap(response => this.session.login(response.token, response.user))
 		);
 	}
 
 	// header only by contract, the interceptor attaches the token
 	logout(): Observable<void> {
-		return this.http.post<void>('/api/auth/logout', null).pipe(
+		return this.http.post<void>(API.auth.logout, null).pipe(
 			tap(() => this.session.logout())
 		);
 	}
 
-	register(input: RegisterInput): Observable<SessionUser> {
-		return this.http.post<SessionUser>('/api/user/create', input);
+	register(input: RegisterRequest): Observable<User> {
+		return this.http.post<User>(API.users.create, input);
 	}
 
-	resetPassword(input: ResetPasswordInput): Observable<LoginResponse> {
-		return this.http.post<LoginResponse>('/api/user/resetPassword', input).pipe(
+	resetPassword(input: ResetPasswordRequest): Observable<LoginResponse> {
+		return this.http.post<LoginResponse>(API.users.resetPassword, input).pipe(
 			tap(response => this.session.login(response.token, response.user))
 		);
 	}

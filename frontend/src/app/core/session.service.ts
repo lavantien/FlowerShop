@@ -1,18 +1,8 @@
 import {Injectable, computed, signal} from '@angular/core';
+import {Role, User} from '../models';
 
-export type Role = 'USER' | 'ADMIN';
-
-export interface SessionUser {
-	id: number;
-	name: string;
-	email: string;
-	phone: string;
-	address: string;
-	district: string;
-	city: string;
-	role: Role;
-	enable: boolean;
-}
+export type {Role};
+export type SessionUser = User;
 
 const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
