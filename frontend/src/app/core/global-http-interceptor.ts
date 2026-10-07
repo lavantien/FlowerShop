@@ -5,6 +5,7 @@ import {catchError, finalize, retry, timeout} from 'rxjs/operators';
 import {identity, throwError} from 'rxjs';
 import {SessionService} from './session.service';
 import {ToastService} from './toast.service';
+import {isPaymentPath} from '../services/api';
 
 const TIMEOUT_MS = 10000;
 const RETRY_COUNT = 2;
@@ -40,6 +41,12 @@ export const globalHttpInterceptor: HttpInterceptorFn = (req, next) => {
 		// only reads may replay: a retried post could double-bill a checkout
 		req.method === 'GET' ? retry(RETRY_COUNT) : identity,
 		catchError((error: HttpErrorResponse) => {
+			// A payment 401 means a bad or truncated sig on a public link, not a
+			// dead session: the pay page surfaces its own error, so the interceptor
+			// stays silent and keeps the session alive.
+			if (error.status === 401 && isPaymentPath(req.url)) {
+				return throwError(() => error);
+			}
 			if (error.status === 401) {
 				session.logout();
 				session.requestLogin();

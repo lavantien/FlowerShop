@@ -5,6 +5,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {globalHttpInterceptor} from './global-http-interceptor';
 import {SessionService, SessionUser} from './session.service';
 import {ToastService} from './toast.service';
+import {API} from '../services/api';
 
 const member: SessionUser = {
 	id: 4,
@@ -141,5 +142,33 @@ describe('globalHttpInterceptor', () => {
 		httpMock.expectOne('/api/order').flush(null, {status: 401, statusText: 'Unauthorized'});
 		expect(session.loginRequested()).toBe(1);
 		expect(toasts.toasts()[0].message).toBe('Session expired. Please sign in again.');
+	});
+
+	it('keeps the session and stays silent on a 401 from a payment path', () => {
+		session.login('token-1', member);
+		const requested = session.loginRequested();
+		const http = TestBed.inject(HttpClient);
+		let errors = 0;
+		// posts never retry, so a single 401 surfaces immediately
+		http.post(API.payments.confirm('pay-1'), null).subscribe({error: () => errors++});
+		httpMock.expectOne(API.payments.confirm('pay-1')).flush(
+			{title: 'Unauthorized', status: 401, detail: 'Payment signature is wrong.'},
+			{status: 401, statusText: 'Unauthorized'});
+		expect(errors).toBe(1);
+		expect(session.isLoggedIn()).toBe(true);
+		expect(localStorage.getItem('token')).toBe('token-1');
+		expect(session.loginRequested()).toBe(requested);
+		expect(toasts.toasts()).toHaveLength(0);
+	});
+
+	it('still toasts the problem detail on non 401 errors from a payment path', () => {
+		const http = TestBed.inject(HttpClient);
+		http.post(API.payments.cancel('pay-1'), null).subscribe({error: () => undefined});
+		httpMock.expectOne(API.payments.cancel('pay-1')).flush(
+			{type: 'about:blank', title: 'Conflict', status: 409, detail: 'The payment is already confirmed.', code: 'PAYMENT_CONFIRMED'},
+			{status: 409, statusText: 'Conflict'});
+		expect(toasts.toasts()).toHaveLength(1);
+		expect(toasts.toasts()[0].kind).toBe('danger');
+		expect(toasts.toasts()[0].message).toBe('The payment is already confirmed.');
 	});
 });
