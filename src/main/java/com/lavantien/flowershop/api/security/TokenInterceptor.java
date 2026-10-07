@@ -27,6 +27,8 @@ public class TokenInterceptor implements HandlerInterceptor {
 		new PublicRule(HttpMethod.GET, "/api/category/*"),
 		new PublicRule(HttpMethod.GET, "/api/type"),
 		new PublicRule(HttpMethod.GET, "/api/type/*"),
+		// The listing only: per-branch stock stays admin-gated.
+		new PublicRule(HttpMethod.GET, "/api/branch"),
 		new PublicRule(HttpMethod.POST, "/api/auth/login"),
 		new PublicRule(HttpMethod.POST, "/api/user/create"),
 		new PublicRule(HttpMethod.POST, "/api/user/resetPassword"));

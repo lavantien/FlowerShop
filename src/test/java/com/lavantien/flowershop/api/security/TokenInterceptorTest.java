@@ -55,9 +55,18 @@ class TokenInterceptorTest {
 		mockMvc.perform(get("/api/product"))
 			.andExpect(status().isOk())
 			.andExpect(content().string("public"));
+		mockMvc.perform(get("/api/branch"))
+			.andExpect(status().isOk())
+			.andExpect(content().string("public"));
 		mockMvc.perform(post("/api/user/create").contentType(MediaType.APPLICATION_JSON).content("{}"))
 			.andExpect(status().isOk())
 			.andExpect(content().string("public"));
+	}
+
+	@Test
+	void theBranchStockSurfaceStaysSessionGated() throws Exception {
+		mockMvc.perform(get("/api/branch/3/stock"))
+			.andExpect(status().isUnauthorized());
 	}
 
 	@Test
@@ -171,6 +180,16 @@ class TokenInterceptorTest {
 		@GetMapping("/api/product")
 		public ResponseEntity<String> publicSurface() {
 			return ResponseEntity.ok("public");
+		}
+
+		@GetMapping("/api/branch")
+		public ResponseEntity<String> branches() {
+			return ResponseEntity.ok("public");
+		}
+
+		@GetMapping("/api/branch/3/stock")
+		public ResponseEntity<String> branchStock() {
+			return ResponseEntity.ok("stock");
 		}
 
 		@PostMapping("/api/user/create")

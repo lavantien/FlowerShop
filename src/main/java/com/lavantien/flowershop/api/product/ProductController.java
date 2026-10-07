@@ -1,6 +1,7 @@
 package com.lavantien.flowershop.api.product;
 
 import com.lavantien.flowershop.api.PageDto;
+import com.lavantien.flowershop.api.branch.StockLevelRepository;
 import com.lavantien.flowershop.api.error.NotFoundException;
 import com.lavantien.flowershop.api.security.RequireRole;
 import com.lavantien.flowershop.api.user.Role;
@@ -48,10 +49,13 @@ public class ProductController {
 	}
 
 	private final ProductRepository productRepository;
+	private final StockLevelRepository stockLevelRepository;
 	private final ProductService productService;
 
-	public ProductController(ProductRepository productRepository, ProductService productService) {
+	public ProductController(ProductRepository productRepository, StockLevelRepository stockLevelRepository,
+		ProductService productService) {
 		this.productRepository = productRepository;
+		this.stockLevelRepository = stockLevelRepository;
 		this.productService = productService;
 	}
 
@@ -63,12 +67,12 @@ public class ProductController {
 		CatalogQuery query = CatalogQuery.of(search, category, type, sort, page, size);
 		Page<Product> products = productRepository.findAll(catalogSpecification(query),
 			PageRequest.of(query.page(), query.size(), query.sort()));
-		return PageDto.from(products, ProductView::from);
+		return PageDto.from(products, this::view);
 	}
 
 	@GetMapping("/{id}")
 	public ProductView getById(@PathVariable Long id) {
-		return ProductView.from(productRepository.findById(id)
+		return view(productRepository.findById(id)
 			.orElseThrow(() -> new NotFoundException("no product with id " + id)));
 	}
 
@@ -84,7 +88,7 @@ public class ProductController {
 			// transaction: retry the whole payload in a fresh one, as updates.
 			saved = productService.upsertAll(products);
 		}
-		return saved.stream().map(ProductView::from).toList();
+		return saved.stream().map(this::view).toList();
 	}
 
 	@RequireRole(Role.ADMIN)
@@ -101,7 +105,7 @@ public class ProductController {
 	@RequireRole(Role.ADMIN)
 	@PostMapping("/create")
 	public ProductView create(@Valid @RequestBody ProductInput input) {
-		return ProductView.from(productRepository.save(input.toEntity()));
+		return view(productRepository.save(input.toEntity()));
 	}
 
 	@RequireRole(Role.ADMIN)
@@ -110,7 +114,7 @@ public class ProductController {
 		productRepository.findById(id).orElseThrow(() -> new NotFoundException("no product with id " + id));
 		Product replacement = input.toEntity();
 		replacement.setId(id);
-		return ProductView.from(productRepository.save(replacement));
+		return view(productRepository.save(replacement));
 	}
 
 	@RequireRole(Role.ADMIN)
@@ -119,6 +123,10 @@ public class ProductController {
 		productRepository.findById(id).orElseThrow(() -> new NotFoundException("no product with id " + id));
 		productRepository.deleteById(id);
 		return ResponseEntity.noContent().build();
+	}
+
+	private ProductView view(Product product) {
+		return ProductView.of(product, stockLevelRepository.sumQuantityByProductId(product.getId()));
 	}
 
 	static Specification<Product> catalogSpecification(CatalogQuery query) {

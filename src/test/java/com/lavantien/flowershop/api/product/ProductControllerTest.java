@@ -1,5 +1,6 @@
 package com.lavantien.flowershop.api.product;
 
+import com.lavantien.flowershop.api.branch.StockLevelRepository;
 import com.lavantien.flowershop.api.error.ApiExceptionHandler;
 import com.lavantien.flowershop.api.security.TokenInterceptor;
 import com.lavantien.flowershop.api.user.Role;
@@ -43,15 +44,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class ProductControllerTest {
 	private ProductRepository productRepository;
+	private StockLevelRepository stockLevelRepository;
 	private MockMvc mockMvc;
 
 	@BeforeEach
 	void setUp() {
 		productRepository = mock(ProductRepository.class);
+		stockLevelRepository = mock(StockLevelRepository.class);
 		UserRepository userRepository = mock(UserRepository.class);
 		UserService userService = new UserService();
 		mockMvc = MockMvcBuilders.standaloneSetup(
-				new ProductController(productRepository, new ProductService(productRepository)))
+				new ProductController(productRepository, stockLevelRepository, new ProductService(productRepository)))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
 			.setControllerAdvice(new ApiExceptionHandler())
 			.build();
@@ -69,6 +72,7 @@ class ProductControllerTest {
 	void anonymousBrowsesTheFirstPageOfTheCatalog() throws Exception {
 		when(productRepository.findAll(any(Specification.class), any(Pageable.class)))
 			.thenReturn(new PageImpl<>(List.of(rose()), PageRequest.of(0, 12), 1));
+		when(stockLevelRepository.sumQuantityByProductId(2L)).thenReturn(40L);
 
 		mockMvc.perform(get("/api/product"))
 			.andExpect(status().isOk())
@@ -147,6 +151,7 @@ class ProductControllerTest {
 	@Test
 	void productIsFoundById() throws Exception {
 		when(productRepository.findById(2L)).thenReturn(Optional.of(rose()));
+		when(stockLevelRepository.sumQuantityByProductId(2L)).thenReturn(40L);
 
 		mockMvc.perform(get("/api/product/2"))
 			.andExpect(status().isOk())
