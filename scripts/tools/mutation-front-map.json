@@ -1,6 +1,6 @@
 {
 	"reportNotes": [
-		"First and only full run at e1478cf over the curated 90-mutant set: 90 killed, 0 survivors, no post-run map changes. The three culled equivalents were removed by analysis before the run, each with its reason attached to the lineOpExcludes entry. Seven flips die as compile kills where the operator also breaks TypeScript narrowing inside the same expression."
+		"First and only full run at e1478cf over the curated 90-mutant set: 90 killed, 0 survivors, no post-run map changes. The two culled equivalents were removed by analysis before the run, each with its reason attached to the lineOpExcludes entry. Seven flips die as compile kills where the operator also breaks TypeScript narrowing inside the same expression. The cart array guard NOT_DROP was later un-culled: dropping the ! breaks the array narrowing into a compile kill, and the reload survival spec pins the reload behavior beneath it."
 	],
 	"targets": [
 		{
@@ -35,13 +35,6 @@
 			"name": "CartService",
 			"file": "frontend/src/app/core/cart.service.ts",
 			"tests": ["src/app/core/cart.service.spec.ts", "src/app/core/cart.fuzz.spec.ts"],
-			"lineOpExcludes": [
-				{
-					"line": 52,
-					"ops": ["NOT_DROP"],
-					"reason": "a non array parsed value then calls .filter inside the same try that already returns an empty cart"
-				}
-			],
 			"explicit": [
 				{
 					"line": 19,

@@ -122,6 +122,22 @@ describe('CartService fuzz', () => {
 		expect(cart.lines()).toEqual([validLine(2, 2)]);
 	});
 
+	it('keeps every line a filled cart saved through the service across a full reload', () => {
+		const cart = boot();
+		cart.add(validItem);
+		cart.add({...validItem, id: 9});
+		cart.changeQuantity(validItem.id, 3);
+		TestBed.tick();
+		const saved = JSON.parse(localStorage.getItem('cart') ?? 'invalid');
+		TestBed.resetTestingModule();
+		TestBed.configureTestingModule({});
+		const reloaded = boot();
+		expect(saved).toEqual([validLine(validItem.id, 3), validLine(9, 1)]);
+		expect(reloaded.lines()).toEqual([validLine(validItem.id, 3), validLine(9, 1)]);
+		expect(reloaded.count()).toBe(4);
+		expect(reloaded.subtotal()).toBe(4 * validItem.price);
+	});
+
 	it('drops the line for non finite or non positive generated quantities', () => {
 		const quantities = [NaN, Infinity, -Infinity, 0, -1, -1e308, gen.intBetween(-999, 0)];
 		for (const quantity of quantities) {
