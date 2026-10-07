@@ -52,7 +52,7 @@ db-nuke: ## stop MySQL container and drop the volume
 	@docker compose down -v
 
 db-seed: ## seed schema, users, taxonomy, branches, coupons (run.sql) plus products and stock (seed.sql)
-	@{ tail -n +3 db/run.sql; cat db/seed.sql; } | docker compose exec -T mysql mysql --default-character-set=utf8mb4 -u$(DB_USER) -p$(DB_PASS) flowershop
+	@{ sed -E '/^(CREATE DATABASE|USE)[[:space:]]/Id' db/run.sql; cat db/seed.sql; } | docker compose exec -T mysql mysql --default-character-set=utf8mb4 -u$(DB_USER) -p$(DB_PASS) flowershop
 
 db-reset: db-nuke db-up db-seed ## drop the volume, boot MySQL fresh, and seed everything
 
