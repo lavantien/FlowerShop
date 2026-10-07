@@ -30,28 +30,30 @@ The Maven wrapper (`mvnw`) is included and `make` targets wrap every build and r
 4. Access our application via an endpoint, for example an `AWS Cloud Endpoint`.
 
 #### Some pictures:
-1. Guess Site shop page
-![Guess Site shop page](./project-pictures/2019-12-25_3.png)
-2. Guess Site shopping cart
-![Guess Site shopping cart](./project-pictures/2019-12-25_5.png)
+1. Guest Site shop page
+![Guest Site shop page](./project-pictures/01-shop-page.png)
+2. Guest Site shopping cart
+![Guest Site shopping cart](./project-pictures/02-shopping-cart.png)
 3. Member Site account details
-![Member Site account details](./project-pictures/2019-12-25_4.png)
+![Member Site account details](./project-pictures/03-member-account-details.png)
 4. Admin Site products listing
-![Admin Site products listing](./project-pictures/2019-12-25.png)
+![Admin Site products listing](./project-pictures/04-admin-products.png)
 5. Admin Site transaction summary
-![Admin Site transaction summary](./project-pictures/2019-12-25_1.png)
+![Admin Site transaction summary](./project-pictures/05-admin-transaction-summary.png)
 6. Admin Page create new product
-![Admin Page create new product](./project-pictures/2019-12-25_6.png)
+![Admin Page create new product](./project-pictures/06-admin-create-product.png)
 7. Admin Page import products from Excel
-![Admin Page import products from Excel](./project-pictures/2019-12-25_7.png)
+![Admin Page import products from Excel](./project-pictures/07-admin-import-excel.png)
 8. Admin Page export products to Excel
-![Admin Page export products to Excel](./project-pictures/2019-12-25_8.png)
+![Admin Page export products to Excel](./project-pictures/08-admin-export-excel.png)
 9. Admin Page edit product
-![Admin Page edit product](./project-pictures/2019-12-25_9.png)
+![Admin Page edit product](./project-pictures/09-admin-edit-product.png)
 10. Admin Page batch delete
-![Admin Page batch delete](./project-pictures/2019-12-25_12.png)
+![Admin Page batch delete](./project-pictures/10-admin-batch-delete.png)
 11. Product details displays when clicked
-![Admin Page batch delete](./project-pictures/ScreenshotFrom20200807.png)
+![Product details displays when clicked](./project-pictures/11-product-details.png)
+
+Regenerate this set against the current build with `make screenshots`.
 
 #### A previous successful build — historical (Aug 7th 2020, Spring Boot 2.3 / Angular 10):
 ```
