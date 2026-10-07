@@ -1,0 +1,50 @@
+.dashboard-wrapper {
+	margin: 10px;
+
+	.tile-value {
+		font-size: 1.4rem;
+		font-weight: bold;
+	}
+
+	.bar-row {
+		display: flex;
+		align-items: center;
+		margin-bottom: 0.4rem;
+	}
+
+	.bar-label {
+		flex: 0 0 170px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.bar-track {
+		flex: 1 1 auto;
+		background-color: rgba(0, 0, 0, .08);
+		border-radius: 4px;
+		height: 16px;
+		overflow: hidden;
+	}
+
+	.bar-fill {
+		height: 100%;
+
+		&.revenue {
+			background-color: #007bff;
+		}
+
+		&.status {
+			background-color: #20c997;
+		}
+
+		&.product {
+			background-color: #fd7e14;
+		}
+	}
+
+	.bar-value {
+		flex: 0 0 110px;
+		text-align: right;
+	}
+}

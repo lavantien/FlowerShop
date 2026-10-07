@@ -1,0 +1,163 @@
+<div class="branches-wrapper table-responsive">
+	<div class="card mb-3">
+		<div class="card-header bg-light text-dark"><b>{{'ADMIN.BRANCHES' | translate}}</b></div>
+		<div class="card-body">
+			<form (ngSubmit)="onSubmit()" [formGroup]="form" class="row align-items-end mb-3">
+				<div class="col-2">
+					<label class="form-label" for="branchName">{{'ADMIN.NAME' | translate}}</label>
+					<input class="form-control" data-test="admin-branch-name" formControlName="name" id="branchName"
+					       type="text">
+				</div>
+				<div class="col-2">
+					<label class="form-label" for="branchAddress">{{'MAIN.ADDRESS' | translate}}</label>
+					<input class="form-control" data-test="admin-branch-address" formControlName="address"
+					       id="branchAddress" type="text">
+				</div>
+				<div class="col-2">
+					<label class="form-label" for="branchCity">{{'MAIN.CITY' | translate}}</label>
+					<select (change)="onCityChange()" class="form-control" data-test="admin-branch-city"
+					        formControlName="city" id="branchCity">
+						@for (city of geo.cities(); track city.name) {
+							<option [value]="city.name">{{city.name}}</option>
+						}
+					</select>
+				</div>
+				<div class="col-2">
+					<label class="form-label" for="branchDistrict">{{'MAIN.DISTRICT' | translate}}</label>
+					<select class="form-control" data-test="admin-branch-district" formControlName="district"
+					        id="branchDistrict">
+						@for (district of districtsForCity(); track district.name) {
+							<option [value]="district.name">{{district.name}}</option>
+						}
+					</select>
+				</div>
+				<div class="col-1">
+					<label class="form-label" for="branchLat">{{'ADMIN.LAT' | translate}}</label>
+					<input class="form-control" data-test="admin-branch-lat" formControlName="lat" id="branchLat"
+					       step="0.0001" type="number">
+				</div>
+				<div class="col-1">
+					<label class="form-label" for="branchLng">{{'ADMIN.LNG' | translate}}</label>
+					<input class="form-control" data-test="admin-branch-lng" formControlName="lng" id="branchLng"
+					       step="0.0001" type="number">
+				</div>
+				<div class="col-1 form-check text-center">
+					<input class="form-check-input" data-test="admin-branch-active" formControlName="active"
+					       id="branchActive" type="checkbox">
+					<label class="form-check-label" for="branchActive">{{'ADMIN.ACTIVE' | translate}}</label>
+				</div>
+				<div class="col-1">
+					<button [disabled]="form.invalid || saving()" class="btn btn-success" data-test="admin-branch-save"
+					        type="submit">
+						<fa-icon [icon]="faPlus"></fa-icon>
+					</button>
+					@if (editId() !== null) {
+						<button (click)="resetForm()" class="btn btn-dark mt-1" type="button">
+							{{'ADMIN.REFRESH' | translate}}
+						</button>
+					}
+				</div>
+			</form>
+			<table class="table table-bordered table-striped table-hover table-sm">
+				<thead class="bg-light text-dark">
+				<tr>
+					<th scope="col">#</th>
+					<th scope="col">{{'ADMIN.NAME' | translate}}</th>
+					<th scope="col">{{'MAIN.ADDRESS' | translate}}</th>
+					<th scope="col">{{'MAIN.DISTRICT' | translate}}</th>
+					<th scope="col">{{'MAIN.CITY' | translate}}</th>
+					<th scope="col">{{'ADMIN.LAT' | translate}}</th>
+					<th scope="col">{{'ADMIN.LNG' | translate}}</th>
+					<th scope="col">{{'ADMIN.ACTIVE' | translate}}</th>
+					<th scope="col">{{'ADMIN.ACTION' | translate}}</th>
+				</tr>
+				</thead>
+				<tbody>
+				@for (branch of branches(); track branch.id) {
+					<tr>
+						<th scope="row">{{branch.id}}</th>
+						<td>{{branch.name}}</td>
+						<td>{{branch.address}}</td>
+						<td>{{branch.district}}</td>
+						<td>{{branch.city}}</td>
+						<td>{{branch.lat}}</td>
+						<td>{{branch.lng}}</td>
+						<td>
+							@if (branch.active) {
+								<span class="badge text-bg-success">{{'ADMIN.ACTIVE' | translate}}</span>
+							} @else {
+								<span class="badge text-bg-secondary">{{'ADMIN.INACTIVE' | translate}}</span>
+							}
+						</td>
+						<td>
+							<button (click)="editBranch(branch)" class="btn btn-info btn-sm me-1"
+							        data-test="admin-branch-edit" placement="bottom"
+							        tooltip="{{'ADMIN.EDIT' | translate}}" type="button">
+								<fa-icon [icon]="faPen"></fa-icon>
+							</button>
+							<button (click)="openStockEditor(stockTemplate, branch)" class="btn btn-dark btn-sm me-1"
+							        data-test="admin-branch-stock" placement="bottom"
+							        tooltip="{{'ADMIN.STOCK_EDITOR' | translate}}" type="button">
+								<fa-icon [icon]="faBoxesStacked"></fa-icon>
+							</button>
+							<button (click)="onDelete(branch)" class="btn btn-warning btn-sm"
+							        data-test="admin-branch-delete" placement="bottom"
+							        tooltip="{{'ADMIN.DELETE' | translate}}" type="button">
+								<fa-icon [icon]="faTrash"></fa-icon>
+							</button>
+						</td>
+					</tr>
+				}
+				@if (branches().length === 0) {
+					<tr>
+						<td colspan="9"><i>{{'ADMIN.NO_BRANCHES' | translate}}</i></td>
+					</tr>
+				}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+<ng-template #stockTemplate>
+	<div class="modal-header bg-light text-dark">
+		<h4 class="modal-title float-start">{{'ADMIN.STOCK_EDITOR' | translate}}: {{stockBranch()?.name}}</h4>
+		<button (click)="modalRef?.hide()" class="btn-close float-end" type="button" aria-label="Close"></button>
+	</div>
+	<div class="modal-body table-responsive wrapper-stock-table">
+		<table class="table table-bordered table-striped table-sm">
+			<thead class="bg-light text-dark">
+			<tr>
+				<th scope="col">#</th>
+				<th scope="col">{{'ADMIN.PRODUCT' | translate}}</th>
+				<th scope="col">{{'ADMIN.STOCK' | translate}}</th>
+				<th scope="col">{{'ADMIN.ACTION' | translate}}</th>
+			</tr>
+			</thead>
+			<tbody>
+			@for (product of products(); track product.id) {
+				<tr>
+					<th scope="row">{{product.id}}</th>
+					<td>{{product.name}}</td>
+					<td>
+						<input (input)="onQuantityInput(product.id, $any($event.target).value)"
+						       [value]="quantityFor(product.id)" class="form-control form-control-sm quantity-input"
+						       data-test="admin-stock-quantity" min="0" type="number">
+					</td>
+					<td>
+						<button (click)="onSaveStock(product.id)" [disabled]="stockSaving() !== null"
+						        class="btn btn-sm btn-success" data-test="admin-stock-save" type="button">
+							{{'ADMIN.STOCK_SET' | translate}}
+						</button>
+					</td>
+				</tr>
+			}
+			@if (products().length === 0) {
+				<tr>
+					<td colspan="4"><i>{{'ADMIN.NO_PRODUCT_FOUND' | translate}}</i></td>
+				</tr>
+			}
+			</tbody>
+		</table>
+	</div>
+</ng-template>

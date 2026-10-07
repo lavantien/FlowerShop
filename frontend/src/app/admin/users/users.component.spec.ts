@@ -154,6 +154,16 @@ describe('AdminUsersComponent', () => {
 		expect(component.busyId()).toBeNull();
 	});
 
+	it('toasts the generic failure when an update is refused', () => {
+		const danger = vi.spyOn(toast, 'danger');
+		flush();
+		((fixture.nativeElement as HTMLElement).querySelectorAll('[data-test="admin-user-enable"]')[1] as HTMLButtonElement).click();
+		httpMock.expectOne('/api/user/4').flush('boom', {status: 500, statusText: 'Server Error'});
+		expect(danger).toHaveBeenCalledTimes(1);
+		expect(danger.mock.calls[0][0]).toBe('ADMIN.ACTION_FAILED');
+		expect(component.busyId()).toBeNull();
+	});
+
 	it('ignores a second action while one is in flight', () => {
 		flush();
 		component.onDelete(users[1]);

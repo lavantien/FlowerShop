@@ -9,6 +9,9 @@ import {ProductsComponent} from './products/products.component';
 import {AdminOrdersComponent} from './orders/orders.component';
 import {AdminUsersComponent} from './users/users.component';
 import {AdminTaxonomyComponent} from './taxonomy/taxonomy.component';
+import {AdminCouponsComponent} from './coupons/coupons.component';
+import {AdminBranchesComponent} from './branches/branches.component';
+import {AdminDashboardComponent} from './dashboard/dashboard.component';
 import {SessionService, SessionUser} from '../core/session.service';
 
 const admin: SessionUser = {
@@ -40,7 +43,10 @@ describe('AdminComponent shell', () => {
 							{path: 'products', component: ProductsComponent},
 							{path: 'orders', component: AdminOrdersComponent},
 							{path: 'users', component: AdminUsersComponent},
-							{path: 'taxonomy', component: AdminTaxonomyComponent}
+							{path: 'taxonomy', component: AdminTaxonomyComponent},
+							{path: 'coupons', component: AdminCouponsComponent},
+							{path: 'branches', component: AdminBranchesComponent},
+							{path: 'dashboard', component: AdminDashboardComponent}
 						]
 					},
 					{path: '**', component: AdminComponent}
@@ -72,7 +78,7 @@ describe('AdminComponent shell', () => {
 		}
 	});
 
-	it('renders the four admin tabs', () => {
+	it('renders the seven admin tabs', () => {
 		configure();
 		fixture.detectChanges();
 		const element: HTMLElement = fixture.nativeElement;
@@ -80,6 +86,9 @@ describe('AdminComponent shell', () => {
 		expect(element.textContent).toContain('ADMIN.TAB_ORDERS');
 		expect(element.textContent).toContain('ADMIN.TAB_USERS');
 		expect(element.textContent).toContain('ADMIN.TAB_TAXONOMY');
+		expect(element.textContent).toContain('ADMIN.TAB_COUPONS');
+		expect(element.textContent).toContain('ADMIN.TAB_BRANCHES');
+		expect(element.textContent).toContain('ADMIN.TAB_DASHBOARD');
 		expect(element.querySelector('router-outlet')).not.toBeNull();
 	});
 

@@ -14,6 +14,9 @@ import {ProductsComponent} from './admin/products/products.component';
 import {AdminOrdersComponent} from './admin/orders/orders.component';
 import {AdminUsersComponent} from './admin/users/users.component';
 import {AdminTaxonomyComponent} from './admin/taxonomy/taxonomy.component';
+import {AdminCouponsComponent} from './admin/coupons/coupons.component';
+import {AdminBranchesComponent} from './admin/branches/branches.component';
+import {AdminDashboardComponent} from './admin/dashboard/dashboard.component';
 import {InfoComponent} from './info/info.component';
 import {ProfileComponent} from './info/profile/profile.component';
 import {OrdersComponent} from './info/orders/orders.component';
@@ -71,10 +74,18 @@ describe('app routes', () => {
 		const byPath = new Map(routes.map(route => [route.path, route]));
 		const adminRoute = byPath.get('admin');
 		expect(adminRoute?.canActivate).toBeDefined();
-		expect(adminRoute?.children?.length).toBe(5);
+		expect(adminRoute?.children?.length).toBe(8);
 		expect(adminRoute?.children?.[0]).toEqual({path: '', pathMatch: 'full', redirectTo: 'products'});
 		const loaded = await Promise.all(adminRoute!.children!.slice(1).map(child => child.loadComponent!()));
-		expect(loaded).toEqual([ProductsComponent, AdminOrdersComponent, AdminUsersComponent, AdminTaxonomyComponent]);
+		expect(loaded).toEqual([
+			ProductsComponent,
+			AdminOrdersComponent,
+			AdminUsersComponent,
+			AdminTaxonomyComponent,
+			AdminCouponsComponent,
+			AdminBranchesComponent,
+			AdminDashboardComponent
+		]);
 	});
 });
 

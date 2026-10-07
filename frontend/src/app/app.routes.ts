@@ -55,6 +55,21 @@ export const routes: Routes = [
 				path: 'taxonomy',
 				title: 'Taxonomy',
 				loadComponent: () => import('./admin/taxonomy/taxonomy.component').then(m => m.AdminTaxonomyComponent)
+			},
+			{
+				path: 'coupons',
+				title: 'Coupons',
+				loadComponent: () => import('./admin/coupons/coupons.component').then(m => m.AdminCouponsComponent)
+			},
+			{
+				path: 'branches',
+				title: 'Branches',
+				loadComponent: () => import('./admin/branches/branches.component').then(m => m.AdminBranchesComponent)
+			},
+			{
+				path: 'dashboard',
+				title: 'Dashboard',
+				loadComponent: () => import('./admin/dashboard/dashboard.component').then(m => m.AdminDashboardComponent)
 			}
 		]
 	},

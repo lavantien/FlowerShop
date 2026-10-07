@@ -181,4 +181,40 @@ describe('AdminTaxonomyComponent', () => {
 		expect(success).toHaveBeenCalledTimes(1);
 		expect(component.categories().length).toBe(2);
 	});
+
+	it('toasts the generic failure for a non conflict save error', () => {
+		const danger = vi.spyOn(toast, 'danger');
+		mount();
+		const input = (fixture.nativeElement as HTMLElement).querySelector('[data-test="admin-category-name"]') as HTMLInputElement;
+		input.value = 'Dried';
+		input.dispatchEvent(new Event('input', {bubbles: true}));
+		((fixture.nativeElement as HTMLElement).querySelector('[data-test="admin-category-save"]') as HTMLButtonElement).click();
+		httpMock.expectOne('/api/category/create').flush('boom', {status: 500, statusText: 'Server Error'});
+		expect(danger).toHaveBeenCalledTimes(1);
+		expect(danger.mock.calls[0][0]).toBe('ADMIN.TAXONOMY_SAVE_FAILED');
+	});
+
+	it('toasts the generic failure for a non conflict delete error', () => {
+		const danger = vi.spyOn(toast, 'danger');
+		mount();
+		((fixture.nativeElement as HTMLElement).querySelector('[data-test="admin-category-delete"]') as HTMLButtonElement).click();
+		httpMock.expectOne('/api/category/1').flush('boom', {status: 500, statusText: 'Server Error'});
+		expect(danger).toHaveBeenCalledTimes(1);
+		expect(danger.mock.calls[0][0]).toBe('ADMIN.TAXONOMY_DELETE_FAILED');
+	});
+
+	it('resets an edit in progress through the refresh buttons', () => {
+		mount();
+		const element = fixture.nativeElement as HTMLElement;
+		(element.querySelector('[data-test="admin-category-edit"]') as HTMLButtonElement).click();
+		(element.querySelector('[data-test="admin-type-edit"]') as HTMLButtonElement).click();
+		fixture.detectChanges();
+		expect(component.editCategoryId()).toBe(1);
+		expect(component.editTypeId()).toBe(1);
+		(element.querySelector('[data-test="admin-category-save"] + .btn-dark') as HTMLButtonElement).click();
+		(element.querySelector('[data-test="admin-type-save"] + .btn-dark') as HTMLButtonElement).click();
+		expect(component.editCategoryId()).toBeNull();
+		expect(component.editTypeId()).toBeNull();
+		expect(component.categoryForm.controls.name.value).toBe('');
+	});
 });

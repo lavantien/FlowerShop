@@ -1,0 +1,107 @@
+<div class="dashboard-wrapper">
+	<div class="row mb-3">
+		<div class="col-2">
+			<input (change)="onFromChange(fromInput.value)" #fromInput [value]="from()" class="form-control"
+			       data-test="admin-dashboard-from" placeholder="{{'ADMIN.FROM' | translate}}" type="date">
+		</div>
+		<div class="col-2">
+			<input (change)="onToChange(toInput.value)" #toInput [value]="to()" class="form-control"
+			       data-test="admin-dashboard-to" placeholder="{{'ADMIN.TO' | translate}}" type="date">
+		</div>
+	</div>
+
+	@if (report(); as sales) {
+		<div class="row mb-3">
+			<div class="col-4">
+				<div class="card text-center" data-test="admin-dashboard-tile">
+					<div class="card-header bg-light text-dark">{{'ADMIN.REVENUE' | translate}}</div>
+					<div class="card-body">
+						<div class="tile-value">
+							{{sales.totals.revenue | currency:'VND':'symbol':'1.0-0':lang()}}
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-4">
+				<div class="card text-center" data-test="admin-dashboard-tile">
+					<div class="card-header bg-light text-dark">{{'ADMIN.ORDERS' | translate}}</div>
+					<div class="card-body">
+						<div class="tile-value">{{sales.totals.orders}}</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-4">
+				<div class="card text-center" data-test="admin-dashboard-tile">
+					<div class="card-header bg-light text-dark">{{'ADMIN.AVG_ORDER' | translate}}</div>
+					<div class="card-body">
+						<div class="tile-value">
+							{{sales.totals.avgOrder | currency:'VND':'symbol':'1.0-0':lang()}}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-6 mb-3">
+				<div class="card">
+					<div class="card-header bg-light text-dark"><b>{{'ADMIN.REVENUE_BY_DAY' | translate}}</b></div>
+					<div class="card-body">
+						@if (revenueBars().length === 0) {
+							<i>{{'ADMIN.DASH_EMPTY' | translate}}</i>
+						}
+						@for (bar of revenueBars(); track bar.label) {
+							<div class="bar-row" data-test="admin-revenue-bar">
+								<span class="bar-label">{{bar.label}}</span>
+								<div class="bar-track">
+									<div class="bar-fill revenue" [style.width.%]="bar.share"></div>
+								</div>
+								<span class="bar-value">{{bar.value | currency:'VND':'symbol':'1.0-0':lang()}}</span>
+							</div>
+						}
+					</div>
+				</div>
+			</div>
+			<div class="col-6 mb-3">
+				<div class="card">
+					<div class="card-header bg-light text-dark"><b>{{'ADMIN.COUNTS_BY_STATUS' | translate}}</b></div>
+					<div class="card-body">
+						@for (bar of statusBars(); track bar.label) {
+							<div class="bar-row" data-test="admin-status-bar">
+								<span class="bar-label">{{'INFO.STATUS_' + bar.label | translate}}</span>
+								<div class="bar-track">
+									<div class="bar-fill status" [style.width.%]="bar.share"></div>
+								</div>
+								<span class="bar-value">{{bar.value}}</span>
+							</div>
+						}
+					</div>
+				</div>
+			</div>
+			<div class="col-12">
+				<div class="card">
+					<div class="card-header bg-light text-dark"><b>{{'ADMIN.TOP_PRODUCTS' | translate}}</b></div>
+					<div class="card-body">
+						@if (productBars().length === 0) {
+							<i>{{'ADMIN.DASH_EMPTY' | translate}}</i>
+						}
+						@for (bar of productBars(); track bar.label) {
+							<div class="bar-row" data-test="admin-product-bar">
+								<span class="bar-label">{{bar.label}}</span>
+								<div class="bar-track">
+									<div class="bar-fill product" [style.width.%]="bar.share"></div>
+								</div>
+								<span class="bar-value">{{bar.value}}</span>
+							</div>
+						}
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+	@if (report() === null) {
+		<div class="text-center" data-test="admin-dashboard-empty">
+			<i>{{'ADMIN.DASH_EMPTY' | translate}}</i>
+		</div>
+	}
+</div>

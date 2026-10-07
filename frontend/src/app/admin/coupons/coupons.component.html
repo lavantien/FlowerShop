@@ -1,0 +1,109 @@
+<div class="coupons-wrapper">
+	<div class="card mb-3">
+		<div class="card-header bg-light text-dark"><b>{{'ADMIN.COUPONS' | translate}}</b></div>
+		<div class="card-body">
+			<form (ngSubmit)="onSubmit()" [formGroup]="form" class="row align-items-end mb-3">
+				<div class="col-2">
+					<label class="form-label" for="couponCode">{{'ADMIN.CODE' | translate}}</label>
+					<input class="form-control" data-test="admin-coupon-code" formControlName="code" id="couponCode"
+					       type="text">
+				</div>
+				<div class="col-2">
+					<label class="form-label" for="couponKind">{{'ADMIN.KIND' | translate}}</label>
+					<select class="form-control" data-test="admin-coupon-kind" formControlName="kind" id="couponKind">
+						@for (kind of kinds; track kind) {
+							<option [value]="kind">{{'ADMIN.KIND_' + kind | translate}}</option>
+						}
+					</select>
+				</div>
+				<div class="col-2">
+					<label class="form-label" for="couponValue">{{'ADMIN.VALUE' | translate}}</label>
+					<input class="form-control" data-test="admin-coupon-value" formControlName="value" id="couponValue"
+					       min="1" type="number">
+				</div>
+				<div class="col-2">
+					<label class="form-label" for="couponExpiry">{{'ADMIN.EXPIRES_AT' | translate}}</label>
+					<input class="form-control" data-test="admin-coupon-expiry" formControlName="expiresAt"
+					       id="couponExpiry" type="date">
+				</div>
+				<div class="col-1 form-check text-center">
+					<input class="form-check-input" data-test="admin-coupon-active" formControlName="active"
+					       id="couponActive" type="checkbox">
+					<label class="form-check-label" for="couponActive">{{'ADMIN.ACTIVE' | translate}}</label>
+				</div>
+				<div class="col-3">
+					<button [disabled]="form.invalid || saving()" class="btn btn-success me-1"
+					        data-test="admin-coupon-save" type="submit">
+						<fa-icon [icon]="faPlus"></fa-icon>
+						{{(editId() === null ? 'ADMIN.ADD' : 'ADMIN.SAVE') | translate}}
+					</button>
+					@if (editId() !== null) {
+						<button (click)="resetForm()" class="btn btn-dark" type="button">
+							{{'ADMIN.REFRESH' | translate}}
+						</button>
+					}
+				</div>
+			</form>
+			<div class="table-responsive">
+				<table class="table table-bordered table-striped table-hover table-sm">
+					<thead class="bg-light text-dark">
+					<tr>
+						<th scope="col">#</th>
+						<th scope="col">{{'ADMIN.CODE' | translate}}</th>
+						<th scope="col">{{'ADMIN.KIND' | translate}}</th>
+						<th scope="col">{{'ADMIN.VALUE' | translate}}</th>
+						<th scope="col">{{'ADMIN.EXPIRES_AT' | translate}}</th>
+						<th scope="col">{{'ADMIN.ACTIVE' | translate}}</th>
+						<th scope="col">{{'ADMIN.ACTION' | translate}}</th>
+					</tr>
+					</thead>
+					<tbody>
+					@for (coupon of coupons(); track coupon.id) {
+						<tr>
+							<th scope="row">{{coupon.id}}</th>
+							<td>{{coupon.code}}</td>
+							<td>{{'ADMIN.KIND_' + coupon.kind | translate}}</td>
+							<td>
+								@if (isPercent(coupon.kind)) {
+									{{coupon.value}}%
+								} @else {
+									{{coupon.value | currency:'VND':'symbol':'1.0-0'}}
+								}
+							</td>
+							<td>{{coupon.expiresAt | date:'yyyy-MM-dd'}}</td>
+							<td>
+								<button (click)="onToggleActive(coupon)"
+								        [class]="'btn btn-sm ' + (coupon.active ? 'btn-success' : 'btn-secondary')"
+								        data-test="admin-coupon-toggle" type="button">
+									@if (coupon.active) {
+										{{'ADMIN.ACTIVE' | translate}}
+									} @else {
+										{{'ADMIN.INACTIVE' | translate}}
+									}
+								</button>
+							</td>
+							<td>
+								<button (click)="editCoupon(coupon)" class="btn btn-info btn-sm me-1"
+								        data-test="admin-coupon-edit" placement="bottom"
+								        tooltip="{{'ADMIN.EDIT' | translate}}" type="button">
+									<fa-icon [icon]="faPen"></fa-icon>
+								</button>
+								<button (click)="onDelete(coupon)" class="btn btn-warning btn-sm"
+								        data-test="admin-coupon-delete" placement="bottom"
+								        tooltip="{{'ADMIN.DELETE' | translate}}" type="button">
+									<fa-icon [icon]="faTrash"></fa-icon>
+								</button>
+							</td>
+						</tr>
+					}
+					@if (coupons().length === 0) {
+						<tr>
+							<td colspan="7"><i>{{'ADMIN.NO_COUPONS' | translate}}</i></td>
+						</tr>
+					}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>

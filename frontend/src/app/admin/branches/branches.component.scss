@@ -1,0 +1,17 @@
+.branches-wrapper {
+	margin: 10px;
+
+	th, td {
+		text-align: center;
+		vertical-align: middle;
+	}
+}
+
+.wrapper-stock-table {
+	max-height: 600px;
+	overflow: auto;
+
+	.quantity-input {
+		width: 110px;
+	}
+}
