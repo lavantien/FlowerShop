@@ -8,6 +8,7 @@ import com.lavantien.flowershop.api.coupon.Coupon;
 import com.lavantien.flowershop.api.coupon.CouponKind;
 import com.lavantien.flowershop.api.coupon.CouponRepository;
 import com.lavantien.flowershop.api.error.ApiExceptionHandler;
+import com.lavantien.flowershop.api.payment.PaymentController;
 import com.lavantien.flowershop.api.payment.PaymentSession;
 import com.lavantien.flowershop.api.payment.PaymentSessionRepository;
 import com.lavantien.flowershop.api.payment.PaymentStatus;
@@ -80,6 +81,7 @@ class OrderControllerTest {
 	private UserRepository userRepository;
 	private UserService userService;
 	private MockMvc mockMvc;
+	private PaymentSession stubbedPayment;
 
 	@BeforeEach
 	void setUp() {
@@ -97,7 +99,8 @@ class OrderControllerTest {
 		OrderService orderService = new OrderService(orderRepository, orderItemRepository, productRepository,
 			branchRepository, stockLevelRepository, paymentSessionRepository, paymentService, geoService,
 			new CouponService(couponRepository), PROPERTIES);
-		mockMvc = MockMvcBuilders.standaloneSetup(new OrderController(orderRepository, orderService))
+		mockMvc = MockMvcBuilders
+			.standaloneSetup(new OrderController(orderRepository, orderService), new PaymentController(orderService))
 			.addInterceptors(new TokenInterceptor(userRepository, userService))
 			.setControllerAdvice(new ApiExceptionHandler())
 			.build();
@@ -820,6 +823,7 @@ class OrderControllerTest {
 		} else if (paymentStatus == PaymentStatus.CANCELLED) {
 			session.cancel(Instant.now());
 		}
+		stubbedPayment = session;
 		when(paymentSessionRepository.lockByOrderId(12L)).thenReturn(Optional.of(session));
 		when(orderItemRepository.findByOrderId(12L))
 			.thenReturn(List.of(item(501, 12, 1, "Red Rose", 100000, 2)));
@@ -974,7 +978,7 @@ class OrderControllerTest {
 	}
 
 	@Test
-	void theAdminCancelsAPendingOrderThroughTheStatusEndpoint() throws Exception {
+	void theAdminCancelsAPendingOrderThroughTheStatusEndpointAndKillsThePayment() throws Exception {
 		Order order = stubCancellableOrder(OrderStatus.PENDING, PaymentStatus.PENDING);
 
 		mockMvc.perform(post("/api/order/12/status").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
@@ -984,7 +988,25 @@ class OrderControllerTest {
 			.andExpect(jsonPath("$.status").value("CANCELLED"));
 
 		assertEquals(OrderStatus.CANCELLED, order.getStatus());
+		assertEquals(PaymentStatus.CANCELLED, stubbedPayment.getStatus(),
+			"an admin status-cancel must kill the pending payment, else a later confirm charges a cancelled order");
 		verify(stockLevelRepository).increment(3001L, 2);
+	}
+
+	@Test
+	void confirmingAPaymentAfterAnAdminStatusCancelAnswers409() throws Exception {
+		stubCancellableOrder(OrderStatus.PENDING, PaymentStatus.PENDING);
+		when(paymentSessionRepository.lockById("pid-1")).thenReturn(Optional.of(stubbedPayment));
+
+		mockMvc.perform(post("/api/order/12/status").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"status\": \"CANCELLED\"}"))
+			.andExpect(status().isOk());
+
+		mockMvc.perform(post("/api/payment/pid-1/confirm")
+				.queryParam("sig", paymentService.sign(stubbedPayment)))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("PAYMENT_CANCELLED"));
 	}
 
 	@Test

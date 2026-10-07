@@ -227,9 +227,9 @@ public class OrderService {
 
 	@Transactional
 	public OrderView changeStatus(Long orderId, OrderStatus next) {
-		// Taken for the row lock only: this path never mutates the payment,
-		// but concurrent confirms on the same order must not interleave.
-		paymentSessionRepository.lockByOrderId(orderId);
+		// Held for the row lock: concurrent confirms on the same order must
+		// not interleave with this transition.
+		PaymentSession payment = paymentSessionRepository.lockByOrderId(orderId).orElse(null);
 		Order order = orderRepository.lockById(orderId)
 			.orElseThrow(() -> new NotFoundException("no order with id " + orderId));
 		if (!order.getStatus().canTransitionTo(next)) {
@@ -243,6 +243,11 @@ public class OrderService {
 				"an order only turns PAID through the payment confirm flow");
 		}
 		if (next == OrderStatus.CANCELLED) {
+			// A pending session must die with the order, exactly as cancel()
+			// kills it, or a later confirm would charge a cancelled order.
+			if (payment != null && payment.getStatus() == PaymentStatus.PENDING) {
+				payment.cancel(Instant.now());
+			}
 			restoreStock(order);
 		}
 		order.transitionTo(next, Instant.now());
