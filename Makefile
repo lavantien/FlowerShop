@@ -22,7 +22,10 @@ export LOCAL_MYSQL_DB_USERNAME := $(DB_USER)
 export LOCAL_MYSQL_DB_PASSWORD := $(DB_PASS)
 
 .DEFAULT_GOAL := help
-.PHONY: help env db-up db-down db-nuke db-seed frontend-install frontend-build frontend-lint frontend-test frontend-serve backend-test build package run screenshots audit clean
+.PHONY: help env db-up db-down db-nuke db-seed db-hash frontend-install frontend-build frontend-lint frontend-test frontend-serve backend-test build package run screenshots audit clean
+
+# Set SKIP_DB_UP=1 when MySQL already runs elsewhere (CI service container);
+# every target below then skips its db-up prerequisite.
 
 help: ## show targets
 	@grep -E '^[a-zA-Z][a-zA-Z0-9_-]*:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "%-18s %s\n", $$1, $$2}'
@@ -34,7 +37,7 @@ env: ## print resolved toolchain versions
 	@docker --version
 	@if [ -x "$(FRONTEND)/node/node.exe" ]; then "$(FRONTEND)/node/node.exe" -v; else node -v; fi
 
-db-up: ## start MySQL 8.4 container and wait until healthy
+db-up: ## start MySQL 9.7 container and wait until healthy
 	@docker compose up -d
 	@id=$$(docker compose ps -q mysql); i=0; until [ "$$(docker inspect --format '{{.State.Health.Status}}' $$id)" = "healthy" ]; do if [ $$i -ge 60 ]; then echo "mysql health wait timed out"; exit 1; fi; sleep 2; i=$$((i+1)); done; echo "mysql healthy"
 
@@ -46,6 +49,12 @@ db-nuke: ## stop MySQL container and drop the volume
 
 db-seed: ## seed the database from db/run.sql (skips its create-database preamble)
 	@tail -n +3 db/run.sql | docker compose exec -T mysql mysql --default-character-set=utf8mb4 -u$(DB_USER) -p$(DB_PASS) flowershop
+
+DB_HASH_PASSWORDS ?= 1234qwer 12345678
+
+db-hash: ## print bcrypt hashes for DB_HASH_PASSWORDS (defaults: seed passwords)
+	@$(MVNW) -q $(MVN_ARGS) dependency:build-classpath -Dmdep.outputFile=target/cp.txt
+	@"$(JAVA_BIN)" --class-path "$$(cat target/cp.txt)" db/tools/BcryptHash.java $(DB_HASH_PASSWORDS)
 
 frontend-install: ## npm install in frontend
 	@$(NPM) install --prefix $(FRONTEND)
@@ -62,16 +71,16 @@ frontend-test: ## run the vitest suite
 frontend-serve: ## dev server on :4200 proxying /api to :8080
 	@$(NPM) run start-dev --prefix $(FRONTEND)
 
-backend-test: db-up ## run backend tests (contextLoads needs live MySQL)
-	@$(MVNW) $(MVN_ARGS) test
+backend-test: $(if $(SKIP_DB_UP),,db-up) ## run backend tests through verify (needs live MySQL)
+	@$(MVNW) $(MVN_ARGS) verify
 
-build: db-up ## build the jar, skipping tests
+build: $(if $(SKIP_DB_UP),,db-up) ## build the jar, skipping tests
 	@$(MVNW) $(MVN_ARGS) -DskipTests package
 
-package: db-up ## full clean build: frontend + backend + tests + repackaged jar
+package: $(if $(SKIP_DB_UP),,db-up) ## full clean build: frontend + backend + tests + repackaged jar
 	@$(MVNW) $(MVN_ARGS) clean package
 
-run: db-up ## run the packaged jar against the compose MySQL
+run: $(if $(SKIP_DB_UP),,db-up) ## run the packaged jar against the compose MySQL
 	@"$(JAVA_BIN)" -jar target/flowershop-2.0.jar
 
 screenshots: db-up ## capture the current UI into project-pictures (runs the packaged jar headlessly)
