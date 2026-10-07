@@ -1,6 +1,5 @@
 package com.lavantien.flowershop.api.user;
 
-import com.jayway.jsonpath.JsonPath;
 import com.lavantien.flowershop.api.error.ApiExceptionHandler;
 import com.lavantien.flowershop.api.security.TokenInterceptor;
 import com.lavantien.flowershop.service.PasswordService;
@@ -12,8 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -53,82 +51,6 @@ class UserControllerTest {
 			.build();
 	}
 
-	private static String loginBody(String email, String password) {
-		return Base64.getEncoder().encodeToString((email + "j0z" + password).getBytes(StandardCharsets.UTF_8));
-	}
-
-	private static final String GUESS_TOKEN = Base64.getEncoder()
-		.encodeToString("0+GUESS".getBytes(StandardCharsets.UTF_8));
-
-	@Test
-	void loginSucceedsAgainstABcryptStoredPassword() throws Exception {
-		User user = persona(1, Role.ADMIN, "admin@flowershop.example");
-		when(userRepository.findByEmail("admin@flowershop.example")).thenReturn(user);
-
-		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
-				.content(loginBody("admin@flowershop.example", "1234qwer")))
-			.andExpect(status().isOk())
-			.andExpect(tokenIdentity("1+ADMIN"))
-			.andExpect(jsonPath("$.phone").value("0900000001"))
-			.andExpect(jsonPath("$.detailAddress").value("01 Demo Lane, Binh Thanh, Ho Chi Minh"));
-		assertTrue(userService.isLoggedIn(1L));
-	}
-
-	@Test
-	void loginRejectsAWrongPassword() throws Exception {
-		User user = persona(4, Role.USER, "member@flowershop.example");
-		when(userRepository.findByEmail("member@flowershop.example")).thenReturn(user);
-
-		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
-				.content(loginBody("member@flowershop.example", "wrong")))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-		assertFalse(userService.isLoggedIn(4L));
-	}
-
-	@Test
-	void loginRejectsAnUnknownEmail() throws Exception {
-		when(userRepository.findByEmail("nobody@flowershop.example")).thenReturn(null);
-
-		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
-				.content(loginBody("nobody@flowershop.example", "1234qwer")))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-		assertFalse(userService.isLoggedIn(1L));
-	}
-
-	@Test
-	void loginAnswersTheGuestTokenForAMalformedBody() throws Exception {
-		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
-				.content("not base64 !!"))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-	}
-
-	@Test
-	void loginAnswersTheGuestTokenWithoutTheSeparator() throws Exception {
-		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
-				.content(Base64.getEncoder().encodeToString("no separator here".getBytes(StandardCharsets.UTF_8))))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-	}
-
-	@Test
-	void logoutAnswersTheGuestTokenForAGarbageToken() throws Exception {
-		mockMvc.perform(post("/api/user/logout").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"token\":\"garbage\",\"phone\":\"0\",\"detailAddress\":\"x\"}"))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-	}
-
-	@Test
-	void logoutAnswersTheGuestTokenForAMissingToken() throws Exception {
-		mockMvc.perform(post("/api/user/logout").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"phone\":\"0\",\"detailAddress\":\"x\"}"))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-	}
-
 	@Test
 	void resetPasswordStoresABcryptHashAndLogsTheUserIn() throws Exception {
 		User user = persona(4, Role.USER, "member@flowershop.example");
@@ -136,9 +58,11 @@ class UserControllerTest {
 		when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		mockMvc.perform(post("/api/user/resetPassword").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"email\":\"member@flowershop.example\",\"answer\":\"demo\",\"password\":\"newpass123\"}"))
+				.content("{\"email\":\"member@flowershop.example\",\"answer\":\"demo\",\"newPassword\":\"newpass123\"}"))
 			.andExpect(status().isOk())
-			.andExpect(tokenIdentity("4+USER"));
+			.andExpect(tokenIdentity("4+USER"))
+			.andExpect(jsonPath("$.user.email").value("member@flowershop.example"))
+			.andExpect(jsonPath("$.user.password").doesNotExist());
 
 		ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
 		verify(userRepository).save(saved.capture());
@@ -148,16 +72,49 @@ class UserControllerTest {
 	}
 
 	@Test
-	void resetPasswordWithoutAStoredAnswerStaysGuestEvenWhenOmittedToo() throws Exception {
+	void resetPasswordAnswers401ForAnUnknownEmail() throws Exception {
+		when(userRepository.findByEmail("nobody@flowershop.example")).thenReturn(null);
+
+		mockMvc.perform(post("/api/user/resetPassword").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"email\":\"nobody@flowershop.example\",\"answer\":\"demo\",\"newPassword\":\"newpass123\"}"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
+		assertFalse(userService.isLoggedIn(1L));
+	}
+
+	@Test
+	void resetPasswordAnswers401ForAWrongAnswer() throws Exception {
+		User user = persona(4, Role.USER, "member@flowershop.example");
+		when(userRepository.findByEmail("member@flowershop.example")).thenReturn(user);
+
+		mockMvc.perform(post("/api/user/resetPassword").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"email\":\"member@flowershop.example\",\"answer\":\"wrong\",\"newPassword\":\"newpass123\"}"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
+		assertFalse(userService.isLoggedIn(4L));
+		verify(userRepository, never()).save(any(User.class));
+	}
+
+	@Test
+	void resetPasswordWithoutAStoredAnswerAnswers401EvenWhenOmittedToo() throws Exception {
 		User user = persona(5, Role.USER, "blank@flowershop.example");
 		user.setAnswer(null);
 		when(userRepository.findByEmail("blank@flowershop.example")).thenReturn(user);
 
 		mockMvc.perform(post("/api/user/resetPassword").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"email\":\"blank@flowershop.example\",\"password\":\"hacked123\"}"))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
+				.content("{\"email\":\"blank@flowershop.example\",\"answer\":\"demo\",\"newPassword\":\"hacked123\"}"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
 		assertFalse(userService.isLoggedIn(5L), "null must not match null on the security answer");
+	}
+
+	@Test
+	void resetPasswordRejectsABlankNewPasswordAsAValidationError() throws Exception {
+		mockMvc.perform(post("/api/user/resetPassword").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"email\":\"member@flowershop.example\",\"answer\":\"demo\",\"newPassword\":\"\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("VALIDATION"))
+			.andExpect(jsonPath("$.errors.newPassword").value("must not be blank"));
 	}
 
 	@Test
@@ -202,9 +159,9 @@ class UserControllerTest {
 		when(userRepository.findByEmail("editor@flowershop.example")).thenReturn(user);
 
 		mockMvc.perform(post("/api/user/resetPassword").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"email\":\"editor@flowershop.example\",\"answer\":\"demo\",\"password\":\"newpass123\"}"))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
+				.content("{\"email\":\"editor@flowershop.example\",\"answer\":\"demo\",\"newPassword\":\"newpass123\"}"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
 	}
 
 	@Test
@@ -400,19 +357,6 @@ class UserControllerTest {
 	}
 
 	@Test
-	void loginRefusesADisabledAccount() throws Exception {
-		User user = persona(3, Role.ADMIN, "staff@flowershop.example");
-		user.setEnable(false);
-		when(userRepository.findByEmail("staff@flowershop.example")).thenReturn(user);
-
-		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
-				.content(loginBody("staff@flowershop.example", "1234qwer")))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-		assertFalse(userService.isLoggedIn(3L));
-	}
-
-	@Test
 	void adminListingNeverSerializesTheSecurityAnswer() throws Exception {
 		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 		when(userRepository.findAll()).thenReturn(List.of(persona(1, Role.ADMIN, "admin@flowershop.example")));
@@ -430,105 +374,5 @@ class UserControllerTest {
 		assertFalse(user.toString().contains("1234qwer"));
 		assertFalse(user.toString().contains("$2a$"));
 		assertFalse(user.toString().contains("demo"));
-	}
-
-	@Test
-	void logoutWithAValidTokenEndsTheSession() throws Exception {
-		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
-
-		mockMvc.perform(post("/api/user/logout").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"token\":\"" + tokenOf(4, Role.USER) + "\",\"phone\":\"0\",\"detailAddress\":\"x\"}"))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-		assertFalse(userService.isLoggedIn(4L), "a valid logout must drop the session");
-	}
-
-	@Test
-	void logoutWithAWrongSecretLeavesTheSessionAlive() throws Exception {
-		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
-		String forged = Base64.getEncoder().encodeToString("4+USER+deadbeefdeadbeef".getBytes(StandardCharsets.UTF_8));
-
-		mockMvc.perform(post("/api/user/logout").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"token\":\"" + forged + "\",\"phone\":\"0\",\"detailAddress\":\"x\"}"))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-		assertTrue(userService.isLoggedIn(4L), "a forged token must not log anybody out");
-	}
-
-	@Test
-	void logoutLeavesTheSessionUntouchedForAnUnparsableId() throws Exception {
-		prime(userRepository, userService, persona(4, Role.USER, "member@flowershop.example"));
-		String unparsable = Base64.getEncoder().encodeToString("x+USER".getBytes(StandardCharsets.UTF_8));
-
-		mockMvc.perform(post("/api/user/logout").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"token\":\"" + unparsable + "\",\"phone\":\"0\",\"detailAddress\":\"x\"}"))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").value(GUESS_TOKEN));
-		assertTrue(userService.isLoggedIn(4L), "a garbage token must not log anybody out");
-	}
-
-	@Test
-	void aFreshLoginRotatesTheSecretAndKillsTheOldToken() throws Exception {
-		User user = persona(1, Role.ADMIN, "admin@flowershop.example");
-		when(userRepository.findByEmail("admin@flowershop.example")).thenReturn(user);
-		when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-
-		String firstToken = loginAndGetToken("admin@flowershop.example", "1234qwer");
-		String secondToken = loginAndGetToken("admin@flowershop.example", "1234qwer");
-
-		mockMvc.perform(get("/api/user").header("X-Auth-Token", firstToken))
-			.andExpect(status().isUnauthorized());
-		mockMvc.perform(get("/api/user").header("X-Auth-Token", secondToken))
-			.andExpect(status().isOk());
-	}
-
-	private String loginAndGetToken(String email, String password) throws Exception {
-		String body = mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
-				.content(loginBody(email, password)))
-			.andExpect(status().isOk())
-			.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
-		return JsonPath.read(body, "$.token");
-	}
-
-	@Test
-	void loginComposesTheDetailAddressFromTheStoredFields() throws Exception {
-		User user = persona(2, Role.USER, "editor@flowershop.example");
-		user.setEmail("editor@flowershop.example");
-		user.setDistrict("Cau Giay");
-		user.setCity("Hanoi");
-		when(userRepository.findByEmail("editor@flowershop.example")).thenReturn(user);
-
-		mockMvc.perform(post("/api/user/login").contentType(MediaType.TEXT_PLAIN)
-				.content(loginBody("editor@flowershop.example", "1234qwer")))
-			.andExpect(status().isOk())
-			.andExpect(tokenIdentity("2+USER"))
-			.andExpect(jsonPath("$.detailAddress").value("01 Demo Lane, Cau Giay, Hanoi"));
-	}
-
-	@Test
-	void forgotDtoBuildsAnIdenticalPayloadThroughEitherConstructionPath() {
-		ForgotDto allAtOnce = new ForgotDto("editor@flowershop.example", "demo", "pw123456");
-		ForgotDto fieldByField = new ForgotDto();
-		fieldByField.setEmail("editor@flowershop.example");
-		fieldByField.setAnswer("demo");
-		fieldByField.setPassword("pw123456");
-
-		assertTrue(allAtOnce.getEmail().equals(fieldByField.getEmail())
-			&& allAtOnce.getAnswer().equals(fieldByField.getAnswer())
-			&& allAtOnce.getPassword().equals(fieldByField.getPassword()),
-			"both construction paths must describe the same reset request");
-	}
-
-	@Test
-	void tokenDtoCarriesEveryFieldThroughItsDefaultConstruction() {
-		TokenDto dto = new TokenDto();
-		dto.setToken("t");
-		dto.setPhone("0900000004");
-		dto.setDetailAddress("04 Demo Lane");
-
-		assertTrue("t".equals(dto.getToken())
-			&& "0900000004".equals(dto.getPhone())
-			&& "04 Demo Lane".equals(dto.getDetailAddress()),
-			"the default construction must keep every populated field readable");
 	}
 }

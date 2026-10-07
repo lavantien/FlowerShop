@@ -100,10 +100,10 @@ async function stopServer(server) {
 }
 
 async function loginToken({email, password}) {
-	const response = await fetchJson(`${CONFIG.baseUrl}/api/user/login`, {
+	const response = await fetchJson(`${CONFIG.baseUrl}/api/auth/login`, {
 		method: 'POST',
-		headers: {'Content-Type': 'text/plain'},
-		body: btoa(email + 'j0z' + password)
+		headers: {'Content-Type': 'application/json'},
+		body: JSON.stringify({email, password})
 	});
 	return response.token;
 }

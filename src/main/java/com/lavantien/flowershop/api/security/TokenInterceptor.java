@@ -27,9 +27,8 @@ public class TokenInterceptor implements HandlerInterceptor {
 		new PublicRule(HttpMethod.GET, "/api/category/*"),
 		new PublicRule(HttpMethod.GET, "/api/type"),
 		new PublicRule(HttpMethod.GET, "/api/type/*"),
-		new PublicRule(HttpMethod.POST, "/api/user/login"),
+		new PublicRule(HttpMethod.POST, "/api/auth/login"),
 		new PublicRule(HttpMethod.POST, "/api/user/create"),
-		new PublicRule(HttpMethod.POST, "/api/user/logout"),
 		new PublicRule(HttpMethod.POST, "/api/user/resetPassword"));
 
 	private final UserRepository userRepository;
@@ -48,7 +47,7 @@ public class TokenInterceptor implements HandlerInterceptor {
 		}
 		Auth.Session session;
 		try {
-			session = Auth.parseSession(request.getHeader("X-Auth-Token"));
+			session = Auth.parseSession(request.getHeader(Auth.TOKEN_HEADER));
 		} catch (RuntimeException malformed) {
 			throw new UnauthenticatedException("a valid X-Auth-Token header is required");
 		}

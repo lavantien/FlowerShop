@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 public final class Auth {
+	public static final String TOKEN_HEADER = "X-Auth-Token";
 	public static final String USER_ID_ATTRIBUTE = "authUserId";
 	public static final String ROLE_ATTRIBUTE = "authRole";
 
@@ -30,6 +31,10 @@ public final class Auth {
 		} catch (RuntimeException malformed) {
 			throw new IllegalArgumentException("malformed token", malformed);
 		}
+	}
+
+	public static String mintToken(long id, Role role, String secret) {
+		return Base64.getEncoder().encodeToString((id + "+" + role.name() + "+" + secret).getBytes(StandardCharsets.UTF_8));
 	}
 
 	public static Long userId(HttpServletRequest request) {

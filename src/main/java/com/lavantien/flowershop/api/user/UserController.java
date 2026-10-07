@@ -3,15 +3,18 @@ package com.lavantien.flowershop.api.user;
 import com.lavantien.flowershop.api.error.ConflictException;
 import com.lavantien.flowershop.api.error.ForbiddenException;
 import com.lavantien.flowershop.api.error.NotFoundException;
+import com.lavantien.flowershop.api.error.UnauthenticatedException;
 import com.lavantien.flowershop.api.security.Auth;
 import com.lavantien.flowershop.api.security.RequireRole;
+import com.lavantien.flowershop.api.security.SessionView;
 import com.lavantien.flowershop.service.PasswordService;
 import com.lavantien.flowershop.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
@@ -103,60 +106,23 @@ public class UserController {
 		return ResponseEntity.ok().build();
 	}
 
-	@PostMapping(value = "/login", consumes = "text/plain")
-	public ResponseEntity<TokenDto> doLogin(@RequestBody String info) {
-		TokenDto tokenDto = guestDto();
-		// A required String body is never null: Spring answers 400 for absent
-		// bodies, so only the decode itself can fail.
-		String decodedInfo;
-		try {
-			decodedInfo = new String(Base64.getDecoder().decode(info));
-		} catch (IllegalArgumentException malformed) {
-			decodedInfo = null;
-		}
-		int index = decodedInfo == null ? -1 : decodedInfo.indexOf("j0z");
-		if (index >= 0) {
-			String email = decodedInfo.substring(0, index);
-			String password = decodedInfo.substring(index + 3);
-			User foundUser = userRepository.findByEmail(email);
-			boolean usable = foundUser != null && Boolean.TRUE.equals(foundUser.getEnable());
-			if (!usable) {
-				passwordService.burnDummyComparison(password);
-			} else if (passwordService.matches(password, foundUser.getPassword())) {
-				tokenDto.setToken(userToken(foundUser, startSession(foundUser)));
-				tokenDto.setPhone(foundUser.getPhone());
-				tokenDto.setDetailAddress(foundUser.getAddress() + ", " + foundUser.getDistrict() + ", " + foundUser.getCity());
-			}
-		}
-		return ResponseEntity.ok(tokenDto);
-	}
-
-	@PostMapping("/logout")
-	public ResponseEntity<TokenDto> doLogout(@RequestBody TokenDto tokenDto) {
-		try {
-			Auth.Session session = Auth.parseSession(tokenDto.getToken());
-			userService.logout(session.id(), session.secret());
-		} catch (RuntimeException malformed) {
-			// garbage or secret-less tokens must not end anybody's session
-		}
-		return ResponseEntity.ok(guestDto());
-	}
+	public record ResetPasswordRequest(@NotBlank String email, @NotBlank String answer, @NotBlank String newPassword) {}
 
 	@PostMapping("/resetPassword")
-	public ResponseEntity<TokenDto> doResetPassword(@RequestBody ForgotDto forgotDto) {
-		User foundUser = userRepository.findByEmail(forgotDto.getEmail());
+	public SessionView doResetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+		User foundUser = userRepository.findByEmail(request.email());
 		// A null or blank stored answer must never match: equals(null, null)
 		// would hand the account to anyone who simply omits the field.
-		boolean answerMatches = foundUser != null && forgotDto.getPassword() != null
+		boolean answerMatches = foundUser != null
 			&& foundUser.getAnswer() != null && !foundUser.getAnswer().isBlank()
-			&& foundUser.getAnswer().equals(forgotDto.getAnswer());
+			&& foundUser.getAnswer().equals(request.answer());
 		if (!answerMatches) {
-			return ResponseEntity.ok(guestDto());
+			throw new UnauthenticatedException("invalid email or answer");
 		}
-		foundUser.setPassword(passwordService.hash(forgotDto.getPassword()));
+		foundUser.setPassword(passwordService.hash(request.newPassword()));
 		userRepository.save(foundUser);
-		return ResponseEntity.ok(new TokenDto(userToken(foundUser, startSession(foundUser)), foundUser.getPhone(),
-			foundUser.getAddress() + ", " + foundUser.getDistrict() + ", " + foundUser.getCity()));
+		return new SessionView(Auth.mintToken(foundUser.getId(), foundUser.getRole(), userService.login(foundUser.getId())),
+			foundUser);
 	}
 
 	private void hashPassword(User user) {
@@ -165,105 +131,11 @@ public class UserController {
 		}
 	}
 
-	private String startSession(User user) {
-		return userService.login(user.getId());
-	}
-
 	private void refuseEmailInUse(String email) {
 		// A duplicate row would break findByEmail for that address forever,
 		// so refuse instead of letting the unique index explode at runtime.
 		if (email != null && userRepository.findByEmail(email) != null) {
 			throw new ConflictException("EMAIL_IN_USE", email + " is already registered");
 		}
-	}
-
-	private static String userToken(User user, String secret) {
-		return Base64.getEncoder().encodeToString((user.getId() + "+" + user.getRole().name() + "+" + secret).getBytes());
-	}
-
-	private static TokenDto guestDto() {
-		return new TokenDto(guessToken(), "0", "A, Cau Giay, Hanoi");
-	}
-
-	private static String guessToken() {
-		return Base64.getEncoder().encodeToString("0+GUESS".getBytes());
-	}
-}
-
-class TokenDto {
-	private String token;
-	private String phone;
-	private String detailAddress;
-
-	public TokenDto() {
-	}
-
-	public TokenDto(String token, String phone, String detailAddress) {
-		this.token = token;
-		this.phone = phone;
-		this.detailAddress = detailAddress;
-	}
-
-	public String getToken() {
-		return token;
-	}
-
-	public void setToken(String token) {
-		this.token = token;
-	}
-
-	public String getPhone() {
-		return phone;
-	}
-
-	public void setPhone(String phone) {
-		this.phone = phone;
-	}
-
-	public String getDetailAddress() {
-		return detailAddress;
-	}
-
-	public void setDetailAddress(String detailAddress) {
-		this.detailAddress = detailAddress;
-	}
-}
-
-class ForgotDto {
-	private String email;
-	private String answer;
-	private String password;
-
-	public ForgotDto() {
-	}
-
-	public ForgotDto(String email, String answer, String password) {
-		this.email = email;
-		this.answer = answer;
-		this.password = password;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
-	public String getAnswer() {
-		return answer;
-	}
-
-	public void setAnswer(String answer) {
-		this.answer = answer;
-	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
 	}
 }
