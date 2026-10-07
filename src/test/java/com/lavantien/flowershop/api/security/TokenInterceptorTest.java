@@ -9,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.persona;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.prime;
 import static com.lavantien.flowershop.api.security.AuthTestSupport.tokenOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -67,6 +70,19 @@ class TokenInterceptorTest {
 	void theBranchStockSurfaceStaysSessionGated() throws Exception {
 		mockMvc.perform(get("/api/branch/3/stock"))
 			.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void nonControllerHandlersSkipTheAuthWallLikeStaticResources() {
+		// Static assets reach the dispatcher with a plain resource handler, not
+		// a HandlerMethod: the auth wall must never run for them or every
+		// bundled asset would answer 401.
+		TokenInterceptor interceptor = new TokenInterceptor(userRepository, userService);
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/index.html");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+
+		assertTrue(interceptor.preHandle(request, response, new Object()),
+			"a handler that is not a controller method never enters the auth wall");
 	}
 
 	@Test

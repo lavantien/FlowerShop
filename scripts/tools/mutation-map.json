@@ -1,5 +1,5 @@
 {
-	"bdCollectionReceivers": ["lines", "predicates", "failing", "items", "saved"],
+	"bdCollectionReceivers": ["lines", "predicates", "failing", "items", "saved", "revenueOrderIds"],
 	"reportNotes": [
 		"First full run at 8baa09e: 129 mutants, 122 killed, 7 survivors. Six were missing tests, closed by the kill tests of commit b4c78d5 (GeoServiceTest tie orders, OrderControllerTest view branchName, cancel without payment session, admin CANCELLED on PENDING, ProductCatalogIntegrationTest zero-filter query). The seventh was the equivalent branch-id tie-break mutant, culled through lineOpExcludes. This run is the confirmation sweep over the culled map."
 	],
@@ -19,7 +19,7 @@
 		{
 			"name": "ShopProperties.Delivery",
 			"file": "src/main/java/com/lavantien/flowershop/service/ShopProperties.java",
-			"tests": ["GeoServiceTest", "DeliveryFeePropertyTest", "CheckoutMoneyPropertyTest"]
+			"tests": ["GeoServiceTest", "DeliveryFeePropertyTest", "CheckoutMoneyPropertyTest", "ShopPropertiesTest"]
 		},
 		{
 			"name": "Coupon.discountOn",
@@ -104,7 +104,7 @@
 			"lineExcludes": ["first <= 0 \\|\\| second < 0"],
 			"explicit": [
 				{
-					"line": 37,
+					"line": 48,
 					"from": "\"+\"",
 					"to": "\"-\"",
 					"occurrence": 1,
@@ -112,7 +112,7 @@
 					"note": "mint separator id:role"
 				},
 				{
-					"line": 37,
+					"line": 48,
 					"from": "\"+\"",
 					"to": "\"-\"",
 					"occurrence": 2,
@@ -125,6 +125,45 @@
 			"name": "UserService session burn",
 			"file": "src/main/java/com/lavantien/flowershop/service/UserService.java",
 			"tests": ["TokenInterceptorTest", "AuthControllerTest"]
+		},
+		{
+			"name": "ReportService",
+			"file": "src/main/java/com/lavantien/flowershop/service/ReportService.java",
+			"tests": ["ReportServiceTest"],
+			"lineOpExcludes": [
+				{
+					"line": 70,
+					"ops": ["ROUND_MODE"],
+					"reason": "the average divides at scale 6 then rounds to the fee step; HALF_UP versus DOWN diverge only when the true quotient lands within 5e-7 below a half-step boundary, which by the 1/n divisor granularity needs at least 2,000,000 orders, so both roundings agree on every feasible order count"
+				}
+			]
+		},
+		{
+			"name": "ReportController window parse",
+			"file": "src/main/java/com/lavantien/flowershop/api/report/ReportController.java",
+			"tests": ["ReportControllerTest"]
+		},
+		{
+			"name": "TokenInterceptor",
+			"file": "src/main/java/com/lavantien/flowershop/api/security/TokenInterceptor.java",
+			"tests": ["TokenInterceptorTest"]
+		},
+		{
+			"name": "BranchController",
+			"file": "src/main/java/com/lavantien/flowershop/api/branch/BranchController.java",
+			"tests": ["BranchControllerTest"],
+			"lineOpExcludes": [
+				{
+					"line": 122,
+					"ops": ["LIT_0_TO_1"],
+					"reason": "the StockLevel constructor quantity is unconditionally overwritten by setQuantity on the next statement before any read, the 0 seed is never observable"
+				}
+			]
+		},
+		{
+			"name": "CouponController code guard",
+			"file": "src/main/java/com/lavantien/flowershop/api/coupon/CouponController.java",
+			"tests": ["CouponControllerTest"]
 		}
 	]
 }
