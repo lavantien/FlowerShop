@@ -27,6 +27,7 @@ import com.lavantien.flowershop.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -54,6 +55,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -617,6 +619,50 @@ class OrderControllerTest {
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.code").value("OUT_OF_STOCK"))
 			.andExpect(jsonPath("$.detail").value(containsString("Red Rose")));
+	}
+
+	@Test
+	void checkoutTakesStockRowLocksInProductIdOrder() throws Exception {
+		stubHappyCheckout();
+
+		// The request names product 2 first: whatever the cart order, the
+		// decrement must visit the stock rows lowest product id first so
+		// opposing paths can never deadlock on mirrored row locks.
+		mockMvc.perform(post("/api/order").header("X-Auth-Token", tokenOf(4, Role.USER))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+						"items": [{"productId": 2, "quantity": 3}, {"productId": 1, "quantity": 2}],
+						"phone": "0900000001",
+						"address": "01 Demo Lane",
+						"district": "Quận 1",
+						"city": "Hồ Chí Minh",
+						"branchId": 3
+					}
+					"""))
+			.andExpect(status().isCreated());
+
+		InOrder order = inOrder(stockLevelRepository);
+		order.verify(stockLevelRepository).decrementIfAvailable(3001L, 2);
+		order.verify(stockLevelRepository).decrementIfAvailable(3002L, 3);
+	}
+
+	@Test
+	void restoreStockTakesStockRowLocksInProductIdOrder() throws Exception {
+		stubCancellableOrder(OrderStatus.PENDING, PaymentStatus.PENDING);
+		// The item rows come back highest product id first: the restore must
+		// still visit the rows lowest product id first, mirroring checkout.
+		when(orderItemRepository.findByOrderId(12L)).thenReturn(List.of(
+			item(502, 12, 2, "White Tulip", 50000, 3), item(501, 12, 1, "Red Rose", 100000, 2)));
+		when(stockLevelRepository.findByBranchIdAndProductId(3L, 2L))
+			.thenReturn(Optional.of(stockLevel(3, 2, 5)));
+
+		mockMvc.perform(post("/api/order/12/cancel").header("X-Auth-Token", tokenOf(4, Role.USER)))
+			.andExpect(status().isOk());
+
+		InOrder order = inOrder(stockLevelRepository);
+		order.verify(stockLevelRepository).increment(3001L, 2);
+		order.verify(stockLevelRepository).increment(3002L, 3);
 	}
 
 	@Test

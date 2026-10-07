@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,6 +94,9 @@ public class OrderService {
 			subtotal = subtotal.add(lineTotal);
 			lines.add(new Line(product, entry.getValue(), lineTotal));
 		}
+		// Every stock-touching path visits the rows lowest product id first:
+		// one global lock order keeps mirrored carts from deadlocking.
+		lines.sort(Comparator.comparing(line -> line.product().getId()));
 
 		// The stock guard: a shortfall on any line rolls the whole cart back
 		// and the detail names every failing item.
@@ -261,7 +265,11 @@ public class OrderService {
 	}
 
 	private void restoreStock(Order order) {
-		for (OrderItem item : orderItemRepository.findByOrderId(order.getId())) {
+		// Mirrors checkout's lock order (lowest product id first) so opposite
+		// transitions never take the same rows in opposite sequences.
+		List<OrderItem> items = new ArrayList<>(orderItemRepository.findByOrderId(order.getId()));
+		items.sort(Comparator.comparing(OrderItem::getProductId));
+		for (OrderItem item : items) {
 			StockLevel row = stockLevelRepository
 				.findByBranchIdAndProductId(order.getBranchId(), item.getProductId()).orElse(null);
 			if (row == null) {
