@@ -102,6 +102,17 @@ class ProductCatalogIntegrationTest {
 	}
 
 	@Test
+	void anUnfilteredQueryRunsTheZeroPredicateSpecificationAndSeesEveryRow() {
+		// Every other case filters, so the empty-predicates branch of the
+		// specification never reaches a real query; this one runs it bare.
+		long baseline = run(null, null, null, null, null, null).getTotalElements();
+		persist("Unfiltered Sentinel", "100000", "IT-T", "IT-UNFILTERED");
+
+		Page<Product> page = run(null, null, null, null, null, null);
+		assertEquals(baseline + 1, page.getTotalElements());
+	}
+
+	@Test
 	void anOverflowingPageClampsIntoIntOffsetRangeAndServesAnEmptyPage() {
 		persist("Overflow Rose", "100000", "IT-T", "IT-OVERFLOW");
 

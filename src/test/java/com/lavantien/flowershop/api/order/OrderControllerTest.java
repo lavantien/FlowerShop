@@ -740,6 +740,18 @@ class OrderControllerTest {
 	}
 
 	@Test
+	void orderDetailCarriesTheBranchNameResolvedThroughTheViewPath() throws Exception {
+		when(orderRepository.findById(12L)).thenReturn(Optional.of(order(12, 4, OrderStatus.PENDING)));
+		when(orderItemRepository.findByOrderId(12L)).thenReturn(List.of(item(501, 12, 1, "Red Rose", 100000, 2)));
+		when(branchRepository.findById(3L)).thenReturn(Optional.of(branch(3, "Binh Thanh Hub")));
+
+		mockMvc.perform(get("/api/order/12").header("X-Auth-Token", tokenOf(4, Role.USER)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.branchId").value(3))
+			.andExpect(jsonPath("$.branchName").value("Binh Thanh Hub"));
+	}
+
+	@Test
 	void changingTheStatusOfAnUnknownOrderIsANotFound() throws Exception {
 		when(paymentSessionRepository.lockByOrderId(404L)).thenReturn(Optional.empty());
 		when(orderRepository.lockById(404L)).thenReturn(Optional.empty());
@@ -830,6 +842,19 @@ class OrderControllerTest {
 		assertEquals(OrderStatus.CANCELLED, order.getStatus());
 		assertEquals(PaymentStatus.CANCELLED,
 			paymentSessionRepository.lockByOrderId(12L).orElseThrow().getStatus());
+		verify(stockLevelRepository).increment(3001L, 2);
+	}
+
+	@Test
+	void theOwnerCancelsAPendingOrderThatHasNoPaymentSessionOnRecord() throws Exception {
+		Order order = stubCancellableOrder(OrderStatus.PENDING, PaymentStatus.PENDING);
+		when(paymentSessionRepository.lockByOrderId(12L)).thenReturn(Optional.empty());
+
+		mockMvc.perform(post("/api/order/12/cancel").header("X-Auth-Token", tokenOf(4, Role.USER)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("CANCELLED"));
+
+		assertEquals(OrderStatus.CANCELLED, order.getStatus());
 		verify(stockLevelRepository).increment(3001L, 2);
 	}
 
@@ -937,6 +962,20 @@ class OrderControllerTest {
 	@Test
 	void theAdminCancelsAPaidOrderThroughTheStatusEndpointAndRestoresStock() throws Exception {
 		Order order = stubCancellableOrder(OrderStatus.PAID, PaymentStatus.CONFIRMED);
+
+		mockMvc.perform(post("/api/order/12/status").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"status\": \"CANCELLED\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("CANCELLED"));
+
+		assertEquals(OrderStatus.CANCELLED, order.getStatus());
+		verify(stockLevelRepository).increment(3001L, 2);
+	}
+
+	@Test
+	void theAdminCancelsAPendingOrderThroughTheStatusEndpoint() throws Exception {
+		Order order = stubCancellableOrder(OrderStatus.PENDING, PaymentStatus.PENDING);
 
 		mockMvc.perform(post("/api/order/12/status").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)

@@ -114,6 +114,24 @@ class GeoServiceTest {
 	}
 
 	@Test
+	void nearestBranchKeepsTheEarlierTiedBranchWhenAHigherIdArrivesSecond() {
+		GeoService.Point target = new GeoService.Point(10.7769, 106.7009);
+
+		Branch tieLow = branch(2, 10.78, 106.70, true);
+		Branch tieHigh = branch(7, 10.78, 106.70, true);
+		assertEquals(tieLow, geoService.nearestBranch(List.of(tieLow, tieHigh), target));
+	}
+
+	@Test
+	void nearestBranchPrefersDistanceOverALowerIdOnTheFartherBranch() {
+		GeoService.Point target = new GeoService.Point(10.7769, 106.7009);
+
+		Branch close = branch(5, 10.78, 106.70, true);
+		Branch far = branch(2, 10.85, 106.75, true);
+		assertEquals(close, geoService.nearestBranch(List.of(close, far), target));
+	}
+
+	@Test
 	void malformedGeoDataFailsFast() {
 		var broken = new ByteArrayInputStream("{ not json".getBytes(StandardCharsets.UTF_8));
 		assertThrows(IllegalStateException.class, () -> GeoService.parse(broken));
