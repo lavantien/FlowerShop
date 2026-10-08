@@ -1,7 +1,3 @@
-# Single-pass memory guard for FlowerShop project processes.
-# Cron-driven via `make memguard`. Exits 1 when the aggregated commit demand
-# of project processes exceeds the cap; the largest offender's process tree
-# is killed and verified gone before exiting.
 
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..' '..')).Path

@@ -1,5 +1,3 @@
-// Renders the self-hosted README badges as shields-style flat SVGs, dependency
-// free. Run from CI with the coverage artifacts in place; outputs into --out.
 import {copyFile, mkdir, readFile, writeFile} from 'node:fs/promises';
 import path from 'node:path';
 
@@ -17,7 +15,6 @@ function escapeXml(text) {
 	return text.replace(/[&<>"']/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;'}[ch]));
 }
 
-// Verdana 10px advance widths, close enough that text never clips.
 function textWidth(text) {
 	let width = 0;
 	for (const ch of text) {
@@ -71,9 +68,6 @@ function coverageColor(percent) {
 	return '#e05d44';
 }
 
-// A missing artifact means the producing job died before reporting (for example
-// surefire stopped the build), so the honest badge value is unknown, not a throw:
-// the badges job must still publish a red ci badge over a stale green one.
 async function readPercentOrNull(reader, source) {
 	try {
 		return await reader();
@@ -110,8 +104,6 @@ async function frontendCoveragePercent() {
 	return pct;
 }
 
-// Floor to 2 decimals so a 89.996 percent reality never displays as 90, then
-// trim trailing zeros: 100, 99.4, and 99.24 all render naturally.
 function formatPercent(raw) {
 	const floored = Math.floor(raw * 100) / 100;
 	return `${floored.toFixed(2).replace(/\.?0+$/, '')}%`;

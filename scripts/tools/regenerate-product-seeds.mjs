@@ -1,11 +1,3 @@
-// Regenerates the committed product seeds: converts db/product.json to the v3 shape
-// (price = round(usd * 23000 / 1000) * 1000 integer VND, imgUrl base64-decoded to the
-// plain URL, quantity dropped) and emits db/seed.sql with idempotent product upserts
-// plus stock_level rows (25 per product per branch, branches 1-6 from db/run.sql).
-// Deterministic: sorted by id, fixed field order, a converted input passes through
-// unchanged so reruns never churn the committed files.
-// Invocation: make seeds, or plain node scripts/tools/regenerate-product-seeds.mjs
-// (the provisioned frontend node works: frontend/node/node.exe).
 import {readFile, writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -52,7 +44,6 @@ function sqlString(value) {
 }
 
 function convert(product) {
-	// A plain http URL marks the converted shape; base64 marks the legacy shape.
 	if (/^https?:\/\//i.test(product.imgUrl)) {
 		return product;
 	}

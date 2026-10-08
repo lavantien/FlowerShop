@@ -1,16 +1,4 @@
 #!/usr/bin/env node
-// API fuzz harness for the packaged jar (plan decision 13: rolled own, no jqwik).
-// Deterministic: fixed seed from scripts/tools/qa.json (fuzz.seed) drives every
-// generated variant, the curated corpus is scripts/tools/fuzz-corpus.json.
-// Assertions per docs/api-v3.md: response status stays in the documented set for
-// the endpoint, and every error body is problem+json carrying a known code,
-// application errors and framework errors alike (deserialization 400 VALIDATION,
-// method-not-allowed 405 METHOD_NOT_ALLOWED, unknown paths 404 NOT_FOUND, per
-// the committed error advice). No response is ever 5xx or a hang.
-// The run boots target/flowershop-*.jar (newest first, same glob as make run) on a
-// scratch port against the compose MySQL, kills it afterwards, and writes
-// docs/qa/fuzz-report.md. Run via `make fuzz`, which provides JAVA_BIN and the
-// MySQL env. Exit 0 on a green run, 1 on any assertion failure.
 
 import { createHmac } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
@@ -24,13 +12,10 @@ const cfg = JSON.parse(readFileSync(join(ROOT, 'scripts/tools/qa.json'), 'utf8')
 const corpus = JSON.parse(readFileSync(join(ROOT, cfg.corpusPath), 'utf8'));
 const BASE = `http://localhost:${cfg.port}`;
 
-// Machine codes from docs/api-v3.md plus the framework advice codes the
-// committed handler emits; every problem+json error must carry one.
 const KNOWN_CODES = new Set(['VALIDATION', 'UNAUTHENTICATED', 'FORBIDDEN', 'NOT_FOUND', 'EMAIL_IN_USE',
 	'NAME_IN_USE', 'OUT_OF_STOCK', 'ILLEGAL_TRANSITION', 'PAYMENT_CANCELLED', 'PAYMENT_CONFIRMED',
 	'HAS_ORDERS', 'COUPON_INACTIVE', 'STOCK_ROWS_EXIST', 'WRONG_SECRET', 'METHOD_NOT_ALLOWED']);
 
-// Deterministic PRNG (mulberry32): same seed, same request sequence, same statuses.
 function mulberry32(seed) {
 	let a = seed >>> 0;
 	return () => {
@@ -43,14 +28,6 @@ function mulberry32(seed) {
 const rng = mulberry32(cfg.seed);
 const pick = (values) => values[Math.floor(rng() * values.length)];
 
-// The seed fixes the request sequence; the run tag namespaces the fresh users
-// each run registers and every credential the run rotates derives from it, so
-// a rerun of the same seed under a fresh tag replays identical statuses and a
-// replay of a completed run (FUZZ_RUN_TAG set to its tag) is green end to end:
-// statuses may flip where persistent state legitimately differs, for instance
-// setup login falling back to the already rotated password, but no assertion
-// may fail. The first run of a tag rotates user 1's password, which is why
-// setup retries the tag derived rotated form.
 const runTag = process.env.FUZZ_RUN_TAG ?? Date.now().toString(36);
 
 const failures = [];
@@ -103,7 +80,6 @@ async function call(name, template, method, path, {query, token, body, raw, stat
 		fail(name, `status ${response.status} outside documented set [${status.join(', ')}]`);
 		return response;
 	}
-	// Read once here and cache: every caller that needs a body reads the cache.
 	const text = await response.text();
 	response.fuzzBody = text;
 	if (response.status < 400 || error === undefined) {
@@ -117,8 +93,6 @@ async function call(name, template, method, path, {query, token, body, raw, stat
 		fail(name, `error body is not JSON (${contentType}): ${text.slice(0, 120)}`);
 		return response;
 	}
-	// Every error body is problem+json per the contract and the committed
-	// error advice; application and framework errors share the shape.
 	if (error === 'any' || error === 'problem') {
 		contentType.startsWith('application/problem+json')
 			? assertProblem(name, parsed, response.status, codes)
@@ -138,10 +112,6 @@ function json(response) {
 	return JSON.parse(response.fuzzBody);
 }
 
-// 2xx money contract: every money field is whole-dong VND with no decimal in
-// the JSON (JS number coercion would hide a ".0"), and the checkout identity
-// holds: line totals sum to the subtotal, total is subtotal minus discount
-// plus fee.
 function assertMoneyField(name, raw, field) {
 	if (new RegExp(`"${field}":\\s*-?\\d+\\.`).test(raw)) {
 		fail(name, `${field} carries decimals in the JSON`);
@@ -169,8 +139,6 @@ function assertCheckoutMoney(name, response, order) {
 const sig = (paymentId, orderId, amount) =>
 	createHmac('sha256', cfg.paymentSecret).update(`${paymentId}:${orderId}:${amount}`).digest('hex');
 
-// Every fuzz user's password derives from the run tag: a replay of the same
-// tag computes the same passwords the previous run left in the database.
 const credential = (n) =>
 	createHmac('sha256', cfg.paymentSecret).update(`${runTag}:user${n}`).digest('hex').slice(0, 20);
 const rotatedCredential = (n) =>
@@ -183,8 +151,6 @@ const bitFlip = (hex) => {
 
 const runStart = Date.now();
 const elapsed = () => Date.now() - runStart;
-
-// --- server lifecycle, same jar selection and tree-kill discipline as capture.mjs
 
 function findJar() {
 	const target = join(ROOT, 'target');
@@ -202,8 +168,6 @@ function startServer() {
 	const javaBin = process.env.JAVA_BIN
 		?? (process.env.JAVA_HOME ? join(process.env.JAVA_HOME, 'bin', process.platform === 'win32' ? 'java.exe' : 'java') : 'java');
 	console.log(`[server] ${javaBin} -jar ${jar.slice(ROOT.length + 1)} on port ${cfg.port}`);
-	// Keep the dev default payment secret so the sig vectors above stay computable.
-	// The log truncates per run so it cannot grow unboundedly across reruns.
 	const logFd = openSync(join(ROOT, cfg.serverLogPath), 'w');
 	const child = spawn(javaBin, ['-jar', jar, `--server.port=${cfg.port}`], {
 		cwd: ROOT,
@@ -216,7 +180,6 @@ function startServer() {
 		try {
 			writeSync(logFd, chunk);
 		} catch {
-			// the log is best effort, the run must not die on a full disk
 		}
 	};
 	child.stdout.on('data', collect);
@@ -230,7 +193,6 @@ function startServer() {
 				const response = await fetch(`${BASE}/api/product?page=0&size=1`, {signal: AbortSignal.timeout(2000)});
 				if (response.ok) return;
 			} catch {
-				// still booting
 			}
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 		}
@@ -242,13 +204,11 @@ function startServer() {
 
 function killTree(pid) {
 	if (process.platform === 'win32') {
-		// taskkill /T reaches the whole process tree, child.kill() would not.
 		spawnSync('taskkill', ['/PID', String(pid), '/T', '/F']);
 	} else {
 		try {
 			process.kill(pid, 'SIGKILL');
 		} catch {
-			// already gone
 		}
 	}
 }
@@ -272,10 +232,6 @@ function stopServer(server) {
 	});
 }
 
-// A plain fetch cannot probe path traversal: the URL parser collapses
-// /api/product/../user to /api/user before the socket opens, so the old
-// check certified nothing. This sends the raw path verbatim on the request
-// line and lets the server's own handling answer.
 function rawPathProbe(path) {
 	return new Promise((resolve, reject) => {
 		const outbound = httpRequest(
@@ -291,8 +247,6 @@ function rawPathProbe(path) {
 	});
 }
 
-// --- scenario state, populated by setup()
-
 const facts = {};
 
 async function login(email, password) {
@@ -301,9 +255,6 @@ async function login(email, password) {
 	return (await json(response)).token;
 }
 
-// User 1's password is rotated by the user walk, so logging in as user 1
-// tries the tag derived base form first and falls back to the rotated one on
-// a replay of a completed run; both candidates are pure functions of the tag.
 async function loginRegistered(n) {
 	const email = facts[`user${n}`];
 	for (const password of [credential(n), rotatedCredential(n)]) {
@@ -321,7 +272,6 @@ async function registerUser(n) {
 	await call(`setup-register-${n}`, 'POST /api/user/create', 'POST', '/api/user/create', {
 		body: {name: `Fuzz ${n}`, email, password: credential(n), phone: '0900000000', address: '1 Le Loi',
 			district: 'Bình Thạnh', city: 'Hồ Chí Minh', answer: 'blue'},
-		// A rerun of the same seed re-registers the same addresses: 201 first, 409 after.
 		status: [201, 409], error: 'any', codes: ['EMAIL_IN_USE'],
 	});
 	return email;
@@ -370,8 +320,6 @@ async function checkout(name, token, body = orderBody()) {
 	return payload;
 }
 
-// --- curated walks, one per contract section
-
 async function authWalk() {
 	const t = facts.adminToken;
 	await call('login-wrong-password', 'POST /api/auth/login', 'POST', '/api/auth/login',
@@ -380,8 +328,6 @@ async function authWalk() {
 		{body: {email: 'ghost@nowhere.x', password: 'nope'}, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
 	await call('login-missing-fields', 'POST /api/auth/login', 'POST', '/api/auth/login',
 		{body: {}, status: [400], error: 'problem', codes: ['VALIDATION']});
-	// The corpus email pool against login: every hostile address must stay
-	// inside the documented envelope, validation 400 or unauthenticated 401.
 	for (const [index, email] of corpus.emails.entries()) {
 		await call(`login-corpus-email-${index}`, 'POST /api/auth/login', 'POST', '/api/auth/login',
 			{body: {email, password: 'nope'}, status: [200, 400, 401], error: 'any', codes: ['VALIDATION', 'UNAUTHENTICATED']});
@@ -392,7 +338,6 @@ async function authWalk() {
 		{token: t, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
 	await call('logout-no-header', 'POST /api/auth/logout', 'POST', '/api/auth/logout',
 		{status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
-	// Fresh admin session for every later walk: logout burned the old one.
 	facts.adminToken = await login('admin@flowershop.example', '1234qwer');
 	await call('reset-wrong-answer', 'POST /api/user/resetPassword', 'POST', '/api/user/resetPassword',
 		{body: {email: facts.user4, answer: 'red', newPassword: 'pass5678'}, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
@@ -412,9 +357,6 @@ async function userWalk() {
 			district: 'Quận 1', city: 'Hồ Chí Minh'}, status: [200], error: 'problem', codes: ['VALIDATION']});
 	await call('me-password-wrong-current', 'POST /api/user/me/password', 'POST', '/api/user/me/password',
 		{token: facts.memberToken, body: {currentPassword: 'wrong', newPassword: rotatedCredential(1)}, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
-	// The rotated target derives from the run tag; on a replay of a completed
-	// run the current password already is the rotated one and the change is a
-	// same value no-op, still 204 with every session revoked.
 	await call('me-password-change', 'POST /api/user/me/password', 'POST', '/api/user/me/password',
 		{token: facts.memberToken, body: {currentPassword: facts.user1Password, newPassword: rotatedCredential(1)}, status: [204]});
 	await call('me-token-dead-after-rotate', 'GET /api/user/me', 'GET', '/api/user/me',
@@ -475,8 +417,6 @@ async function catalogWalk() {
 	const created = await json(await call('product-create', 'POST /api/product/create', 'POST', '/api/product/create',
 		{token: t, body: {name: `Fuzz Bouquet ${cfg.seed}`, description: 'harness probe', imgUrl: 'https://x/y.png',
 			price: 100000, typeName: facts.typeName, categoryName: facts.categoryName}, status: [200], error: 'problem', codes: ['VALIDATION']}));
-	// A nonpositive price never enters the catalog (812e3bd): every template
-	// answers 400 VALIDATION with a field error naming price.
 	for (const [index, price] of corpus.nonPositivePrices.entries()) {
 		const response = await call(`product-create-price-${index}`, 'POST /api/product/create', 'POST', '/api/product/create',
 			{token: t, body: {name: `Fuzz Price ${cfg.seed} ${index}`, description: 'harness probe', imgUrl: 'https://x/y.png',
@@ -518,31 +458,21 @@ async function taxonomyWalk() {
 	await call('type-list', 'GET /api/type', 'GET', '/api/type', {status: [200]});
 	const t = facts.adminToken;
 	const categoryName = `Fuzz Cat ${cfg.seed}`;
-	// A run that died before teardown may have left the base row behind: the
-	// scan below adopts it either way, exactly like the coupon walk.
 	await call('category-create', 'POST /api/category/create', 'POST', '/api/category/create',
 		{token: t, body: {name: categoryName}, status: [200, 409], error: 'problem', codes: ['VALIDATION', 'NAME_IN_USE']});
 	await call('category-create-duplicate', 'POST /api/category/create', 'POST', '/api/category/create',
 		{token: t, body: {name: categoryName}, status: [409], error: 'problem', codes: ['NAME_IN_USE']});
 	const categories = await json(await call('category-scan', 'GET /api/category', 'GET', '/api/category', {status: [200]}));
 	const created = categories.find((c) => c.name === categoryName);
-	// Crash healing: a run that died mid-cascade leaves probe products that
-	// would block the category delete through NAME_IN_USE, so they die first.
 	const orphans = await json(await call('category-cascade-orphans', 'GET /api/product', 'GET', '/api/product',
 		{query: {search: `Fuzz Cascade ${cfg.seed}`, size: 48}, status: [200]}));
 	for (const orphan of orphans.content) {
 		await call(`category-cascade-orphan-${orphan.id}`, 'DELETE /api/product/{id}', 'DELETE', `/api/product/${orphan.id}`,
 			{token: t, status: [204]});
 	}
-	// The rename cascade (9ae754a): a category products reference carries its
-	// product rows along, so the public catalog must show the new name and the
-	// old name must stop returning the product. The walk deletes the probe
-	// product afterwards so teardown can drop the category.
 	const cascadeProduct = await json(await call('category-cascade-product-create', 'POST /api/product/create', 'POST', '/api/product/create',
 		{token: t, body: {name: `Fuzz Cascade ${cfg.seed}`, description: 'rename cascade probe', imgUrl: 'https://x/y.png',
 			price: 100000, typeName: facts.typeName, categoryName}, status: [200], error: 'problem', codes: ['VALIDATION']}));
-	// Run-tagged rename target: teardown wipes the previous run's rows, so a
-	// same tag replay renames into free space and stays deterministic.
 	const renamedTo = `${categoryName}b-${runTag}`;
 	await call('category-cascade-rename', 'PUT /api/category/{id}', 'PUT', `/api/category/${created.id}`,
 		{token: t, body: {name: renamedTo}, status: [200], error: 'problem', codes: ['NOT_FOUND', 'NAME_IN_USE']});
@@ -578,12 +508,6 @@ async function taxonomyWalk() {
 		{token: t, body: {name: `${typeName}b-${runTag}`, categoryName: facts.categoryName}, status: [200, 409], error: 'problem', codes: ['NOT_FOUND', 'NAME_IN_USE']});
 	await call('type-delete', 'DELETE /api/type/{id}', 'DELETE', `/api/type/${createdType.id}`,
 		{token: t, status: [204]});
-	// Root fix for fuzz residue: every taxonomy row this walk owns dies here
-	// through the admin API, including the phantom rows pre-teardown runs
-	// inserted, so the database stays clean across reruns and the run-tagged
-	// renames above always land in free space. A row products still reference
-	// answers 409 NAME_IN_USE: only fuzz walks ever put products under these
-	// names, so the referencing probes die first and the delete retries once.
 	for (const [kind, prefix, filter] of [['category', `Fuzz Cat ${cfg.seed}`, 'category'], ['type', `Fuzz Type ${cfg.seed}`, 'type']]) {
 		const rows = await json(await call(`taxonomy-teardown-scan-${kind}`, `GET /api/${kind}`, 'GET', `/api/${kind}`, {status: [200]}));
 		for (const row of rows.filter((candidate) => candidate.name.startsWith(prefix))) {
@@ -608,9 +532,6 @@ async function branchWalk() {
 	const created = await json(await call('branch-create', 'POST /api/branch', 'POST', '/api/branch',
 		{token: t, body: {name: `Fuzz Branch ${cfg.seed}`, address: '3 Test St', district: 'Bình Thạnh',
 			city: 'Hồ Chí Minh', lat: 10.78, lng: 106.7, active: false}, status: [200], error: 'problem', codes: ['VALIDATION']}));
-	// Coordinates are required and bounded (34ee4c4): a create without them,
-	// with them null, or off the globe answers 400 VALIDATION with a field
-	// error on the offender.
 	const coordinateless = [
 		{offender: 'lat', body: {name: `Fuzz Lost A ${cfg.seed}`, address: '3 Test St', district: 'Bình Thạnh', city: 'Hồ Chí Minh', lng: 106.7}},
 		{offender: 'lng', body: {name: `Fuzz Lost B ${cfg.seed}`, address: '3 Test St', district: 'Bình Thạnh', city: 'Hồ Chí Minh', lat: 10.78}},
@@ -637,8 +558,6 @@ async function branchWalk() {
 	if (updated.lat !== created.lat || updated.lng !== created.lng) {
 		fail('branch-update', `coordinates drifted on update: ${created.lat},${created.lng} -> ${updated.lat},${updated.lng}`);
 	}
-	// A maintenance PUT that omits coordinates answers 400 naming them, so the
-	// stored pair on this very real branch can never be wiped (34ee4c4).
 	{
 		const response = await call('branch-update-omitted-coordinates', 'PUT /api/branch/{id}', 'PUT', `/api/branch/${created.id}`,
 			{token: t, body: {name: 'Fuzz Renamed Hub'}, status: [400], error: 'problem', codes: ['VALIDATION']});
@@ -647,9 +566,6 @@ async function branchWalk() {
 			fail('branch-update-omitted-coordinates', `expected field errors on lat and lng: ${response.fuzzBody.slice(0, 120)}`);
 		}
 	}
-	// Body validation runs before the existence check: a body without the
-	// required coordinates scores 400 VALIDATION, a valid body on an unknown
-	// id scores the 404.
 	await call('branch-update-invalid-body', 'PUT /api/branch/{id}', 'PUT', '/api/branch/99999999',
 		{token: t, body: {name: 'Ghost'}, status: [400], error: 'problem', codes: ['VALIDATION']});
 	await call('branch-update-unknown', 'PUT /api/branch/{id}', 'PUT', '/api/branch/99999999',
@@ -668,7 +584,6 @@ async function branchWalk() {
 		{token: t, body: {productId: facts.productId, quantity: 5}, status: [404], error: 'problem', codes: ['NOT_FOUND']});
 	await call('stock-restore', 'PUT /api/branch/{id}/stock', 'PUT', `/api/branch/${facts.branchId}/stock`,
 		{token: t, body: {productId: facts.productId, quantity: cfg.stockTopUpQuantity}, status: [200], error: 'problem', codes: ['NOT_FOUND']});
-	// The created branch now carries a stock row, so delete must refuse.
 	await call('branch-delete-with-stock', 'DELETE /api/branch/{id}', 'DELETE', `/api/branch/${created.id}`,
 		{token: t, status: [409], error: 'problem', codes: ['STOCK_ROWS_EXIST']});
 	await call('branch-delete-unknown', 'DELETE /api/branch/{id}', 'DELETE', '/api/branch/99999999',
@@ -698,7 +613,6 @@ async function orderAndPaymentWalk() {
 		{token: t, query: {status: 'banana', from: 'zzz', to: 'yyy'}, status: [200]});
 	await call('order-admin-list-member-forbidden', 'GET /api/order', 'GET', '/api/order',
 		{token: facts.memberToken, status: [403], error: 'problem', codes: ['FORBIDDEN']});
-	// Payment matrix against the live PENDING session from the couponed checkout.
 	const payment = couponed.payment;
 	const good = sig(payment.id, couponed.order.id, couponed.order.total);
 	const paymentView = await call('payment-get', 'GET /api/payment/{id}', 'GET', `/api/payment/${payment.id}`,
@@ -713,8 +627,6 @@ async function orderAndPaymentWalk() {
 		{query: {sig: good.slice(0, 32)}, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
 	await call('payment-get-missing-sig', 'GET /api/payment/{id}', 'GET', `/api/payment/${payment.id}`,
 		{status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
-	// The corpus sig pool against a live payment: every hostile signature
-	// must draw the documented 401, never a 5xx or a body leak.
 	for (const [index, hostile] of corpus.sigs.entries()) {
 		await call(`payment-get-sig-corpus-${index}`, 'GET /api/payment/{id}', 'GET', `/api/payment/${payment.id}`,
 			{query: {sig: hostile}, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
@@ -727,7 +639,6 @@ async function orderAndPaymentWalk() {
 		{query: {sig: good}, status: [200]});
 	await call('payment-cancel-after-confirm', 'POST /api/payment/{id}/cancel', 'POST', `/api/payment/${payment.id}/cancel`,
 		{query: {sig: good}, status: [409], error: 'problem', codes: ['PAYMENT_CONFIRMED']});
-	// Fulfilment transitions on the PAID order, then the terminal wall.
 	await call('order-status-shipped', 'POST /api/order/{id}/status', 'POST', `/api/order/${couponed.order.id}/status`,
 		{token: t, body: {status: 'SHIPPED'}, status: [200], error: 'problem', codes: ['NOT_FOUND', 'ILLEGAL_TRANSITION']});
 	await call('order-status-completed', 'POST /api/order/{id}/status', 'POST', `/api/order/${couponed.order.id}/status`,
@@ -736,7 +647,6 @@ async function orderAndPaymentWalk() {
 		{token: t, body: {status: 'PENDING'}, status: [409], error: 'problem', codes: ['ILLEGAL_TRANSITION']});
 	await call('order-cancel-completed', 'POST /api/order/{id}/cancel', 'POST', `/api/order/${couponed.order.id}/cancel`,
 		{token: t, status: [409], error: 'problem', codes: ['ILLEGAL_TRANSITION']});
-	// A second PENDING order walks the cancel path: owner cancel, replay, stock restore.
 	const second = await checkout('order-checkout-for-cancel', facts.buyerToken);
 	const cancelSig = sig(second.payment.id, second.order.id, second.order.total);
 	await call('payment-cancel', 'POST /api/payment/{id}/cancel', 'POST', `/api/payment/${second.payment.id}/cancel`,
@@ -747,7 +657,6 @@ async function orderAndPaymentWalk() {
 		{query: {sig: cancelSig}, status: [409], error: 'problem', codes: ['PAYMENT_CANCELLED']});
 	await call('order-cancel-already-cancelled', 'POST /api/order/{id}/cancel', 'POST', `/api/order/${second.order.id}/cancel`,
 		{token: facts.buyerToken, status: [409], error: 'problem', codes: ['ILLEGAL_TRANSITION']});
-	// Cross-session sig: a valid signature computed over a different payment.
 	const third = await checkout('order-checkout-cross-session', facts.buyerToken);
 	await call('payment-get-cross-session-sig', 'GET /api/payment/{id}', 'GET', `/api/payment/${third.payment.id}`,
 		{query: {sig: cancelSig}, status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
@@ -801,8 +710,6 @@ async function couponWalk() {
 	if (created.status === 200) {
 		couponId = (await json(created)).id;
 	} else {
-		// 409 NAME_IN_USE from an earlier crashed run: resolve the existing
-		// coupon by its code instead of addressing an undefined id.
 		const list = await json(await call('coupon-scan', 'GET /api/coupon', 'GET', '/api/coupon', {token: t, status: [200]}));
 		couponId = list.find((c) => c.code === code).id;
 	}
@@ -859,8 +766,6 @@ async function reportWalk() {
 		{status: [401], error: 'problem', codes: ['UNAUTHENTICATED']});
 }
 
-// Cross-cutting abuse: malformed transports, tampered tokens, wrong methods,
-// unknown paths. None of these may reach a controller with side effects.
 async function crossWalk() {
 	for (const raw of corpus.malformedBodies) {
 		await call(`login-malformed-${raw.length}-${raw.slice(0, 6)}`, 'POST /api/auth/login', 'POST', '/api/auth/login',
@@ -876,21 +781,14 @@ async function crossWalk() {
 	await call('tampered-token-member-on-admin', 'GET /api/user', 'GET', '/api/user',
 		{token: Buffer.from(`${facts.buyerOrderId}+ADMIN+deadbeef`).toString('base64'),
 			status: [401, 403], error: 'any', codes: ['UNAUTHENTICATED', 'FORBIDDEN']});
-	// Wrong methods on paths that exist for another verb: 405 problem+json
-	// METHOD_NOT_ALLOWED from the error advice.
 	await call('wrong-method-get-login', 'GET /api/auth/login', 'GET', '/api/auth/login', {status: [405], error: 'problem', codes: ['METHOD_NOT_ALLOWED']});
 	await call('wrong-method-delete-payment', 'DELETE /api/payment/x', 'DELETE', '/api/payment/x', {status: [405], error: 'problem', codes: ['METHOD_NOT_ALLOWED']});
 	await call('wrong-method-put-order-me', 'PUT /api/order/me', 'PUT', '/api/order/me', {status: [405], error: 'problem', codes: ['METHOD_NOT_ALLOWED']});
-	// DELETE /api/product is real and destructive with an empty body: hit it
-	// only with a member token, which the interceptor rejects before dispatch.
 	await call('wrong-method-delete-product-member', 'DELETE /api/product', 'DELETE', '/api/product',
 		{token: facts.memberToken, body: [], status: [403], error: 'problem', codes: ['FORBIDDEN']});
 	await call('unknown-api-path', 'GET /api/nosuch', 'GET', '/api/nosuch', {status: [404], error: 'problem', codes: ['NOT_FOUND']});
 	await call('unknown-api-post-path', 'POST /api/nosuch/deep/path', 'POST', '/api/nosuch/deep/path',
 		{body: {}, status: [404], error: 'problem', codes: ['NOT_FOUND']});
-	// Path traversal over a raw socket: the dot segments must reach the server
-	// un-normalized and be refused as an unknown endpoint, with the problem
-	// instance echoing the raw path back as the proof it arrived intact.
 	const traversal = await rawPathProbe('/api/product/../user');
 	stat('GET /api/product/../user', traversal.status);
 	if (traversal.status !== 404) {
@@ -903,8 +801,6 @@ async function crossWalk() {
 		}
 	}
 }
-
-// --- seeded generated variants over mutating JSON templates
 
 function hostileValue() {
 	switch (Math.floor(rng() * 6)) {
@@ -921,7 +817,6 @@ function mutated(body) {
 	const keys = Object.keys(body);
 	const key = keys[Math.floor(rng() * keys.length)];
 	const copy = {...body};
-	// Nested items arrays mutate one inner field so checkout variants stay shaped.
 	if (Array.isArray(copy[key])) {
 		const inner = {...copy[key][0]};
 		inner[Object.keys(inner)[Math.floor(rng() * Object.keys(inner).length)]] = hostileValue();
@@ -952,7 +847,6 @@ async function variantsWalk() {
 				{token, body: mutated(body), status: statuses ?? [200, 201, 204, 400, 404, 409], error: 'any'});
 		}
 	}
-	// A few raw malformed swaps against the two most sensitive writers.
 	for (let i = 0; i < cfg.generatedVariantsPerEndpoint; i++) {
 		await call(`variant-raw-checkout-${i}`, 'POST /api/order', 'POST', '/api/order',
 			{token: facts.buyerToken, raw: pick(corpus.malformedBodies), status: [400], error: 'problem', codes: ['VALIDATION']});
@@ -962,8 +856,6 @@ async function variantsWalk() {
 }
 
 const methodOf = (template) => template.split(' ')[0];
-
-// --- report
 
 function writeReport(jarName, durationMs) {
 	const lines = [];
@@ -1012,8 +904,6 @@ function writeReport(jarName, durationMs) {
 	writeFileSync(join(ROOT, cfg.reportPath), lines.join('\n') + '\n');
 }
 
-// --- main
-
 let server = null;
 try {
 	mkdirSync(dirname(join(ROOT, cfg.reportPath)), {recursive: true});
@@ -1025,8 +915,6 @@ try {
 	await catalogWalk();
 	await taxonomyWalk();
 	await branchWalk();
-	// Orders before admin user admin: the HAS_ORDERS delete case needs the
-	// buyer's checkouts on record, and deleting a user kills its session.
 	await orderAndPaymentWalk();
 	await checkoutCorpusWalk();
 	await adminUserWalk();

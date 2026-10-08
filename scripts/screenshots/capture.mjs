@@ -1,8 +1,3 @@
-// Captures the README screenshot set from the live app served by the packaged jar.
-// Run through `make screenshots`, which provides db-up, JAVA_BIN, and the MySQL env.
-// The walk mirrors a real v3 session: guest browse with server paging, register,
-// cart checkout with coupon, payment gateway confirm, order history with a member
-// cancel, wishlist, then the full admin back office and a 404.
 import {spawn} from 'node:child_process';
 import {readdir, mkdir} from 'node:fs/promises';
 import {existsSync, statSync, readFileSync} from 'node:fs';
@@ -17,7 +12,6 @@ const CONFIG = {
 	outDir: path.join(REPO_ROOT, 'project-pictures'),
 	viewport: {width: 1600, height: 900},
 	locale: 'en',
-	// a fresh member per run proves the register flow and dodges duplicate-email 409s
 	member: {
 		name: 'Capture Member',
 		email: `capture-${STAMP}@flowershop.example`,
@@ -46,10 +40,6 @@ async function fetchJson(url, options) {
 	return response.json();
 }
 
-// Money mirrors of the jar's own math (GeoService, Coupon, ShopProperties),
-// parameterized from the committed config and seeds so the expected numbers
-// cannot drift from the source of truth.
-
 function readDeliveryConfig() {
 	const block = readFileSync(path.join(REPO_ROOT, 'src/main/resources/application.yml'), 'utf8')
 		.split('delivery:')[1].split('payment:')[0];
@@ -76,7 +66,6 @@ function readSeedCoupon(code) {
 	return {kind: hit[1], value: Number(hit[2])};
 }
 
-// Mean earth radius, IUGG R1, with GeoService's ceil to the next tenth of a km.
 const EARTH_RADIUS_KM = 6371.0088;
 
 function distanceKm(from, to) {
@@ -90,20 +79,15 @@ function distanceKm(from, to) {
 
 function expectedDeliveryFee(delivery, distance) {
 	const raw = Math.min(delivery.baseFee + delivery.perKm * distance, delivery.maxFee);
-	// HALF_UP onto the round-to step, like ShopProperties.Delivery.round.
 	return Math.round(raw / delivery.roundTo) * delivery.roundTo;
 }
 
-// The fee depends only on the distance, so the nearest eligible branch decides
-// it regardless of GeoService's lowest-id tie-break among equals.
 function nearestBranchDistance(branches, target) {
 	return Math.min(...branches
 		.filter(branch => branch.active && branch.lat !== null && branch.lng !== null)
 		.map(branch => distanceKm({lat: branch.lat, lng: branch.lng}, target)));
 }
 
-// Coupon.discountOn (percent kinds ceil, both clamp to the subtotal) followed
-// by the checkout's round-then-min clamp.
 function expectedDiscount(delivery, subtotal, coupon) {
 	const raw = coupon.kind === 'PERCENT'
 		? Math.ceil(subtotal * coupon.value / 100)
@@ -150,7 +134,6 @@ async function findJar() {
 
 function killTree(child) {
 	if (process.platform === 'win32') {
-		// taskkill /T reaches the whole process tree, child.kill() would not.
 		spawn('taskkill', ['/PID', String(child.pid), '/T', '/F']);
 	} else {
 		child.kill('SIGTERM');
@@ -170,8 +153,6 @@ async function startServer() {
 	child.stderr.on('data', chunk => {
 		stderrTail = (stderrTail + chunk).slice(-2000);
 	});
-	// These throws happen before main's try/finally, so the tree must die here
-	// or the orphaned jar keeps port 8080 and poisons every later run.
 	const deadline = Date.now() + CONFIG.healthTimeoutMs;
 	while (Date.now() < deadline) {
 		if (child.exitCode !== null) {
@@ -192,8 +173,6 @@ async function stopServer(server) {
 	if (!server || server.child.exitCode !== null) {
 		return;
 	}
-	// 'close' fires exactly once, so a jar that already died would leave a bare
-	// once() listener hanging forever; the timeout keeps make from hanging too.
 	await new Promise(resolve => {
 		const timer = setTimeout(resolve, 10_000);
 		server.child.once('close', () => {
@@ -204,8 +183,6 @@ async function stopServer(server) {
 	});
 }
 
-// The seeds must already live in MySQL (make db-reset); the walker never
-// POSTs db/product.json anymore, it boots against the seeded database.
 async function verifySeeded() {
 	const firstPage = await fetchJson(`${CONFIG.baseUrl}/api/product?page=0&size=1`);
 	if (!Array.isArray(firstPage.content) || firstPage.content.length === 0 || firstPage.totalElements < 13) {
@@ -230,7 +207,6 @@ async function launchBrowser() {
 	throw new Error(`no chromium channel found (tried ${channels.join(', ')})`);
 }
 
-// Toasts sit fixed in the top right corner for 4 s and would cover the shots.
 async function settleToasts(page) {
 	try {
 		await page.waitForFunction(() => document.querySelectorAll('app-toasts .toast').length === 0, null, {timeout: 6000});
@@ -250,8 +226,6 @@ async function waitForImages(page) {
 	try {
 		await page.waitForFunction(loaded, null, {timeout: CONFIG.imageTimeoutMs});
 	} catch {
-		// image.complete is true for broken loads too, so failed CDN URLs are
-		// indistinguishable from slow ones without the naturalWidth check above.
 		const broken = await page.evaluate(() => Array.from(document.images)
 			.filter(image => image.complete && image.naturalWidth === 0)
 			.map(image => image.src));
@@ -262,10 +236,6 @@ async function waitForImages(page) {
 	}
 }
 
-// ngx-bootstrap fades opacity over 150 ms and the dialog transform over 300 ms,
-// so `.modal.show` alone fires mid-fade and the shot captures a half-transparent
-// modal. Settled means opacity 1 and both opacity and transform unchanged across
-// two consecutive animation frames.
 async function waitForModalSettled(page) {
 	await page.waitForFunction(() => {
 		const modal = document.querySelector('.modal.show');
@@ -281,24 +251,17 @@ async function waitForModalSettled(page) {
 }
 
 async function closeModal(page) {
-	// Pin the count before clicking: a locator re-query for detachment could match
-	// a modal queued behind this one, while the count dropping proves this one died.
 	const openCount = await page.locator('.modal.show').count();
 	const close = page.locator('.modal.show .btn-close');
 	if (await close.count() > 0) {
 		await close.first().click();
 	} else {
-		// the store product modal has no header, ngx-bootstrap closes on Escape
 		await page.keyboard.press('Escape');
 	}
 	await page.waitForFunction(count => document.querySelectorAll('.modal.show').length < count, openCount, {timeout: 5000});
-	// ngx-bootstrap queues a new modal behind the previous fade-out, so the next
-	// open must find a clean stage.
 	await page.waitForFunction(() => document.querySelectorAll('.modal.show').length === 0, null, {timeout: 5000});
 }
 
-// The auth modal is a plain always-rendered div pair, not an ngx-bootstrap
-// dialog, so it never carries .show and needs its own waits.
 async function openAuthModal(page) {
 	await page.locator('.responsive-float button:not([data-test="nav-cart"])').click();
 	await page.waitForSelector('app-auth-modal .modal #inputEmail');
@@ -310,14 +273,12 @@ async function login(page, {email, password}) {
 	await page.fill('app-auth-modal #inputPassword', password);
 	await page.locator('app-auth-modal .modal-footer .btn-success').click();
 	await page.waitForSelector('app-auth-modal .modal', {state: 'detached', timeout: 10_000});
-	// The app writes the token before the zoneless navbar re-renders, so gate
-	// on the DOM, not on localStorage, before any button-index click.
 	await page.waitForSelector('.responsive-float svg.fa-right-from-bracket', {timeout: 10_000});
 }
 
 async function register(page, member) {
 	await openAuthModal(page);
-	await page.locator('app-auth-modal .modal-footer .btn-primary').click(); // switch to the sign up form
+	await page.locator('app-auth-modal .modal-footer .btn-primary').click();
 	await page.waitForSelector('app-auth-modal #inputNameS');
 	await page.fill('app-auth-modal #inputNameS', member.name);
 	await page.fill('app-auth-modal #inputEmailS', member.email);
@@ -330,7 +291,6 @@ async function register(page, member) {
 	await page.fill('app-auth-modal #inputAddressS', member.address);
 	await page.locator('app-auth-modal .modal-footer .btn-success').click();
 	await page.waitForSelector('app-auth-modal .modal', {state: 'detached', timeout: 10_000});
-	// register auto-logs in on success, the navbar flips to logout right after
 	await page.waitForSelector('.responsive-float svg.fa-right-from-bracket', {timeout: 10_000});
 }
 
@@ -363,9 +323,6 @@ async function main() {
 	const branches = await fetchJson(`${CONFIG.baseUrl}/api/branch`);
 	const fee = expectedDeliveryFee(delivery, nearestBranchDistance(branches, districtPoint));
 	const coupon = readSeedCoupon(CONFIG.couponCode);
-	// The walk's two carts, priced from the same catalog page the store grid
-	// renders (sorted name-asc, page 1): card 0 twice plus card 2 once for the
-	// couponed checkout, card 0 once for the cancel-path checkout.
 	const catalog = await fetchJson(`${CONFIG.baseUrl}/api/product?page=0&size=12&sort=name-asc`);
 	const priceOf = index => catalog.content[index].price;
 	const expectedMoney = (lines, appliedCoupon) => {
@@ -389,12 +346,6 @@ async function main() {
 			}
 		});
 		page.on('requestfailed', request => console.log(`[requestfailed] ${request.method()} ${request.url()} ${request.failure()?.errorText}`));
-		// Money trail: the JSON behind the pay view and the order history. The
-		// checkout response itself is unreadable here: the cart redirects to
-		// the gateway with document.location.assign, and Chromium discards the
-		// previous document's network resources, so the walked order is instead
-		// predicted from the catalog prices and asserted on the surfaces whose
-		// bodies survive.
 		const trail = {payments: [], history: []};
 		page.on('response', async response => {
 			if (response.status() >= 400) {
@@ -409,16 +360,12 @@ async function main() {
 					trail.payments.push(await response.json());
 				}
 			} catch {
-				// non-JSON bodies never join the money trail
 			}
 		});
 
-		// Guest: shop grid with server paging, product modal, cart lines.
 		await page.goto(`${CONFIG.baseUrl}/`);
 		await page.waitForSelector('app-store .card');
 		await waitForImages(page);
-		// Viewport framing like the 2019 set; fullPage would stretch the grid
-		// across three screens for no extra information.
 		await shot(page, '01-shop-page.png');
 
 		const pageSize = 12;
@@ -445,13 +392,11 @@ async function main() {
 		await page.locator('[data-test="store-add"]').nth(2).click();
 		await waitForCartBadge(page, 3);
 
-		// Member: register a fresh account, wishlist one product from the grid.
 		await register(page, CONFIG.member);
 		await page.locator('[data-test="store-heart"]').nth(1).click();
 		await page.waitForFunction(() => document.querySelectorAll('[data-test="store-heart"]')[1]
 			?.classList.contains('text-danger') === true, null, {timeout: 10_000});
 
-		// First checkout pays through the gateway and leaves one PAID order.
 		await page.locator('[data-test="nav-cart"]').click();
 		await page.waitForSelector('[data-test="cart-checkout"]');
 		await fillCheckoutForm(page);
@@ -473,7 +418,6 @@ async function main() {
 		await page.waitForSelector('[data-test="order-card"]');
 		await shot(page, '14-info-order-history.png');
 
-		// Second checkout stays PENDING so the member cancel has a live target.
 		await page.locator('a[href="/shop"]').click();
 		await page.waitForSelector('[data-test="store-range"]');
 		await page.locator('[data-test="store-add"]').first().click();
@@ -490,8 +434,6 @@ async function main() {
 		await page.locator('a[href="/info"]').click();
 		await page.waitForFunction(() => document.querySelectorAll('[data-test="order-card"]').length === 2,
 			null, {timeout: 10_000});
-		// The history view must carry exactly the predicted money: the couponed
-		// order is the one that used the coupon, the plain one is not.
 		const history = trail.history.at(-1).content;
 		if (history.length !== 2) {
 			throw new Error(`history view answered ${history.length} orders, expected the 2 walked`);
@@ -518,13 +460,12 @@ async function main() {
 			null, {timeout: 10_000});
 		await shot(page, '03-member-account-details.png');
 
-		// Admin: product table, create, import, edit, batch delete, export.
 		await logout(page);
 		await login(page, CONFIG.admin);
 		await page.locator('a[href="/admin"]').click();
 		await page.waitForSelector('.table-product tbody tr');
 		await waitForImages(page);
-		await page.mouse.move(800, 450); // drop the navbar tooltip before shooting
+		await page.mouse.move(800, 450);
 		await page.waitForTimeout(300);
 		await shot(page, '04-admin-products.png');
 
@@ -565,8 +506,6 @@ async function main() {
 		await shot(page, '08-admin-export-excel.png');
 		await page.mouse.move(800, 450);
 
-		// Admin orders: the list replaces the old transaction summary, then the
-		// capture member's PAID order ships.
 		await page.locator('[data-test="admin-tab-orders"]').click();
 		await page.waitForSelector('[data-test="admin-order-status"]');
 		await shot(page, '05-admin-transaction-summary.png');
@@ -579,7 +518,6 @@ async function main() {
 		await page.waitForFunction(() => (document.querySelector('[data-test="admin-order-status"]')?.textContent ?? '')
 			.trim() === 'SHIPPED', null, {timeout: 10_000});
 
-		// Coupons: create one, the table shows it next to the three seeds.
 		await page.locator('[data-test="admin-tab-coupons"]').click();
 		await page.waitForSelector('[data-test="admin-coupon-save"]');
 		await page.fill('[data-test="admin-coupon-code"]', CONFIG.newCoupon.code);
@@ -590,7 +528,6 @@ async function main() {
 			.some(tr => (tr.textContent ?? '').includes(code)), CONFIG.newCoupon.code, {timeout: 10_000});
 		await shot(page, '16-admin-coupons.png');
 
-		// Branch stock editor: set an absolute quantity on the first branch.
 		await page.locator('[data-test="admin-tab-branches"]').click();
 		await page.waitForSelector('[data-test="admin-branch-stock"]');
 		await page.locator('[data-test="admin-branch-stock"]').first().click();
@@ -609,13 +546,11 @@ async function main() {
 		await shot(page, '17-admin-branch-stock.png');
 		await closeModal(page);
 
-		// Dashboard: tiles and CSS bars over the report aggregates.
 		await page.locator('[data-test="admin-tab-dashboard"]').click();
 		await page.waitForFunction(() => document.querySelectorAll('[data-test="admin-dashboard-tile"]').length === 3
 			&& document.querySelectorAll('[data-test="admin-status-bar"]').length > 0, null, {timeout: 10_000});
 		await shot(page, '18-admin-dashboard.png');
 
-		// Users: disable the capture member instead of deleting (they own orders).
 		await page.locator('[data-test="admin-tab-users"]').click();
 		await page.waitForSelector('[data-test="admin-user-enable"]');
 		const captureRow = page.locator('tbody tr', {hasText: CONFIG.member.email});
@@ -625,7 +560,6 @@ async function main() {
 			?.querySelector('[data-test="admin-user-enable"]')
 			?.classList.contains('btn-secondary') === true, CONFIG.member.email, {timeout: 10_000});
 
-		// Taxonomy: one new category row proves the create path.
 		await page.locator('[data-test="admin-tab-taxonomy"]').click();
 		await page.waitForSelector('[data-test="admin-category-name"]');
 		await page.fill('[data-test="admin-category-name"]', CONFIG.taxonomyName);
@@ -633,15 +567,12 @@ async function main() {
 		await page.waitForFunction(name => Array.from(document.querySelectorAll('tbody tr'))
 			.some(tr => (tr.textContent ?? '').includes(`DATA.${name}`)), CONFIG.taxonomyName, {timeout: 10_000});
 
-		// Wildcard route: the SPA 404 page on a junk deep link.
 		await page.goto(`${CONFIG.baseUrl}/${CONFIG.junkRoute}`);
 		await page.waitForSelector('h1.display-1');
 		await shot(page, '19-not-found.png');
 
 		await context.close();
 	} catch (error) {
-		// Fresh clones have no playground/ yet; without the mkdir the failure
-		// screenshot rejects with ENOENT and the catch swallows its own artifact.
 		await mkdir(path.join(REPO_ROOT, 'playground'), {recursive: true});
 		await page?.screenshot({path: path.join(REPO_ROOT, 'playground', 'failure.png'), fullPage: true}).catch(() => {});
 		throw error;

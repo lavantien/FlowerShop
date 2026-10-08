@@ -1,19 +1,4 @@
 #!/usr/bin/env node
-// Source-level mutation harness (plan decision 13: rolled own, no pitest, no
-// stryker). Applies one mutant at a time to the logic-dense classes listed in
-// scripts/tools/mutation-map.json, runs only the mapped test classes through
-// mvnw, and classifies the outcome: compile failure, test failure, or a hang
-// all count as killed, a green selective run is a survivor and fails the gate.
-// The tree must be clean before the run starts and is restored with git after
-// every mutant, verified against git diff between mutants. Serialized: one
-// mutant, one build, one selective test run at a time. A control run over the
-// mapped tests must pass unmutated before the sweep: a dead MySQL, offline
-// maven, or a genuinely red suite would otherwise turn every nonzero exit
-// into a phantom kill and hand the gate a false all-killed report. Writes the
-// committed artifact docs/qa/mutation-report.md. Run via `make mutate` (JAVA_HOME from
-// the Makefile wins; the JDK 27 fallback mirrors it). Exit 0 on zero
-// survivors, 1 otherwise. --list prints the curated mutant set without
-// running anything, --only <id> runs a single mutant for triage.
 
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -48,7 +33,6 @@ function javaHome() {
 
 function killTree(pid) {
 	if (process.platform === 'win32') {
-		// taskkill /T reaches the whole process tree, child.kill() would not.
 		spawnSync('taskkill', ['/PID', String(pid), '/T', '/F']);
 	} else {
 		try {
@@ -61,9 +45,6 @@ function killTree(pid) {
 	}
 }
 
-// Mask string literals, char literals, and comments so token scanners only see
-// code. Masked characters become \x01, offsets stay identical to the raw line.
-// Code units, not code points, so indices always align with string slicing.
 function maskLine(line, state) {
 	const chars = line.split('');
 	let inString = false;
@@ -139,8 +120,6 @@ function nearString(masked, index, prevTail) {
 		i--;
 	}
 	if (i < 0) {
-		// Nothing before the operator on this line: a continuation of the
-		// previous one, a string there makes this a concat, not arithmetic.
 		const tail = (prevTail ?? '').trimEnd();
 		return tail.length > 0 && STRINGISH.has(tail[tail.length - 1]);
 	}
@@ -162,8 +141,6 @@ function receiverIdentifier(masked, dotIndex) {
 	return masked.slice(end, dotIndex);
 }
 
-// One top-level argument inside the call's parentheses, else an arity flip
-// would be a cheap compile-failure kill rather than a behavioral mutant.
 function singleTopLevelArgument(masked, openIndex) {
 	let depth = 0;
 	let commas = 0;
@@ -203,8 +180,6 @@ function scanLine(rawLine, masked, prevTail) {
 	for (const match of masked.matchAll(/\|\|/g)) {
 		push(match.index, 2, '&&', 'OR_TO_AND');
 	}
-	// Comparison boundaries. Whitespace or an opening paren on both sides keeps
-	// generics (Map<Long, ...>), lambdas (->), and shifts out.
 	for (const match of masked.matchAll(/(?<=[\s(])<=(?=[\s;)])/g)) {
 		push(match.index, 2, '<', 'LE_TO_LT');
 	}
@@ -350,8 +325,6 @@ function generateMutants() {
 			const excluded = skipLines.has(index)
 				|| (target.lineExcludes && matchesAny(target.lineExcludes, line))
 				|| (target.lineIncludes && !matchesAny(target.lineIncludes, line));
-			// Equivalent-mutant exclusions: an operator provably indistinguishable
-			// on one line, under a data invariant, never enters the gate.
 			const opExcludes = (target.lineOpExcludes ?? [])
 				.filter((rule) => rule.line === index + 1)
 				.flatMap((rule) => rule.ops);
@@ -421,7 +394,6 @@ function runMaven(tests) {
 			resolve({ timedOut: false, exitCode: code, output, seconds: (Date.now() - started) / 1000 });
 		});
 	}).then((result) => {
-		// The last build's full output stays on disk for triage.
 		writeFileSync(logPath, result.output, 'utf8');
 		return result;
 	});
@@ -517,9 +489,6 @@ async function main() {
 		console.error(`no mutants selected${onlyId ? ` for ${onlyId}` : ''}`);
 		process.exit(1);
 	}
-	// Clean-tree precondition scoped to what the cycle touches: every source
-	// file and the pom at HEAD, nothing untracked under src/, so every mutant
-	// is exactly one line over a known state and git restore is exact.
 	if (git('diff', '--name-only', '--', 'src', 'pom.xml')
 		|| git('diff', '--cached', '--name-only', '--', 'src', 'pom.xml')
 		|| git('status', '--porcelain', '--', 'src', 'pom.xml')) {
@@ -528,8 +497,6 @@ async function main() {
 	}
 	const head = git('rev-parse', 'HEAD');
 	console.log(`mutation run over ${selected.length} mutants at ${head}`);
-	// Control run: the mapped tests must be green with no mutant applied, or
-	// every later nonzero exit would masquerade as a kill.
 	const controlTests = [...new Set(selected.flatMap((mutant) => mutant.tests))];
 	console.log(`control run: ${controlTests.length} mapped test classes unmutated`);
 	const control = await runMaven(controlTests);
@@ -566,8 +533,6 @@ async function main() {
 		}
 	}
 	run.seconds = (Date.now() - started) / 1000;
-	// Stamped at sweep completion, not run start: the Run line must read the
-	// moment the last mutant finished, matching the runtime beside it.
 	run.finishedAt = new Date().toISOString();
 	run.killed = results.filter((result) => result.verdict !== 'survivor').length;
 	const operatorTable = [
