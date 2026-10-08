@@ -6,40 +6,15 @@
 [![qa](https://raw.githubusercontent.com/lavantien/FlowerShop/badges/qa.svg)](https://github.com/lavantien/FlowerShop#qa-harness)
 ![aws ready](https://raw.githubusercontent.com/lavantien/FlowerShop/badges/aws-ready.svg)
 
-eCommerce web app: a Spring Boot 4 REST API with JPA, BCrypt password hashing, and token auth, an Angular 22 storefront with an admin console, and MySQL 9.7 LTS storage. v3 adds server-priced orders with an atomic stock guard, HMAC-signed payment sessions, coupons, wishlists, and sales reports. The Maven wrapper and `make` targets wrap every build, test, and run step, and the build provisions its own Node 24 for the Angular bundle, so the host needs a JDK, Docker, make, and Node for the tooling scripts. For a simpler legacy architecture, check the [v2.0 tag](https://github.com/lavantien/FlowerShop/tree/v2.0).
+eCommerce web system with full backoffice: a Spring Boot 4 REST API with JPA, BCrypt password hashing, and token auth, an Angular 22 storefront with an admin console, and MySQL 9.7 LTS storage. v3 adds server-priced orders with an atomic stock guard, HMAC-signed payment sessions, coupons, wishlists, and sales reports. The Maven wrapper and `make` targets wrap every build, test, and run step, and the build provisions its own Node 24 for the Angular bundle, so the host needs a JDK, Docker, make, and Node for the tooling scripts. For a simpler legacy architecture, check the [v2.0 tag](https://github.com/lavantien/FlowerShop/tree/v2.0).
 
 ## Table of contents
 
-1. [v3 quickstart](#v3-quickstart)
-2. [Pictures](#pictures)
+1. [Pictures](#pictures)
+2. [v3 quickstart](#v3-quickstart)
 3. [QA harness](#qa-harness)
 4. [Build logs](#build-logs)
 5. [Architecture and flows](#architecture-and-flows)
-
-## v3 quickstart
-
-Prerequisites: `JDK 27`, `Docker`, `make`, and `Node 24` with npm on PATH. CURL or Postman helps for ad hoc API calls, and any editor works.
-
-1. Start MySQL and seed it: `make db-up` then `make db-seed`, or `make db-reset` to drop the volume and redo both in one step. The seed writes the schema, 4 demo users, the taxonomy, 79 products, 6 Ho Chi Minh City branches with stock rows, and 3 coupons (`WELCOME10` percent, `SHIP50K` fixed, `EXPIRED5` inactive).
-2. Build and run: `make package` runs the full clean build with tests, then `make run` starts the newest `target/flowershop-*.jar` against the compose MySQL and serves the built SPA. The Makefile exports the `LOCAL_MYSQL_DB_*` variables matching compose, so no `application.yml` edit is needed unless you run your own MySQL.
-3. Log in over JSON as the seeded admin (password `1234qwer`):
-
-    ```sh
-    curl -s -X POST http://localhost:8080/api/auth/login \
-      -H "Content-Type: application/json" \
-      -d '{"email": "admin@flowershop.example", "password": "1234qwer"}'
-    ```
-
-    The 200 body is `{"token": "...", "user": {user}}`. Tokens are minted by login, rotated on every fresh login, and die on logout or restart, since sessions live in memory.
-4. Send the token in the `X-Auth-Token` header on every authenticated call:
-
-    ```sh
-    curl -s http://localhost:8080/api/user/me -H "X-Auth-Token: <token>"
-    ```
-
-    The whole contract, including the error code list and the payment signature scheme, is frozen in [docs/api-v3.md](docs/api-v3.md).
-5. For frontend work: `make frontend-install` then `make frontend-serve` serves the dev build at `http://localhost:4200`, proxying `/api` to `:8080`.
-6. To deploy elsewhere, copy the jar from `make package` and run `java -jar target/flowershop-*.jar` against your own MySQL 9.7. On AWS an EC2 instance or a Lightsail VPS runs the jar, RDS serves MySQL, and S3 holds backups and static assets.
 
 ## Pictures
 
@@ -86,6 +61,31 @@ The v3 user journey first, then the admin console. Regenerate the set against th
 
 Shot 17 keeps its legacy filename `05-admin-transaction-summary.png`, the v3 capture regenerated it as the admin orders screen.
 
+## v3 quickstart
+
+Prerequisites: `JDK 27`, `Docker`, `make`, and `Node 24` with npm on PATH. CURL or Postman helps for ad hoc API calls, and any editor works.
+
+1. Start MySQL and seed it: `make db-up` then `make db-seed`, or `make db-reset` to drop the volume and redo both in one step. The seed writes the schema, 4 demo users, the taxonomy, 79 products, 6 Ho Chi Minh City branches with stock rows, and 3 coupons (`WELCOME10` percent, `SHIP50K` fixed, `EXPIRED5` inactive).
+2. Build and run: `make package` runs the full clean build with tests, then `make run` starts the newest `target/flowershop-*.jar` against the compose MySQL and serves the built SPA. The Makefile exports the `LOCAL_MYSQL_DB_*` variables matching compose, so no `application.yml` edit is needed unless you run your own MySQL.
+3. Log in over JSON as the seeded admin (password `1234qwer`):
+
+    ```sh
+    curl -s -X POST http://localhost:8080/api/auth/login \
+      -H "Content-Type: application/json" \
+      -d '{"email": "admin@flowershop.example", "password": "1234qwer"}'
+    ```
+
+    The 200 body is `{"token": "...", "user": {user}}`. Tokens are minted by login, rotated on every fresh login, and die on logout or restart, since sessions live in memory.
+4. Send the token in the `X-Auth-Token` header on every authenticated call:
+
+    ```sh
+    curl -s http://localhost:8080/api/user/me -H "X-Auth-Token: <token>"
+    ```
+
+    The whole contract, including the error code list and the payment signature scheme, is frozen in [docs/api-v3.md](docs/api-v3.md).
+5. For frontend work: `make frontend-install` then `make frontend-serve` serves the dev build at `http://localhost:4200`, proxying `/api` to `:8080`.
+6. To deploy elsewhere, copy the jar from `make package` and run `java -jar target/flowershop-*.jar` against your own MySQL 9.7. On AWS an EC2 instance or a Lightsail VPS runs the jar, RDS serves MySQL, and S3 holds backups and static assets.
+
 ## QA harness
 
 Every gate runs through a make target, and the committed reports under [docs/qa/](docs/qa) hold the numbers below.
@@ -97,9 +97,11 @@ Every gate runs through a make target, and the committed reports under [docs/qa/
 5. `make mutate-front`: the same conventions over the TypeScript core and services classes with 19 operators. Baseline run: 93 mutants, 71 killed by failing specs, 22 by compile rejection, 0 by timeout, 0 survivors. Report: [docs/qa/mutation-front-report.md](docs/qa/mutation-front-report.md).
 6. CI runs four gate jobs on every push and pull request: backend tests and the API fuzz gate, both against a MySQL 9.7.2 service container on JDK 27, frontend lint, coverage, and build on Node 24, and the npm audit zero-vulnerability gate. A badges job needs all four and publishes the ci and coverage badges above from master pushes, uploading the fuzz report and server log when the fuzz gate fails.
 
+Both mutation runs open with an unmutated control pass over the mapped tests and abort when it comes back red, refuse to start on a dirty source tree, restore and verify every mutant with git before the next, and run only the mapped test classes per target. The maps pin line numbers, so any line shift in a mapped file needs a map recalibration. The fuzz harness derives deterministic HMAC-tagged credentials per run, keyed on the run tag, and truncates its server log per run.
+
 ## Build logs
 
-### Historical build (Aug 7 2020, Spring Boot 2.3 / Angular 10)
+### Build log (historical, Aug 7 2020)
 ```
 [INFO] Results:
 [INFO] 
@@ -119,28 +121,7 @@ Every gate runs through a make target, and the committed reports under [docs/qa/
 [INFO] ------------------------------------------------------------------------
 ```
 
-### Build log (Oct 6 2026)
-```
-[INFO] Results:
-[INFO] 
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
-[INFO] 
-[INFO] 
-[INFO] --- jar:3.5.1:jar (default-jar) @ flowershop ---
-[INFO] Building jar: C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-2.0.jar
-[INFO] 
-[INFO] --- spring-boot:4.1.1:repackage (repackage) @ flowershop ---
-[INFO] Replacing main artifact C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-2.0.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
-[INFO] The original artifact has been renamed to C:\Users\lavantien\dev\github\FlowerShop\target\flowershop-2.0.jar.original
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-[INFO] Total time:  15.161 s
-[INFO] Finished at: 2026-10-06T21:30:24+07:00
-[INFO] ------------------------------------------------------------------------
-```
-
-### Build log (Oct 7 2026)
+### Build log (v2.0)
 ```
 [INFO] Results:
 [INFO] 
