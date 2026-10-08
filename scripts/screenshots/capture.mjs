@@ -29,7 +29,10 @@ const CONFIG = {
 	taxonomyName: `Capture${STAMP}`,
 	junkRoute: 'no-such-capture-route',
 	healthTimeoutMs: 180_000,
-	imageTimeoutMs: 45_000
+	imageTimeoutMs: 45_000,
+	shots: process.env.FLOWERSHOP_SHOTS
+		? new Set(process.env.FLOWERSHOP_SHOTS.split(',').map(name => name.trim()).filter(Boolean))
+		: null
 };
 
 async function fetchJson(url, options) {
@@ -216,6 +219,10 @@ async function settleToasts(page) {
 }
 
 async function shot(page, name, fullPage = false) {
+	if (CONFIG.shots && !CONFIG.shots.has(name)) {
+		console.log(`[shot-skip] ${name}`);
+		return;
+	}
 	await settleToasts(page);
 	await page.screenshot({path: path.join(CONFIG.outDir, name), fullPage});
 	console.log(`[shot] ${name}`);

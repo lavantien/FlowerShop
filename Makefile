@@ -121,7 +121,7 @@ run: $(if $(SKIP_DB_UP),,db-up) ## run the newest packaged jar against the compo
 	if [ -z "$$jar" ]; then echo "no target/flowershop-*.jar; run make package first"; exit 1; fi; \
 	"$(JAVA_BIN)" -jar $$jar
 
-screenshots: db-up ## capture the current UI into project-pictures (runs the packaged jar headlessly)
+screenshots: package ## capture the current UI into project-pictures (packages the jar, then runs it headlessly)
 	@$(NPM) install --prefix scripts/screenshots
 	@JAVA_BIN="$(JAVA_BIN)" node scripts/screenshots/capture.mjs
 
