@@ -186,7 +186,6 @@ class TypeControllerTest {
 		when(categoryRepository.existsByName("PLANT")).thenReturn(true);
 		when(typeRepository.save(any(Type.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		// The documented body and the frontend both send no id.
 		mockMvc.perform(put("/api/type/5").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"POTTED\",\"categoryName\":\"PLANT\"}"))

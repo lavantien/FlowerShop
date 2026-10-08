@@ -225,7 +225,6 @@ class OrderControllerTest {
 		assertNotNull(saved.getValue().getPlacedAt());
 		assertEquals(0, saved.getValue().getTotal().scale());
 
-		// The payment block is signed over the session this transaction saved.
 		ArgumentCaptor<PaymentSession> session = ArgumentCaptor.forClass(PaymentSession.class);
 		verify(paymentSessionRepository).save(session.capture());
 		assertEquals(PaymentStatus.PENDING, session.getValue().getStatus());
@@ -321,8 +320,6 @@ class OrderControllerTest {
 		when(couponRepository.findByCode("ODD10"))
 			.thenReturn(Optional.of(coupon("ODD10", CouponKind.PERCENT, "10", true)));
 
-		// subtotal 255556, ceil of the tenth is 25556, HALF_UP to 1000 is 26000,
-		// so the total is 255556 - 26000 + 40000.
 		mockMvc.perform(post("/api/order").header("X-Auth-Token", tokenOf(4, Role.USER))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
@@ -625,9 +622,6 @@ class OrderControllerTest {
 	void checkoutTakesStockRowLocksInProductIdOrder() throws Exception {
 		stubHappyCheckout();
 
-		// The request names product 2 first: whatever the cart order, the
-		// decrement must visit the stock rows lowest product id first so
-		// opposing paths can never deadlock on mirrored row locks.
 		mockMvc.perform(post("/api/order").header("X-Auth-Token", tokenOf(4, Role.USER))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
@@ -650,8 +644,6 @@ class OrderControllerTest {
 	@Test
 	void restoreStockTakesStockRowLocksInProductIdOrder() throws Exception {
 		stubCancellableOrder(OrderStatus.PENDING, PaymentStatus.PENDING);
-		// The item rows come back highest product id first: the restore must
-		// still visit the rows lowest product id first, mirroring checkout.
 		when(orderItemRepository.findByOrderId(12L)).thenReturn(List.of(
 			item(502, 12, 2, "White Tulip", 50000, 3), item(501, 12, 1, "Red Rose", 100000, 2)));
 		when(stockLevelRepository.findByBranchIdAndProductId(3L, 2L))

@@ -13,10 +13,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// The standalone suite pins controller shapes with mocked repositories; this
-// class runs the Specification, the sort whitelist, and the paging clamps
-// through the controller's own query pipeline against the real MySQL, so the
-// generated SQL is the thing under test.
 @SpringBootTest
 @Transactional
 class ProductCatalogIntegrationTest {
@@ -103,8 +99,6 @@ class ProductCatalogIntegrationTest {
 
 	@Test
 	void anUnfilteredQueryRunsTheZeroPredicateSpecificationAndSeesEveryRow() {
-		// Every other case filters, so the empty-predicates branch of the
-		// specification never reaches a real query; this one runs it bare.
 		long baseline = run(null, null, null, null, null, null).getTotalElements();
 		persist("Unfiltered Sentinel", "100000", "IT-T", "IT-UNFILTERED");
 
@@ -116,9 +110,6 @@ class ProductCatalogIntegrationTest {
 	void anOverflowingPageClampsIntoIntOffsetRangeAndServesAnEmptyPage() {
 		persist("Overflow Rose", "100000", "IT-T", "IT-OVERFLOW");
 
-		// Pre-fix this exact pipeline answered 500: Spring Data rejects a
-		// pageable whose page*size leaves int range. The clamp keeps the
-		// offset legal, and a page past the data is simply empty.
 		Page<Product> page = run(null, "IT-OVERFLOW", null, null, 2147483647, 48);
 		long offset = (long) page.getNumber() * page.getSize();
 		assertTrue(offset + page.getSize() <= Integer.MAX_VALUE);

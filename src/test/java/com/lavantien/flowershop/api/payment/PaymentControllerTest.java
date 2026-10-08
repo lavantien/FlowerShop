@@ -237,8 +237,6 @@ class PaymentControllerTest {
 		PaymentSession original = pendingSession();
 		String stolen = paymentService.sign(original);
 
-		// The signature was minted over 390000; the stored row now says
-		// 389999, and verification recomputes from the stored values.
 		PaymentSession tampered = new PaymentSession("pid-1", 12L, BigDecimal.valueOf(389999));
 		when(paymentSessionRepository.findById("pid-1")).thenReturn(Optional.of(tampered));
 

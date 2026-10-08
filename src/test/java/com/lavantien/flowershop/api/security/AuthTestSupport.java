@@ -19,8 +19,6 @@ import static org.mockito.Mockito.when;
 
 public final class AuthTestSupport {
 	private static final PasswordService PASSWORD_SERVICE = new PasswordService();
-	// tokenOf needs the secret the last prime minted, so forged-id tokens still
-	// carry a syntactically valid secret segment while never matching a session.
 	private static final Map<Long, String> PRIMED_SECRETS = new ConcurrentHashMap<>();
 
 	private AuthTestSupport() {

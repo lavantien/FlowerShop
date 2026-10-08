@@ -360,8 +360,6 @@ class CouponControllerTest {
 
 	@Test
 	void validateKillsACouponAtItsExactExpiryInstant() throws Exception {
-		// Stamped now: by the time resolve runs, the clock reads at or past
-		// the expiry, and at the boundary the coupon must already be dead.
 		when(couponRepository.findByCode("NOW5"))
 			.thenReturn(Optional.of(coupon(6, "NOW5", CouponKind.PERCENT, "5", true, Instant.now())));
 

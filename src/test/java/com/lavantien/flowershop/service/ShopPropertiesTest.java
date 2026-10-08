@@ -9,8 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// The delivery tunables are bound at startup, so a misconfigured grid must
-// fail the boot, not silently produce fees above the cap.
 class ShopPropertiesTest {
 
 	@Test
@@ -49,8 +47,6 @@ class ShopPropertiesTest {
 
 	@Test
 	void deliveryAcceptsAWholeDongStep() {
-		// Step 1 is the finest legal grid: the positivity boundary must stop at
-		// zero, not swallow the whole-dong step.
 		ShopProperties.Delivery wholeDong
 			= assertDoesNotThrow(() -> new ShopProperties.Delivery(20000, 5000, 200000, 1));
 		assertEquals(0, BigDecimal.valueOf(255000).compareTo(wholeDong.round(BigDecimal.valueOf(255000))),

@@ -28,7 +28,6 @@ class PaymentServiceTest {
 
 	@Test
 	void theSignatureIsLowercaseHexHmacOverTheContractPayload() {
-		// Vectors computed independently with: openssl dgst -sha256 -hmac.
 		assertEquals("7bb676c8049576a4fcea1f1f4aaba9759ce57b9aadb5dc51bfcbc9780d912504",
 			paymentService.sign(session("pay-demo-id", 12, 265000)));
 		assertEquals("b9cf346afc649beb3cbc9fc388cecfff91e3cb9c497050c18f20b5250e10939f",
@@ -47,10 +46,8 @@ class PaymentServiceTest {
 		assertFalse(paymentService.matches(session, null));
 		assertFalse(paymentService.matches(session, ""));
 
-		// A valid signature from another session never verifies here.
 		assertFalse(paymentService.matches(session, paymentService.sign(session("other-id", 12, 265000))));
 
-		// The recomputation binds the amount: a moved decimal kills the sig.
 		assertFalse(paymentService.matches(session("pay-demo-id", 12, 265001), sig));
 		assertFalse(paymentService.matches(session("pay-demo-id", 13, 265000), sig));
 	}

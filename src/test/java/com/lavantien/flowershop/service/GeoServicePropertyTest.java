@@ -6,14 +6,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Property view of the geo half of GeoService: haversine symmetry, the zero
-// self-distance, a sane half-circumference on antipodes, the tenth-of-a-km
-// ceiling everywhere, and the district-city-default fallback chain over the
-// real vn-geo.json dataset.
 class GeoServicePropertyTest {
 	private static final long SEED = 20261008L;
-	// Half circumference for R = 6371.0088: pi * R = 20015.1144 km, which the
-	// tenth ceiling always lifts to 20015.2.
 	private static final double HALF_CIRCUMFERENCE_KM = 20015.2;
 
 	private final SeededGenerator gen = new SeededGenerator(SEED);
@@ -25,8 +19,6 @@ class GeoServicePropertyTest {
 		return new GeoService.Point(-point.lat(), point.lng() <= 0 ? point.lng() + 180 : point.lng() - 180);
 	}
 
-	// Hanoi's numeric district names ("1" to "12") are reachable by the plain
-	// string generator, so redraw until the candidate matches nothing known.
 	private String unknownName() {
 		String candidate = gen.string(20);
 		while (geoService.knownDistricts().contains(candidate) || geoService.knownCities().contains(candidate)) {

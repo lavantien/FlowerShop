@@ -83,8 +83,6 @@ class AuthControllerTest {
 
 	@Test
 	void loginOnALegacyNullRoleAccountAnswers401NotA500() throws Exception {
-		// ddl-auto update on a carried-forward volume can leave role NULL;
-		// minting a session for such an account must fail as 401 problem+json.
 		User legacy = persona(7, Role.USER, "legacy@flowershop.example");
 		legacy.setRole(null);
 		when(userRepository.findByEmail("legacy@flowershop.example")).thenReturn(legacy);

@@ -161,7 +161,6 @@ class UserControllerTest {
 
 	@Test
 	void createAnswersTheDocumented409WhenTheUniqueKeyRaceBeatsThePreflight() throws Exception {
-		// The preflight find misses, the save hits the email unique key.
 		when(userRepository.findByEmail("raced@flowershop.example")).thenReturn(null);
 		when(userRepository.save(any(User.class))).thenThrow(new DataIntegrityViolationException(
 			"could not execute statement",
@@ -201,8 +200,6 @@ class UserControllerTest {
 
 	@Test
 	void meAnswers404WhenTheSessionUserVanishesBetweenInterceptorAndHandler() throws Exception {
-		// The interceptor validates the row first, the handler reads it again:
-		// a delete landing between the two must answer 404, not 500.
 		User member = persona(4, Role.USER, "member@flowershop.example");
 		prime(userRepository, userService, member);
 		when(userRepository.findById(4L)).thenReturn(Optional.of(member)).thenReturn(Optional.empty());
@@ -415,8 +412,6 @@ class UserControllerTest {
 	void batchUserEndpointsAreGone() throws Exception {
 		prime(userRepository, userService, persona(1, Role.ADMIN, "admin@flowershop.example"));
 
-		// The listing stays on GET /api/user, so the batch verbs answer 405:
-		// the method no longer exists on the path.
 		mockMvc.perform(post("/api/user").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("[]"))

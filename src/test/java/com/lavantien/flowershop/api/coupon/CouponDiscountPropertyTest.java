@@ -8,12 +8,6 @@ import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Property view of Coupon.discountOn, the one formula the validate endpoint
-// and checkout share. The implemented truth: a stored percent rate is a whole
-// number up to 100 (PercentCap plus CouponInput's scale-0 normalization), the
-// discount is that rate ceiled onto whole dong and capped at the subtotal, and
-// a fixed discount clamps at the subtotal. The oracles below recompute both
-// rules in plain long arithmetic, independent of BigDecimal's rounding modes.
 class CouponDiscountPropertyTest {
 	private static final long SEED = 20261009L;
 
@@ -25,13 +19,10 @@ class CouponDiscountPropertyTest {
 		return coupon;
 	}
 
-	// ceil(subtotal * rate / 100) for whole-dong subtotals, in long math.
 	private static long percentOracle(long subtotal, long rate) {
 		return Math.min((subtotal * rate + 99) / 100, subtotal);
 	}
 
-	// The same ceiling for a subtotal expressed in cents: ceil(cents * rate /
-	// 10000) whole dong, capped at the subtotal.
 	private static BigDecimal percentOracle(BigDecimal subtotal, long rate) {
 		long cents = subtotal.movePointRight(2).longValueExact();
 		long ceiled = (cents * rate + 9999) / 10000;
@@ -58,7 +49,6 @@ class CouponDiscountPropertyTest {
 	void percentDiscountHoldsForFractionalPreviewSubtotals() {
 		for (int i = 0; i < 300; i++) {
 			long rate = gen.longBetween(1, 100);
-			// /api/coupon/validate takes any positive subtotal, cents included.
 			BigDecimal subtotal = gen.decimalBetween(1, 5_000_000_00L, 2);
 			BigDecimal discount = coupon(CouponKind.PERCENT, rate).discountOn(subtotal);
 

@@ -15,9 +15,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// The standalone suite pins controller shapes with mocked repositories; this
-// class runs the admin filter specification and the newest-first ordering as
-// real SQL against the CI MySQL.
 @SpringBootTest
 @Transactional
 class OrderListingIntegrationTest {

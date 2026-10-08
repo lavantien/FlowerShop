@@ -176,7 +176,6 @@ class CategoryControllerTest {
 		when(categoryRepository.findById(3L)).thenReturn(Optional.of(bouquet()));
 		when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		// The documented body and the frontend both send no id.
 		mockMvc.perform(put("/api/category/3").header("X-Auth-Token", tokenOf(1, Role.ADMIN))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"POTTED\"}"))
@@ -231,8 +230,6 @@ class CategoryControllerTest {
 				.content("{\"name\":\"POTTED\"}"))
 			.andExpect(status().isOk());
 
-		// The old name was the referenced one; after the cascade the delete
-		// guard sees the new name free and the delete succeeds.
 		mockMvc.perform(delete("/api/category/3").header("X-Auth-Token", tokenOf(1, Role.ADMIN)))
 			.andExpect(status().isNoContent());
 

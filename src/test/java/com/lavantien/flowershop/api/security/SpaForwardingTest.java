@@ -51,8 +51,6 @@ class SpaForwardingTest {
 
 	@Test
 	void dottedAssetPathsPassThroughToTheStaticHandler() throws Exception {
-		// No such asset exists, so the resolver 404s; the point is that it
-		// never lands on the SPA index.
 		mockMvc.perform(get("/pay/no-such.js"))
 			.andExpect(status().isNotFound())
 			.andExpect(noForward());

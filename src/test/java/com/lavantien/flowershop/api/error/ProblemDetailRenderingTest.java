@@ -25,10 +25,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-// The contract promises application/problem+json for every error, so the
-// framework-raised failures (unreadable bodies, type mismatches, unmatched
-// routes, wrong methods, list element validation) must all render the same
-// document shape the ApiException family does.
 class ProblemDetailRenderingTest {
 	record ProbeBody(@NotBlank String name, @Positive BigDecimal price) {}
 

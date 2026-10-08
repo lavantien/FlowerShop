@@ -37,12 +37,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-// Property view of the checkout money pipeline: OrderService.checkout drives
-// the real GeoService fee, the real coupon formula, and the real rounding, so
-// every amount it writes on the order, its lines, and the payment session is
-// whole dong, non-negative, and consistent with an independent long-arithmetic
-// oracle. The JSON pass proves the wire shape: serialized money never carries
-// a decimal point.
 class CheckoutMoneyPropertyTest {
 	private static final long SEED = 20261011L;
 	private static final int CHECKOUTS = 250;
@@ -56,8 +50,6 @@ class CheckoutMoneyPropertyTest {
 
 	private final SeededGenerator gen = new SeededGenerator(SEED);
 	private final ObjectMapper mapper = new ObjectMapper();
-	// The save answers record every persisted row so each iteration judges its
-	// own order and session without Mockito call-count bookkeeping.
 	private final List<Order> savedOrders = new ArrayList<>();
 	private final List<PaymentSession> savedSessions = new ArrayList<>();
 
@@ -100,7 +92,6 @@ class CheckoutMoneyPropertyTest {
 			new GeoService(PROPERTIES), new CouponService(couponRepository), PROPERTIES);
 	}
 
-	// HALF_UP onto the 1000 dong step in plain long arithmetic.
 	private static long toStep(long amount) {
 		return (amount + 500) / 1000 * 1000;
 	}
@@ -118,8 +109,6 @@ class CheckoutMoneyPropertyTest {
 			List<CheckoutRequest.Item> items = new ArrayList<>(lineCount);
 			long subtotal = 0;
 			for (int line = 0; line < lineCount; line++) {
-				// Prices mix whole steps with arbitrary dong so rounding paths
-				// only sub-step subtotals can reach stay exercised.
 				long price = gen.flag() ? gen.longBetween(1, 2000) * 1000 : gen.longBetween(1000, 2_000_000);
 				int quantity = gen.intBetween(1, 30);
 				Product product = new Product("Product " + line, "demo", "https://cdn.example/x.jpg",
@@ -136,8 +125,6 @@ class CheckoutMoneyPropertyTest {
 			branch.setId(5L);
 			when(branchRepository.findAll()).thenReturn(List.of(branch));
 
-			// Half the carts ride a coupon: an integral percent rate up to 100
-			// or a fixed whole-dong amount, exactly what CouponInput stores.
 			long percent = gen.longBetween(1, 100);
 			long fixed = gen.longBetween(1, 200_000);
 			Coupon coupon = gen.flag()
@@ -162,8 +149,6 @@ class CheckoutMoneyPropertyTest {
 			assertTrue(fee >= 20000 && fee <= 200000, "fee " + fee + " left the canonical band");
 			assertEquals(0, fee % 1000, "fee " + fee + " is not a whole step");
 			assertEquals(expectedDiscount, discount, "discount drift at subtotal " + subtotal);
-			// The checkout clamps the step-rounded discount back to the
-			// subtotal, so the strict bound always holds.
 			assertTrue(discount >= 0 && discount <= subtotal,
 				"discount " + discount + " broke its bounds against subtotal " + subtotal);
 			assertEquals(subtotal - discount + fee, order.getTotal().longValueExact(),
@@ -193,7 +178,6 @@ class CheckoutMoneyPropertyTest {
 					product.getPrice().multiply(BigDecimal.valueOf(item.quantity()))));
 			}
 
-			// The wire: serialized money fields must be bare integers.
 			String json = mapper.writeValueAsString(view);
 			for (String field : MONEY_FIELDS) {
 				assertTrue(Pattern.compile("\"" + field + "\":-?\\d+[,}]").matcher(json).find(),

@@ -9,10 +9,6 @@ import java.math.RoundingMode;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Property view of GeoService.deliveryFee: whatever the distance and the
-// delivery tunables, the fee is a whole step, never above the cap, never
-// decreasing as the cart travels further, and always the plan formula
-// min(base + perKm * km, maxFee) rounded HALF_UP to the step.
 class DeliveryFeePropertyTest {
 	private static final long SEED = 20261007L;
 	private static final int CASES_PER_CONFIG = 300;
@@ -33,8 +29,6 @@ class DeliveryFeePropertyTest {
 			.multiply(BigDecimal.valueOf(roundTo)).longValueExact();
 	}
 
-	// Distances mix the tenth-of-a-km grid checkout really sees with raw
-	// doubles, zero, and distances far past the cap.
 	private double distance() {
 		return switch (gen.intBetween(0, 3)) {
 			case 0 -> gen.intBetween(0, 5000) / 10.0;
@@ -48,8 +42,6 @@ class DeliveryFeePropertyTest {
 	void feeIsAlwaysAWholeStepBelowTheCapAndMatchesTheFormula() {
 		ShopProperties.Delivery canonical = new ShopProperties.Delivery(20000, 5000, 200000, 1000);
 		for (ShopProperties.Delivery delivery : new ShopProperties.Delivery[] {canonical,
-			// Alternate tunables; maxFee stays a multiple of roundTo so the cap
-			// survives the final rounding, exactly like the production numbers.
 			new ShopProperties.Delivery(15000, 3500, 150000, 500),
 			new ShopProperties.Delivery(30000, 7000, 300000, 2000)}) {
 			GeoService service = new GeoService(new ShopProperties(delivery,

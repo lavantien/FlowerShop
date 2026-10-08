@@ -49,8 +49,6 @@ class GeoServiceTest {
 
 	@Test
 	void theDatasetMatchesTheFrontendGeoAssetsExactly() throws IOException {
-		// The frontend ships districts.json and cities.json; the server must
-		// resolve the same names, diacritics included, or checkout falls back.
 		ObjectMapper mapper = new ObjectMapper();
 		List<Map<String, String>> districtRows = mapper.readValue(
 			Path.of("frontend/src/assets/data/districts.json").toFile(),
@@ -73,7 +71,6 @@ class GeoServiceTest {
 	@Test
 	void distanceRoundsUpToTheTenthOfAKilometer() {
 		assertEquals(0.0, geoService.distanceKm(new GeoService.Point(0, 0), new GeoService.Point(0, 0)));
-		// One degree on the equator is 111.196 km with R = 6371.0088.
 		assertEquals(111.2, geoService.distanceKm(new GeoService.Point(0, 0), new GeoService.Point(0, 1)));
 		assertEquals(15.7, geoService.distanceKm(new GeoService.Point(10, 10), new GeoService.Point(10.1, 10.1)));
 		assertTrue(geoService.distanceKm(new GeoService.Point(0, 0), new GeoService.Point(0.01, 0)) > 1.0);

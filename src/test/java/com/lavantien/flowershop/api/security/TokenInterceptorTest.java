@@ -74,9 +74,6 @@ class TokenInterceptorTest {
 
 	@Test
 	void nonControllerHandlersSkipTheAuthWallLikeStaticResources() {
-		// Static assets reach the dispatcher with a plain resource handler, not
-		// a HandlerMethod: the auth wall must never run for them or every
-		// bundled asset would answer 401.
 		TokenInterceptor interceptor = new TokenInterceptor(userRepository, userService);
 		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/index.html");
 		MockHttpServletResponse response = new MockHttpServletResponse();

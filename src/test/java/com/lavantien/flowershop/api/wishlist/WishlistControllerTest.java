@@ -155,8 +155,6 @@ class WishlistControllerTest {
 	void toggleTreatsARacedInsertAsAnAdd() throws Exception {
 		when(productRepository.findById(1L)).thenReturn(Optional.of(product(1, "Red Rose", 100000)));
 		when(wishlistItemRepository.findByUserIdAndProductId(4L, 1L)).thenReturn(Optional.empty());
-		// Both toggles missed the find and both insert; the unique key rejects
-		// the second one, which still means the row exists now: added.
 		when(wishlistItemRepository.save(any(WishlistItem.class))).thenThrow(
 			new DataIntegrityViolationException("Duplicate entry '4-1' for key 'wishlist_item.unique'"));
 

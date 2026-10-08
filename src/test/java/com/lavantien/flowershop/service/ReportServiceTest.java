@@ -72,7 +72,6 @@ class ReportServiceTest {
 
 		assertEquals(0, BigDecimal.valueOf(350000).compareTo(report.totals().revenue()));
 		assertEquals(3, report.totals().orders(), "only the revenue orders count into the average");
-		// 350000 over 3 orders is 116666.67, HALF_UP to the money step is 117000.
 		assertEquals(0, BigDecimal.valueOf(117000).compareTo(report.totals().avgOrder()));
 		assertEquals(0, BigDecimal.valueOf(100000).compareTo(report.revenueByStatus().get(OrderStatus.PAID)));
 		assertEquals(0, BigDecimal.valueOf(200000).compareTo(report.revenueByStatus().get(OrderStatus.SHIPPED)));
@@ -122,8 +121,6 @@ class ReportServiceTest {
 			order(1, OrderStatus.PAID, "2026-10-01T10:00:00Z", 100000),
 			order(2, OrderStatus.SHIPPED, "2026-10-02T10:00:00Z", 100000),
 			order(3, OrderStatus.CANCELLED, "2026-10-03T10:00:00Z", 100000)));
-		// The answer honors the id filter the way the real query does, so the
-		// cancelled order's items never reach the ranking.
 		when(orderItemRepository.findByOrderIdIn(anyCollection())).thenAnswer(invocation -> {
 			java.util.Collection<Long> ids = invocation.getArgument(0);
 			return List.of(

@@ -29,9 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// The oversell suite: the atomic stock guard runs as real concurrent
-// transactions against the CI MySQL, one contended row, exact winner counts,
-// never a negative quantity.
 @SpringBootTest
 class OversellIntegrationTest {
 	@Autowired
@@ -47,8 +44,6 @@ class OversellIntegrationTest {
 	@Autowired
 	private StockLevelRepository stockLevelRepository;
 
-	// Orders carry a per-run marker as userId so cleanup finds exactly the
-	// rows this class created, whatever the shared database already holds.
 	private long marker;
 	private final List<Long> branches = new ArrayList<>();
 	private final List<Long> products = new ArrayList<>();
@@ -109,8 +104,6 @@ class OversellIntegrationTest {
 		}
 	}
 
-	// Every thread parks on the latch so the whole fan hits the contended row
-	// in the same window; the executor's close joins them before asserting.
 	private List<Outcome> hammer(int threads, CheckoutRequest request) throws Exception {
 		CountDownLatch ready = new CountDownLatch(threads);
 		CountDownLatch start = new CountDownLatch(1);
@@ -180,8 +173,6 @@ class OversellIntegrationTest {
 				assertEquals("OUT_OF_STOCK", outcome.conflictCode());
 			}
 		}
-		// Exactly one rose decrement committed; every rolled-back contender
-		// left the row where it was.
 		assertEquals(2, stock(branch.getId(), rose.getId()));
 		assertEquals(0, stock(branch.getId(), tulip.getId()));
 	}

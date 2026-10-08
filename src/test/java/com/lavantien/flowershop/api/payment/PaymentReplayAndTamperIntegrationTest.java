@@ -45,10 +45,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-// The replay storm and the tamper matrix run over the real HTTP pipeline and
-// the CI MySQL: parallel confirms, forged and stolen signatures, and the
-// state guards after cancel and confirm. The MockMvc is built from the real
-// application context so the Boot message converters answer too.
 @SpringBootTest
 class PaymentReplayAndTamperIntegrationTest {
 	@Autowired
@@ -100,8 +96,6 @@ class PaymentReplayAndTamperIntegrationTest {
 		userRepository.deleteAllById(users);
 	}
 
-	// Seeds one PENDING order with a two-rose cart and its PENDING payment
-	// session under a fixed id, branch stocked at 5.
 	private Order seedPendingOrder(String paymentId) {
 		marker = System.nanoTime();
 		Branch branch = branchRepository.save(new Branch("Tamper Branch " + marker, "01 Test Lane",
@@ -169,37 +163,29 @@ class PaymentReplayAndTamperIntegrationTest {
 			}
 		}
 
-		// Every caller gets 200, winner and replays alike.
 		assertEquals(20, statuses.stream().filter(code -> code == 200).count());
 
 		PaymentSession session = paymentSessionRepository.findById("pid-storm").orElseThrow();
 		assertEquals(PaymentStatus.CONFIRMED, session.getStatus());
 		Order paid = orderRepository.findById(order.getId()).orElseThrow();
 		assertEquals(OrderStatus.PAID, paid.getStatus());
-		// One transition wrote both stamps with the same instant: paidAt was
-		// set exactly once, by the single winning confirm.
 		assertEquals(session.getConfirmedAt(), paid.getPaidAt());
 	}
 
 	@Test
 	void theTamperMatrixDiesOnTheSignatureOrTheStateGuard() throws Exception {
-		// Forged: one flipped hex character.
 		Order forged = seedPendingOrder("pid-forged");
 		String sig = sigOf("pid-forged");
 		String flipped = (sig.charAt(0) == '0' ? "1" : "0") + sig.substring(1);
 		assertEquals(401, confirm("pid-forged", flipped));
 
-		// Truncated by one character.
 		seedPendingOrder("pid-truncated");
 		assertEquals(401, confirm("pid-truncated", sigOf("pid-truncated").substring(0, 63)));
 
-		// Cross session: a valid sig stolen from another payment.
 		seedPendingOrder("pid-cross-a");
 		seedPendingOrder("pid-cross-b");
 		assertEquals(401, confirm("pid-cross-a", sigOf("pid-cross-b")));
 
-		// Tampered amount: the stored row moved after the sig was minted, and
-		// verification recomputes from the stored values.
 		Order tampered = seedPendingOrder("pid-amount");
 		String stolen = sigOf("pid-amount");
 		paymentSessionRepository.deleteById("pid-amount");
@@ -214,14 +200,12 @@ class PaymentReplayAndTamperIntegrationTest {
 		}
 		assertEquals(OrderStatus.PENDING, orderRepository.findById(forged.getId()).orElseThrow().getStatus());
 
-		// Confirm after cancel.
 		Order cancelled = seedPendingOrder("pid-cc");
 		String ccSig = sigOf("pid-cc");
 		assertEquals(200, cancel("pid-cc", ccSig));
 		assertEquals(409, confirm("pid-cc", ccSig));
 		assertEquals(OrderStatus.CANCELLED, orderRepository.findById(cancelled.getId()).orElseThrow().getStatus());
 
-		// Cancel after confirm.
 		Order confirmed = seedPendingOrder("pid-cf");
 		String cfSig = sigOf("pid-cf");
 		assertEquals(200, confirm("pid-cf", cfSig));

@@ -12,10 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Property view of the token pair Auth.mintToken / Auth.parseSession plus the
-// UserService session store they ride on: every login round-trips through the
-// store, and a seeded bit flip at every payload byte position of a valid token
-// either breaks parsing or names a session the store rejects.
 class TokenTamperPropertyTest {
 	private static final long SEED = 20261010L;
 
@@ -75,9 +71,6 @@ class TokenTamperPropertyTest {
 				payload[position] ^= (byte) mask;
 				String tampered = Base64.getEncoder().encodeToString(payload);
 
-				// A flipped byte changes exactly one character of id+ROLE+secret,
-				// so a surviving parse can never restate the original session;
-				// the store, holding only real logins, must refuse it.
 				Auth.Session parsed;
 				try {
 					parsed = Auth.parseSession(tampered);

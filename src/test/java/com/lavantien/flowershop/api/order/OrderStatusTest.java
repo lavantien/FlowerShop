@@ -9,8 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class OrderStatusTest {
 	private record Arc(OrderStatus from, OrderStatus to) {}
 
-	// The locked transition table restated independently of the enum, so the
-	// matrix test cannot merely mirror the implementation switch.
 	private static final Set<Arc> LEGAL = Set.of(
 		new Arc(OrderStatus.PENDING, OrderStatus.PAID),
 		new Arc(OrderStatus.PENDING, OrderStatus.CANCELLED),
