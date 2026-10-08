@@ -19,8 +19,6 @@ public record CheckoutRequest(
 	Long branchId,
 	@Size(max = 255) String couponCode) {
 
-	// The ceiling keeps one absurd quantity from blowing past DECIMAL(12,0)
-	// in the line math; no real cart needs five digits of one flower.
 	public record Item(@NotNull(message = "is required") Long productId,
 		@Min(value = 1, message = "must be at least 1") @Max(value = 10000, message = "must be at most 10000")
 		int quantity) {}

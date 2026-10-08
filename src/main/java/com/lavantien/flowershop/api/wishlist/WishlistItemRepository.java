@@ -7,7 +7,6 @@ import java.util.Optional;
 
 public interface WishlistItemRepository extends JpaRepository<WishlistItem, Long> {
 
-	// The id tiebreak keeps equal creation instants deterministic.
 	List<WishlistItem> findByUserIdOrderByCreatedAtDescIdDesc(Long userId);
 
 	Optional<WishlistItem> findByUserIdAndProductId(Long userId, Long productId);

@@ -22,10 +22,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/branch")
 public class BranchController {
-	// The Size ceilings mirror the 255-wide columns so a wide string fails
-	// validation instead of blowing up at the database. Coordinates are
-	// required and bounded: every branch must be resolvable on the map, and a
-	// maintenance body that omitted them would wipe the stored pair.
 	public record BranchInput(@NotBlank @Size(max = 255) String name, @Size(max = 255) String address,
 		@Size(max = 255) String district, @Size(max = 255) String city,
 		@NotNull @DecimalMin("-90.0") @DecimalMax("90.0") Double lat,
@@ -44,8 +40,6 @@ public class BranchController {
 			branch.setCity(city);
 			branch.setLat(lat);
 			branch.setLng(lng);
-			// An omitted active keeps the stored flag on updates and rides the
-			// entity's true default on creates.
 			if (active != null) {
 				branch.setActive(active);
 			}
@@ -116,7 +110,6 @@ public class BranchController {
 		requireBranch(id);
 		productRepository.findById(request.productId())
 			.orElseThrow(() -> new NotFoundException("no product with id " + request.productId()));
-		// The set is absolute and never negative: floor at zero.
 		int quantity = Math.max(request.quantity(), 0);
 		StockLevel row = stockLevelRepository.findByBranchIdAndProductId(id, request.productId())
 			.orElseGet(() -> new StockLevel(id, request.productId(), 0));

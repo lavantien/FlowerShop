@@ -17,15 +17,11 @@ public class CouponService {
 		this.couponRepository = couponRepository;
 	}
 
-	// The one resolution rule validate and checkout share: an unknown code is
-	// a missing reference, an inactive or expired one a business conflict.
 	@Transactional(readOnly = true)
 	public Coupon resolve(String code) {
 		Coupon coupon = couponRepository.findByCode(code)
 			.orElseThrow(() -> new NotFoundException("no coupon with code " + code));
 		Instant now = Instant.now();
-		// The coupon dies at its expiry instant: at now == expiresAt it is
-		// already dead, so only a strictly later expiry still resolves.
 		if (!coupon.isActive() || coupon.getExpiresAt() != null && !coupon.getExpiresAt().isAfter(now)) {
 			throw new ConflictException("COUPON_INACTIVE", "coupon " + code + " is inactive or expired");
 		}

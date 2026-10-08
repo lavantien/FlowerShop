@@ -77,8 +77,6 @@ public class OrderController {
 
 	@GetMapping("/{id}")
 	public OrderView getById(@PathVariable Long id, HttpServletRequest request) {
-		// The path id names the order, so the owner can only be known after
-		// the row is loaded: unknown ids 404 first, foreign ones 403 after.
 		Order order = orderRepository.findById(id)
 			.orElseThrow(() -> new NotFoundException("no order with id " + id));
 		if (!Auth.ownIdOrAdmin(order.getUserId(), request)) {
@@ -87,8 +85,6 @@ public class OrderController {
 		return orderService.view(order);
 	}
 
-	// The owner may cancel while PENDING, an admin while any legal arc to
-	// CANCELLED is open; both restore stock and kill the pending payment.
 	@PostMapping("/{id}/cancel")
 	public OrderView cancel(@PathVariable Long id, HttpServletRequest request) {
 		return orderService.cancel(id, Auth.userId(request), Auth.isAdmin(request));
@@ -118,8 +114,6 @@ public class OrderController {
 		};
 	}
 
-	// Garbage filters fall back to no filter at all, the same silent-clamp
-	// policy the catalog applies to its query parameters.
 	static OrderStatus parseStatus(String raw) {
 		if (raw == null || raw.isBlank()) {
 			return null;
@@ -131,8 +125,6 @@ public class OrderController {
 		}
 	}
 
-	// An ISO local date lands on its UTC midnight; the exclusive end shifts
-	// one day forward so the whole "to" day stays inside the window.
 	static Instant parseInstant(String raw, boolean endExclusive) {
 		if (raw == null || raw.isBlank()) {
 			return null;

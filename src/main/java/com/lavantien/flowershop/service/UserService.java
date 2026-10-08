@@ -9,9 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class UserService {
-	// Sessions are keyed by user id and carry a random secret that only the
-	// login response ever hands out, so encoding the public id and type into a
-	// token no longer lets a forger impersonate a logged in account.
 	private final Map<Long, String> sessionSecrets = new ConcurrentHashMap<>();
 
 	public String login(long id) {
@@ -24,8 +21,6 @@ public class UserService {
 		sessionSecrets.remove(id, secret);
 	}
 
-	// A password change must kill every session the user holds, not just
-	// the one that asked for it.
 	public void logoutAll(long id) {
 		sessionSecrets.remove(id);
 	}

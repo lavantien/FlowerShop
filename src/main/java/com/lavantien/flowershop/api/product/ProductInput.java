@@ -12,8 +12,6 @@ public record ProductInput(Long id, @NotBlank String name, @Length(max = 2000) S
 	@Length(max = 2000) String imgUrl, @NotNull @Positive BigDecimal price, String typeName,
 	String categoryName) {
 
-	// VND prices are whole dong: normalize any submitted scale to 0 so the
-	// DECIMAL(12,0) column and the JSON wire shape never disagree.
 	Product toEntity() {
 		Product product = new Product();
 		product.setId(id);

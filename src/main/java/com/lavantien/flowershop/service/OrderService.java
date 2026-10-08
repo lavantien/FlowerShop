@@ -72,10 +72,6 @@ public class OrderService {
 		this.properties = properties;
 	}
 
-	// One transaction prices every line from the database, snapshots name and
-	// price into order_item, resolves the branch, decrements stock through the
-	// single conditional update, writes the order PENDING, and opens the
-	// payment session whose signed redirect the response carries.
 	@Transactional
 	public CheckoutResponse checkout(Long userId, CheckoutRequest request) {
 		Map<Long, Integer> quantities = mergedQuantities(request.items());
@@ -94,12 +90,8 @@ public class OrderService {
 			subtotal = subtotal.add(lineTotal);
 			lines.add(new Line(product, entry.getValue(), lineTotal));
 		}
-		// Every stock-touching path visits the rows lowest product id first:
-		// one global lock order keeps mirrored carts from deadlocking.
 		lines.sort(Comparator.comparing(line -> line.product().getId()));
 
-		// The stock guard: a shortfall on any line rolls the whole cart back
-		// and the detail names every failing item.
 		List<String> failing = new ArrayList<>();
 		for (Line line : lines) {
 			StockLevel row = stockLevelRepository
@@ -112,10 +104,6 @@ public class OrderService {
 			throw new ConflictException("OUT_OF_STOCK", "insufficient stock for: " + String.join(", ", failing));
 		}
 
-		// The coupon rules are exactly the validate endpoint's; the discount
-		// then lands on the money step every computed amount rounds to, clamped
-		// again after rounding so a sub-step subtotal never pays a step-rounded
-		// discount larger than itself.
 		String couponCode = blankToNull(request.couponCode());
 		BigDecimal discountAmount = BigDecimal.ZERO;
 		if (couponCode != null) {
@@ -172,8 +160,6 @@ public class OrderService {
 					.orElseThrow(() -> new NotFoundException("no order with id " + session.getOrderId()));
 				Instant now = Instant.now();
 				session.confirm(now);
-				// The payment row lock already serialized the replays; the
-				// transition guard is the second wall.
 				if (order.getStatus() == OrderStatus.PENDING) {
 					order.transitionTo(OrderStatus.PAID, now);
 				}
@@ -213,8 +199,6 @@ public class OrderService {
 		if (!admin && !actingUserId.equals(order.getUserId())) {
 			throw new ForbiddenException("only the owner or an admin may cancel this order");
 		}
-		// The owner may cancel while PENDING, an admin while any legal arc to
-		// CANCELLED is open; the enum table is the only definition.
 		if (!order.getStatus().canTransitionTo(OrderStatus.CANCELLED)
 				|| (!admin && order.getStatus() != OrderStatus.PENDING)) {
 			throw new ConflictException("ILLEGAL_TRANSITION",
@@ -231,8 +215,6 @@ public class OrderService {
 
 	@Transactional
 	public OrderView changeStatus(Long orderId, OrderStatus next) {
-		// Held for the row lock: concurrent confirms on the same order must
-		// not interleave with this transition.
 		PaymentSession payment = paymentSessionRepository.lockByOrderId(orderId).orElse(null);
 		Order order = orderRepository.lockById(orderId)
 			.orElseThrow(() -> new NotFoundException("no order with id " + orderId));
@@ -240,15 +222,11 @@ public class OrderService {
 			throw new ConflictException("ILLEGAL_TRANSITION",
 				"an order in " + order.getStatus() + " cannot move to " + next);
 		}
-		// PENDING to PAID belongs to payment confirm alone, never to an admin
-		// pushing the status by hand.
 		if (order.getStatus() == OrderStatus.PENDING && next == OrderStatus.PAID) {
 			throw new ConflictException("ILLEGAL_TRANSITION",
 				"an order only turns PAID through the payment confirm flow");
 		}
 		if (next == OrderStatus.CANCELLED) {
-			// A pending session must die with the order, exactly as cancel()
-			// kills it, or a later confirm would charge a cancelled order.
 			if (payment != null && payment.getStatus() == PaymentStatus.PENDING) {
 				payment.cancel(Instant.now());
 			}
@@ -265,8 +243,6 @@ public class OrderService {
 	}
 
 	private void restoreStock(Order order) {
-		// Mirrors checkout's lock order (lowest product id first) so opposite
-		// transitions never take the same rows in opposite sequences.
 		List<OrderItem> items = new ArrayList<>(orderItemRepository.findByOrderId(order.getId()));
 		items.sort(Comparator.comparing(OrderItem::getProductId));
 		for (OrderItem item : items) {
@@ -304,8 +280,6 @@ public class OrderService {
 		if (request.branchId() != null) {
 			Branch branch = branchRepository.findById(request.branchId())
 				.orElseThrow(() -> new NotFoundException("no branch with id " + request.branchId()));
-			// An inactive or coordinate-less branch cannot fulfill anything;
-			// both would either strand the order or die on the distance math.
 			if (!Boolean.TRUE.equals(branch.getActive()) || branch.getLat() == null || branch.getLng() == null) {
 				throw new NotFoundException("no active branch with id " + request.branchId()
 					+ " and coordinates to fulfill the order");

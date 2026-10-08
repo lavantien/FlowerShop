@@ -19,8 +19,6 @@ public class PaymentService {
 		this.payment = properties.payment();
 	}
 
-	// sig = lowercase hex HMAC-SHA256(secret, paymentId:orderId:amount) with
-	// the amount in its plain integer decimal form.
 	public String sign(PaymentSession session) {
 		try {
 			Mac mac = Mac.getInstance("HmacSHA256");
@@ -33,8 +31,6 @@ public class PaymentService {
 		}
 	}
 
-	// Constant time over a recomputation from the stored row, never from any
-	// claim the request carries.
 	public boolean matches(PaymentSession session, String sig) {
 		if (sig == null || sig.isBlank()) {
 			return false;

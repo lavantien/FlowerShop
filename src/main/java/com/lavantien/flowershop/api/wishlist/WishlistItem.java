@@ -25,8 +25,6 @@ public class WishlistItem {
 	public WishlistItem() {
 	}
 
-	// Stamping here keeps every insert ordered by creation without a service
-	// layer that would only set this one field.
 	public WishlistItem(Long userId, Long productId) {
 		this.userId = userId;
 		this.productId = productId;
@@ -43,8 +41,6 @@ public class WishlistItem {
 			'}';
 	}
 
-	// The id stays database-private: the user and product pair is the whole
-	// identity the app ever reads.
 
 	public Long getUserId() {
 		return userId;

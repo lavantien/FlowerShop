@@ -17,8 +17,6 @@ import java.time.Instant;
 @Entity
 @Table(name = "coupon", uniqueConstraints = @UniqueConstraint(name = Coupon.CODE_UNIQUE_KEY, columnNames = "code"))
 public class Coupon {
-	// The name Hibernate gave the key when it generated the schema; pinned
-	// here so a raced insert can be mapped to its documented 409 by name.
 	public static final String CODE_UNIQUE_KEY = "UKbg4p9ontpj7adq7yr71h93sdn";
 
 	@Id
@@ -58,8 +56,6 @@ public class Coupon {
 			'}';
 	}
 
-	// The raw formula the validate endpoint returns verbatim; the checkout
-	// rounds it to the money step like every other computed amount.
 	public BigDecimal discountOn(BigDecimal subtotal) {
 		BigDecimal raw = kind == CouponKind.PERCENT
 			? subtotal.multiply(value).divide(BigDecimal.valueOf(100), 0, RoundingMode.CEILING)

@@ -40,8 +40,6 @@ public class TypeController {
 	@RequireRole(Role.ADMIN)
 	@DeleteMapping
 	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
-		// The bulk path must honor the same NAME_IN_USE wall the single delete
-		// enforces: any referenced candidate name refuses the whole batch.
 		if (ids == null) {
 			requireUnreferenced(typeRepository.findAll());
 			typeRepository.deleteAll();
@@ -71,8 +69,6 @@ public class TypeController {
 	@Transactional
 	@PutMapping("/{id}")
 	public ResponseEntity<Type> update(@PathVariable Long id, @RequestBody Type type) {
-		// The documented body carries no id, so the addressed row must be
-		// mutated and saved: saving the request entity would insert a phantom.
 		Type target = typeRepository.findById(id)
 			.orElseThrow(() -> new NotFoundException("no type with id " + id));
 		requireFreeName(type.getName(), id);
@@ -82,8 +78,6 @@ public class TypeController {
 		target.setName(to);
 		target.setCategoryName(type.getCategoryName());
 		typeRepository.save(target);
-		// Products reference the name, not the id, so a rename must carry the
-		// reference columns along in the same transaction.
 		if (!to.equals(from)) {
 			productRepository.renameType(from, to);
 		}
@@ -95,8 +89,6 @@ public class TypeController {
 	public ResponseEntity<Void> delete(@PathVariable Long id) {
 		Type type = typeRepository.findById(id)
 			.orElseThrow(() -> new NotFoundException("no type with id " + id));
-		// Products reference the name, not the id: deleting the row would
-		// strand every product still pointing at it.
 		if (productRepository.existsByTypeName(type.getName())) {
 			throw new ConflictException("NAME_IN_USE", "products still reference type " + type.getName());
 		}
@@ -112,8 +104,6 @@ public class TypeController {
 		}
 	}
 
-	// A type belongs to a category: a name matching no row would strand the
-	// type exactly like a product pointing at a deleted taxonomy name.
 	private void requireKnownCategory(String categoryName) {
 		if (categoryName != null && !categoryRepository.existsByName(categoryName)) {
 			throw new NotFoundException("no category with name " + categoryName);

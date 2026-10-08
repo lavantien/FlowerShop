@@ -32,12 +32,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// Extending ResponseEntityExceptionHandler claims the framework-raised
-// failures (unreadable bodies, type mismatches, method validation, unmatched
-// routes, wrong methods) so every error path renders problem+json. The base
-// class would already answer those with a bare problem document; each override
-// below keeps the contract's code field, and the validation shapes keep the
-// per-field errors map.
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	private static final Map<String, String> CONFLICT_CODES_BY_KEY = Map.of(
@@ -54,8 +48,6 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return problem;
 	}
 
-	// Defense in depth under the bean validation: a paging or integrity misuse
-	// that slips past the clamps must still answer problem+json, never a 500.
 	@ExceptionHandler(InvalidDataAccessApiUsageException.class)
 	public ProblemDetail handleInvalidUsage(InvalidDataAccessApiUsageException exception, HttpServletRequest request) {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
@@ -65,9 +57,6 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return problem;
 	}
 
-	// A raced unique-key insert answers "Duplicate entry ... for key '<name>'"
-	// on MySQL 9; the documented 409 codes map by constraint name while any
-	// other integrity failure stays a 400.
 	@ExceptionHandler(DataIntegrityViolationException.class)
 	public ProblemDetail handleIntegrityViolation(DataIntegrityViolationException exception,
 		HttpServletRequest request) {
@@ -88,16 +77,12 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = validationProblem(request);
 		Map<String, String> errors = new LinkedHashMap<>();
 		for (FieldError error : exception.getBindingResult().getFieldErrors()) {
-			// The contract maps each field to its first failing message.
 			errors.putIfAbsent(error.getField(), error.getDefaultMessage());
 		}
 		problem.setProperty("errors", errors);
 		return response(problem, headers, status);
 	}
 
-	// The bulk endpoints take List<@Valid element> bodies, which Spring method
-	// validation rejects with this type; element violations carry the list
-	// index so the field key stays unambiguous across the batch.
 	@Override
 	protected ResponseEntity<Object> handleHandlerMethodValidationException(HandlerMethodValidationException exception,
 		HttpHeaders headers, HttpStatusCode status, WebRequest request) {
@@ -139,8 +124,6 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return response(problem, headers, status);
 	}
 
-	// Unmatched /api routes fall through the SPA forward to the static
-	// handler, whose NoResourceFoundException lands here.
 	@Override
 	protected ResponseEntity<Object> handleNoResourceFoundException(NoResourceFoundException exception,
 		HttpHeaders headers, HttpStatusCode status, WebRequest request) {
@@ -169,9 +152,6 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return request instanceof ServletWebRequest servlet ? URI.create(servlet.getRequest().getRequestURI()) : null;
 	}
 
-	// Walks the cause chain for MySQL's duplicate-entry message and returns
-	// the violated constraint's name, tolerating the 'table.constraint'
-	// qualified form. Null when the violation is not a duplicate key.
 	private static String duplicateKeyOf(DataIntegrityViolationException exception) {
 		for (Throwable cause = exception; cause != null && cause != cause.getCause(); cause = cause.getCause()) {
 			if (cause.getMessage() == null || !cause.getMessage().contains("Duplicate entry")) {

@@ -14,19 +14,13 @@ public interface StockLevelRepository extends JpaRepository<StockLevel, Long> {
 
 	boolean existsByBranchId(Long branchId);
 
-	// Sole stock source: the product view sums every branch row and treats
-	// no rows as zero, never as unknown.
 	@Query("select coalesce(sum(s.quantity), 0) from StockLevel s where s.productId = :productId")
 	long sumQuantityByProductId(Long productId);
 
-	// The locked oversell guard: one conditional update per line, the
-	// affected-row check inside the caller's transaction decides, no version
-	// column, no retry loop.
 	@Modifying
 	@Query("update StockLevel s set s.quantity = s.quantity - :n where s.id = :id and s.quantity >= :n")
 	int decrementIfAvailable(Long id, int n);
 
-	// Restores run as one atomic increment per line, no read-modify-write.
 	@Modifying
 	@Query("update StockLevel s set s.quantity = s.quantity + :n where s.id = :id")
 	int increment(Long id, int n);

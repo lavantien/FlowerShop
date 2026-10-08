@@ -30,8 +30,6 @@ public class ReportController {
 		return reportService.sales(window.from(), window.to());
 	}
 
-	// Absent or garbage dates fall back to the last 30 days ending today, the
-	// same silent-clamp policy the catalog and order filters follow.
 	static Window window(String from, String to, LocalDate today) {
 		LocalDate toDate = parseDate(to, today);
 		LocalDate fromDate = parseDate(from, toDate.minusDays(30));

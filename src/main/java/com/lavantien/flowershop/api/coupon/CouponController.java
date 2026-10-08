@@ -64,7 +64,6 @@ public class CouponController {
 		return ResponseEntity.noContent().build();
 	}
 
-	// Any live session may preview its cart's discount before committing.
 	@PostMapping("/validate")
 	public CouponPreview validate(@Valid @RequestBody ValidateRequest request) {
 		Coupon coupon = couponService.resolve(request.code().strip());

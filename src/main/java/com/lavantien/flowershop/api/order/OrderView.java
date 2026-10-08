@@ -18,7 +18,6 @@ public record OrderView(Long id, Long userId, OrderStatus status, Instant placed
 		}
 	}
 
-	// branchName is resolved by the caller, which owns the branch repository.
 	public static OrderView of(Order order, List<OrderItem> items, String branchName) {
 		return new OrderView(order.getId(), order.getUserId(), order.getStatus(), order.getPlacedAt(),
 			order.getPaidAt(), order.getShippedAt(), order.getCompletedAt(), order.getCancelledAt(),

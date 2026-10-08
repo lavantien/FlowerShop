@@ -10,8 +10,6 @@ import java.util.Optional;
 public interface PaymentSessionRepository extends JpaRepository<PaymentSession, String> {
 	Optional<PaymentSession> findByOrderId(Long orderId);
 
-	// Both locked reads follow the same order everywhere, payment row before
-	// order row, so the confirm, cancel, and status paths never deadlock.
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select p from PaymentSession p where p.id = :id")
 	Optional<PaymentSession> lockById(String id);

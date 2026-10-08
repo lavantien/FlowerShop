@@ -11,8 +11,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.math.BigDecimal;
 
-// Class-level rule, reported on the value field so the problem+json errors
-// map names it beside the plain field constraints.
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = PercentCap.Validator.class)

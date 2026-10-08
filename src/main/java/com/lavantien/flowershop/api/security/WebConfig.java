@@ -10,10 +10,6 @@ import java.util.List;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-	// Locked decision 14: every GET whose segments carry no dot and whose
-	// first segment is not api forwards to the SPA index, so new Angular
-	// routes work without backend edits. Dotted paths stay with the static
-	// handler, unmatched /api paths keep 404ing in the dispatcher.
 	private static final int SPA_MAX_DEPTH = 4;
 	private static final List<String> SPA_CATCH_ALL = catchAllPatterns(SPA_MAX_DEPTH);
 

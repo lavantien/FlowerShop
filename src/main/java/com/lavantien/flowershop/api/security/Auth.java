@@ -15,8 +15,6 @@ public final class Auth {
 	private Auth() {
 	}
 
-	// id and role stay first and second so the frontend split('+') parsers keep
-	// working; the third segment is the unguessable per-login session secret.
 	public record Session(long id, Role role, String secret) {}
 
 	public static Session parseSession(String token) {
@@ -34,9 +32,6 @@ public final class Auth {
 		}
 	}
 
-	// A carried-forward volume can hold a NULL role; a roleless account must
-	// never open a session, and the NPE must surface as 401, not 500. Callers
-	// invoke this before the session secret is minted and stored.
 	public static void requireRole(Role role) {
 		if (role == null) {
 			throw new UnauthenticatedException("the account has no role assigned and cannot open a session");

@@ -14,8 +14,6 @@ import jakarta.persistence.UniqueConstraint;
 @Entity
 @Table(name = "user", uniqueConstraints = @UniqueConstraint(name = User.EMAIL_UNIQUE_KEY, columnNames = "email"))
 public class User {
-	// The name Hibernate gave the key when it generated the schema; pinned
-	// here so a raced insert can be mapped to its documented 409 by name.
 	public static final String EMAIL_UNIQUE_KEY = "UKob8kqyqqgmefl0aco34akdtpe";
 
 	@Id
@@ -52,8 +50,6 @@ public class User {
 
 	@Override
 	public String toString() {
-		// Never print the password hash or the security answer: one stray log
-		// line must not leak either.
 		return "User{" +
 			"id=" + id +
 			", name='" + name + '\'' +

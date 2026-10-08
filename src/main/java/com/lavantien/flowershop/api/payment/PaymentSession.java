@@ -13,8 +13,6 @@ import java.time.Instant;
 public class PaymentSession {
 	@Id
 	private String id;
-	// One live session per order: the unique key is the replay wall beside
-	// the status guard and the order transition guard.
 	@Column(unique = true)
 	private Long orderId;
 	@Column(precision = 12, scale = 0)

@@ -23,11 +23,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
-	// Self registration never binds the entity raw: a submitted id would
-	// merge into someone else's row and a submitted enable or role would
-	// leak admin powers onto a public endpoint. The Size ceilings mirror the
-	// 255-wide columns so a wide string fails validation instead of blowing
-	// up at the database.
 	public record CreateRequest(@NotBlank @Size(max = 255) String name, @NotBlank @Size(max = 255) String email,
 		@NotBlank String password, @Size(max = 255) String phone, @Size(max = 255) String address,
 		@Size(max = 255) String district, @Size(max = 255) String city, @Size(max = 255) String answer) {}
@@ -139,16 +134,12 @@ public class UserController {
 	@PostMapping("/resetPassword")
 	public SessionView doResetPassword(@Valid @RequestBody ResetPasswordRequest request) {
 		User foundUser = userRepository.findByEmail(request.email());
-		// A null or blank stored answer must never match: equals(null, null)
-		// would hand the account to anyone who simply omits the field.
 		boolean answerMatches = foundUser != null
 			&& foundUser.getAnswer() != null && !foundUser.getAnswer().isBlank()
 			&& foundUser.getAnswer().equals(request.answer());
 		if (!answerMatches) {
 			throw new UnauthenticatedException("invalid email or answer");
 		}
-		// Guarded before the session secret is stored, so a roleless legacy
-		// account never leaves an orphaned session behind its 401.
 		Auth.requireRole(foundUser.getRole());
 		foundUser.setPassword(passwordService.hash(request.newPassword()));
 		userRepository.save(foundUser);
@@ -168,8 +159,6 @@ public class UserController {
 	}
 
 	private void refuseEmailInUse(String email) {
-		// A duplicate row would break findByEmail for that address forever,
-		// so refuse instead of letting the unique index explode at runtime.
 		if (email != null && userRepository.findByEmail(email) != null) {
 			throw new ConflictException("EMAIL_IN_USE", email + " is already registered");
 		}

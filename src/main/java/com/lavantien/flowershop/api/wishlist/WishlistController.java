@@ -35,7 +35,6 @@ public class WishlistController {
 	@GetMapping("/me")
 	public List<WishlistEntry> myWishlist(HttpServletRequest request) {
 		return wishlistItemRepository.findByUserIdOrderByCreatedAtDescIdDesc(Auth.userId(request)).stream()
-			// A row can outlive its product: nothing about it is renderable.
 			.map(item -> productRepository.findById(item.getProductId())
 				.map(product -> new WishlistEntry(view(product), item.getCreatedAt()))
 				.orElse(null))
@@ -57,9 +56,6 @@ public class WishlistController {
 				try {
 					wishlistItemRepository.save(new WishlistItem(userId, productId));
 				} catch (DataIntegrityViolationException raced) {
-					// Two concurrent toggles both missed the find and both
-					// insert: the unique key rejecting this one means the row
-					// exists now, which is the add this request asked for.
 				}
 				return new ToggleOutcome(true);
 			});

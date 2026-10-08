@@ -33,9 +33,6 @@ public class AuthController {
 	@PostMapping("/login")
 	public SessionView login(@Valid @RequestBody LoginRequest request) {
 		User user = userRepository.findByEmail(request.email());
-		// Unknown and disabled addresses still pay the bcrypt cost so response
-		// time stops revealing which emails exist; a wrong password on a live
-		// account burns the same cost inside matches itself.
 		if (user == null || !Boolean.TRUE.equals(user.getEnable())) {
 			passwordService.burnDummyComparison(request.password());
 			throw new UnauthenticatedException("invalid email or password");
@@ -43,8 +40,6 @@ public class AuthController {
 		if (!passwordService.matches(request.password(), user.getPassword())) {
 			throw new UnauthenticatedException("invalid email or password");
 		}
-		// Guarded before the session secret is stored, so a roleless legacy
-		// account never leaves an orphaned session behind its 401.
 		Auth.requireRole(user.getRole());
 		return new SessionView(Auth.mintToken(user.getId(), user.getRole(), userService.login(user.getId())),
 			UserView.from(user));
@@ -52,8 +47,6 @@ public class AuthController {
 
 	@PostMapping("/logout")
 	public ResponseEntity<Void> logout(HttpServletRequest request) {
-		// The interceptor already validated this header against the session
-		// store, so the parse below cannot fail here.
 		Auth.Session session = Auth.parseSession(request.getHeader(Auth.TOKEN_HEADER));
 		userService.logout(session.id(), session.secret());
 		return ResponseEntity.noContent().build();

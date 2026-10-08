@@ -12,8 +12,6 @@ import java.time.Instant;
 public record CouponInput(@NotBlank String code, @NotNull CouponKind kind,
 	@NotNull @Positive BigDecimal value, Boolean active, Instant expiresAt) {
 
-	// Fixed values are whole dong and percent rates stay integral; the
-	// ceiling keeps any accepted positive fraction from rounding to zero.
 	Coupon toEntity() {
 		Coupon coupon = new Coupon();
 		applyTo(coupon);
@@ -24,8 +22,6 @@ public record CouponInput(@NotBlank String code, @NotNull CouponKind kind,
 		coupon.setCode(code.strip());
 		coupon.setKind(kind);
 		coupon.setValue(value.setScale(0, RoundingMode.CEILING));
-		// An omitted active keeps the stored flag on updates and rides the
-		// entity's true default on creates.
 		if (active != null) {
 			coupon.setActive(active);
 		}

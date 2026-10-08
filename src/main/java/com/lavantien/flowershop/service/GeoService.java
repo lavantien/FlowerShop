@@ -26,7 +26,6 @@ public class GeoService {
 	record GeoData(@JsonProperty("default") Point defaultPoint, List<CityPoint> cities, List<DistrictPoint> districts) {}
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
-	// Mean earth radius, IUGG R1.
 	private static final double EARTH_RADIUS_KM = 6371.0088;
 
 	private final Map<String, Point> districts = new HashMap<>();
@@ -34,7 +33,6 @@ public class GeoService {
 	private final Point defaultPoint;
 	private final ShopProperties.Delivery delivery;
 
-	// The test-only constructors beside this one force the pick.
 	@Autowired
 	public GeoService(ShopProperties properties) {
 		this("geo/vn-geo.json", properties);
@@ -95,7 +93,6 @@ public class GeoService {
 		double a = sinLat * sinLat
 			+ Math.cos(Math.toRadians(from.lat())) * Math.cos(Math.toRadians(to.lat())) * sinLng * sinLng;
 		double raw = 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(a)));
-		// Ceil to the next tenth of a km: a hair under never rounds down.
 		return Math.ceil(raw * 10) / 10;
 	}
 
@@ -106,7 +103,6 @@ public class GeoService {
 	}
 
 	public Branch nearestBranch(List<Branch> branches, Point target) {
-		// Inactive or coordinate-less branches can never be the answer.
 		List<Branch> eligible = branches.stream()
 			.filter(branch -> Boolean.TRUE.equals(branch.getActive())
 				&& branch.getLat() != null && branch.getLng() != null)
@@ -115,7 +111,6 @@ public class GeoService {
 		double nearestDistance = Double.POSITIVE_INFINITY;
 		for (Branch branch : eligible) {
 			double distance = distanceKm(new Point(branch.getLat(), branch.getLng()), target);
-			// Ties at the rounded tenth of a km go to the lowest id.
 			if (distance < nearestDistance
 					|| (distance == nearestDistance && branch.getId() < nearest.getId())) {
 				nearest = branch;

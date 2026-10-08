@@ -36,8 +36,6 @@ public class CategoryController {
 	@RequireRole(Role.ADMIN)
 	@DeleteMapping
 	public ResponseEntity<?> deleteMany(@RequestBody(required = false) List<Long> ids) {
-		// The bulk path must honor the same NAME_IN_USE wall the single delete
-		// enforces: any referenced candidate name refuses the whole batch.
 		if (ids == null) {
 			requireUnreferenced(categoryRepository.findAll());
 			categoryRepository.deleteAll();
@@ -66,8 +64,6 @@ public class CategoryController {
 	@Transactional
 	@PutMapping("/{id}")
 	public ResponseEntity<Category> update(@PathVariable Long id, @RequestBody Category category) {
-		// The documented body carries no id, so the addressed row must be
-		// mutated and saved: saving the request entity would insert a phantom.
 		Category target = categoryRepository.findById(id)
 			.orElseThrow(() -> new NotFoundException("no category with id " + id));
 		requireFreeName(category.getName(), id);
@@ -75,8 +71,6 @@ public class CategoryController {
 		String to = category.getName();
 		target.setName(to);
 		categoryRepository.save(target);
-		// Products reference the name, not the id, so a rename must carry the
-		// reference columns along in the same transaction.
 		if (!to.equals(from)) {
 			productRepository.renameCategory(from, to);
 		}
@@ -88,8 +82,6 @@ public class CategoryController {
 	public ResponseEntity<Void> delete(@PathVariable Long id) {
 		Category category = categoryRepository.findById(id)
 			.orElseThrow(() -> new NotFoundException("no category with id " + id));
-		// Products reference the name, not the id: deleting the row would
-		// strand every product still pointing at it.
 		if (productRepository.existsByCategoryName(category.getName())) {
 			throw new ConflictException("NAME_IN_USE", "products still reference category " + category.getName());
 		}

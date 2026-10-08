@@ -25,8 +25,6 @@ import java.util.TreeMap;
 
 @Service
 public class ReportService {
-	// Revenue counts these three statuses only; PENDING and CANCELLED rows
-	// still land in countsByStatus but never in any money figure.
 	private static final Set<OrderStatus> REVENUE_STATUSES = Set.of(OrderStatus.PAID, OrderStatus.SHIPPED,
 		OrderStatus.COMPLETED);
 	private static final int TOP_PRODUCTS = 10;
@@ -86,7 +84,6 @@ public class ReportService {
 		Map<Long, Aggregate> byProduct = new LinkedHashMap<>();
 		for (OrderItem item : orderItemRepository.findByOrderIdIn(revenueOrderIds)) {
 			Aggregate current = byProduct.get(item.getProductId());
-			// The name snapshot is stable per product, the first one seen wins.
 			Aggregate merged = new Aggregate(current == null ? item.getProductName() : current.name(),
 				(current == null ? 0 : current.quantity()) + item.getQuantity(),
 				(current == null ? BigDecimal.ZERO : current.revenue()).add(item.getLineTotal()));

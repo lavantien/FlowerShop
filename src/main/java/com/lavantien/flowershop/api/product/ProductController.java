@@ -24,8 +24,6 @@ import java.util.Locale;
 @RestController
 @RequestMapping("/api/product")
 public class ProductController {
-	// The parsed and clamped catalog query: the only place page, size, and
-	// sort policy live, so both the controller and its tests read one rule.
 	record CatalogQuery(String search, String category, String type, Sort sort, int page, int size) {
 		static CatalogQuery of(String search, String category, String type, String sort, Integer page, Integer size) {
 			PageQuery paging = PageQuery.of(page, size);
@@ -37,8 +35,6 @@ public class ProductController {
 			return value == null || value.isBlank() ? null : value.strip();
 		}
 
-		// The sort whitelist: anything unknown falls back to name-asc, the
-		// same silent-clamp philosophy the paging parameters follow.
 		private static Sort sortOf(String raw) {
 			return switch (raw == null ? "" : raw.strip()) {
 				case "name-desc" -> Sort.by(Sort.Direction.DESC, "name");
@@ -85,8 +81,6 @@ public class ProductController {
 		try {
 			saved = productService.upsertAll(products);
 		} catch (DataIntegrityViolationException raced) {
-			// A concurrent request inserted the same id first and poisoned this
-			// transaction: retry the whole payload in a fresh one, as updates.
 			saved = productService.upsertAll(products);
 		}
 		return saved.stream().map(this::view).toList();

@@ -8,9 +8,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// Every route here is public on the wire and gated on the HMAC signature
-// instead of a session token: a bad or missing sig is a 401 before any
-// state is touched.
 @RestController
 @RequestMapping("/api/payment")
 public class PaymentController {

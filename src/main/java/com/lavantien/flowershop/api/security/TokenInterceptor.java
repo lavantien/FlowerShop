@@ -27,10 +27,7 @@ public class TokenInterceptor implements HandlerInterceptor {
 		new PublicRule(HttpMethod.GET, "/api/category/*"),
 		new PublicRule(HttpMethod.GET, "/api/type"),
 		new PublicRule(HttpMethod.GET, "/api/type/*"),
-		// The listing only: per-branch stock stays admin-gated.
 		new PublicRule(HttpMethod.GET, "/api/branch"),
-		// Payment paths gate on the HMAC signature inside the controller,
-		// never on a session token.
 		new PublicRule(HttpMethod.GET, "/api/payment/**"),
 		new PublicRule(HttpMethod.POST, "/api/payment/**"),
 		new PublicRule(HttpMethod.POST, "/api/auth/login"),

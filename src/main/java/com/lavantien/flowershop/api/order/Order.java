@@ -81,8 +81,6 @@ public class Order {
 			'}';
 	}
 
-	// Blind assignment: the canTransitionTo guard is enforced by OrderService.
-	// This only keeps each status landing in its own timestamp slot.
 	public void transitionTo(OrderStatus next, Instant at) {
 		this.status = next;
 		switch (next) {
