@@ -313,6 +313,15 @@ async function waitForCartBadge(page, expected) {
 	}, expected, {timeout: 5000});
 }
 
+function paymentOnPage(page, trail) {
+	const id = new URL(page.url()).pathname.split('/').pop();
+	const entry = trail.payments.find(payment => payment.paymentId === id);
+	if (!entry) {
+		throw new Error(`no captured payment view for ${id}`);
+	}
+	return entry;
+}
+
 async function fillCheckoutForm(page) {
 	await page.fill('[data-test="cart-phone"]', CONFIG.member.phone);
 	await page.fill('[data-test="cart-address"]', CONFIG.member.address);
@@ -418,8 +427,8 @@ async function main() {
 		await page.waitForFunction(() => (document.querySelector('[data-test="pay-status"]')?.textContent ?? '').includes('PENDING'),
 			null, {timeout: 10_000});
 		await shot(page, '13-pay-gateway.png');
-		assertMoney('couponed pay view amount', couponedMoney.total, trail.payments.at(-1).amount);
-		const couponedPayment = trail.payments.at(-1);
+		const couponedPayment = paymentOnPage(page, trail);
+		assertMoney('couponed pay view amount', couponedMoney.total, couponedPayment.amount);
 		await page.locator('[data-test="pay-confirm"]').click();
 		await page.waitForURL(/\/info/, {timeout: 15_000});
 		await page.waitForSelector('[data-test="order-card"]');
@@ -437,14 +446,15 @@ async function main() {
 		await page.waitForSelector('[data-test="pay-amount"]');
 		await page.waitForFunction(() => (document.querySelector('[data-test="pay-status"]')?.textContent ?? '').includes('PENDING'),
 			null, {timeout: 10_000});
-		assertMoney('plain pay view amount', plainMoney.total, trail.payments.at(-1).amount);
+		assertMoney('plain pay view amount', plainMoney.total, paymentOnPage(page, trail).amount);
 		await page.locator('a[href="/info"]').click();
 		await page.waitForFunction(() => document.querySelectorAll('[data-test="order-card"]').length === 2,
 			null, {timeout: 10_000});
-		const history = trail.history.at(-1).content;
-		if (history.length !== 2) {
-			throw new Error(`history view answered ${history.length} orders, expected the 2 walked`);
+		const historyEntry = trail.history.filter(entry => entry.content.length === 2).at(-1);
+		if (!historyEntry) {
+			throw new Error('no history view answered the 2 walked orders');
 		}
+		const history = historyEntry.content;
 		const couponedOrder = history.find(order => order.couponCode === CONFIG.couponCode);
 		const plainOrder = history.find(order => order.couponCode == null);
 		if (!couponedOrder || !plainOrder) {
