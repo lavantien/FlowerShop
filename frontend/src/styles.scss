@@ -1,0 +1,15 @@
+$product-modal-gap: 0.5rem;
+
+.product-modal-fit {
+	margin: $product-modal-gap auto;
+
+	.modal-content {
+		height: calc(100vh - 2 * #{$product-modal-gap});
+	}
+
+	.modal-body {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+	}
+}

@@ -155,7 +155,7 @@ export class StoreComponent implements OnInit {
 
 	openModal(product: ProductView, template: TemplateRef<void>): void {
 		this.selected.set(product);
-		this.modalRef = this.modalService.show(template);
+		this.modalRef = this.modalService.show(template, {class: 'product-modal-fit'});
 	}
 
 	onModalAddToCart(quantity: number): void {

@@ -1,5 +1,7 @@
 <div class="modal-body text-center">
-	<img [alt]="product().name" [src]="product().imgUrl" class="img-fluid modal-image-capped" data-test="modal-image">
+	<div class="modal-image-wrap">
+		<img [alt]="product().name" [src]="product().imgUrl" class="img-fluid modal-image-capped" data-test="modal-image">
+	</div>
 	<h5 class="mt-2"><b>{{product().name}}</b></h5>
 	<div>({{'DATA.' + product().categoryName | translate}} - {{'DATA.' + product().typeName | translate}})</div>
 	<p class="modal-description">{{product().description}}</p>

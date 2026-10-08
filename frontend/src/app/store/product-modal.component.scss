@@ -1,7 +1,16 @@
-.modal-image-capped {
-	max-height: 54vh;
-	object-fit: contain;
-	width: auto;
+.modal-image-wrap {
+	align-items: center;
+	display: flex;
+	flex: 1 1 auto;
+	justify-content: center;
+	min-height: 0;
+
+	.modal-image-capped {
+		max-height: 100%;
+		max-width: 100%;
+		object-fit: contain;
+		width: auto;
+	}
 }
 
 .modal-description {
