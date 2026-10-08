@@ -1,0 +1,89 @@
+npm notice run frontend@0.0.0 test:coverage
+npm notice run ng test --configuration=coverage
+❯ Building...
+✔ Building...
+Application bundle generation complete. [2.694 seconds] - 2026-10-08T01:41:32.776Z
+
+
+ RUN  v5.0.3 C:/Users/lavantien/dev/github/FlowerShop/frontend
+      Coverage enabled with v8
+
+
+ Test Files  44 passed (44)
+      Tests  309 passed (309)
+   Start at  08:41:33
+   Duration  4.37s (environment 56%, tests 18%, setup 11%, import 9%, transform 6%, worker 2%)
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   96.21 |    91.27 |   91.27 |   97.79 |                   
+ app               |     100 |    97.05 |     100 |     100 |                   
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  app.component.ts |     100 |    93.75 |     100 |     100 | 59                
+  models.ts        |       0 |        0 |       0 |       0 |                   
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+ ...admin/branches |    97.7 |    88.46 |   90.47 |   97.91 |                   
+  ...omponent.html |   98.57 |      100 |   77.77 |     100 |                   
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  ....component.ts |   95.78 |    85.71 |   93.93 |   95.23 | 73,138,143,167    
+ app/admin/coupons |   98.85 |     92.1 |   95.45 |     100 |                   
+  ...omponent.html |   98.42 |      100 |      80 |     100 |                   
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  ....component.ts |     100 |     87.5 |     100 |     100 | 48,81-92          
+ ...dmin/dashboard |   94.81 |    76.47 |   95.45 |   96.73 |                   
+  ...omponent.html |   93.68 |       75 |     100 |   96.77 | 51,86             
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  ....component.ts |    97.5 |    76.92 |      95 |   96.66 | 73                
+ app/admin/orders  |   97.77 |    94.64 |   94.87 |   97.43 |                   
+  ...omponent.html |   99.23 |    92.85 |     100 |   98.64 | 87                
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  ....component.ts |   95.74 |    95.23 |   93.54 |   96.34 | 84,126,132        
+ ...admin/products |   95.16 |    92.04 |   85.55 |   96.96 |                   
+  excel.ts         |   96.15 |      100 |    87.5 |     100 |                   
+  ...omponent.html |   95.87 |       90 |      75 |   98.27 | 20,56,84          
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  ....component.ts |   93.42 |    91.37 |   89.65 |   94.69 | ...18,244,255,275 
+ ...admin/taxonomy |   98.36 |    89.47 |   94.28 |   97.74 |                   
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  ....component.ts |   95.23 |    84.61 |   92.59 |   94.91 | 70,79,112         
+ app/admin/users   |   98.21 |    88.23 |   95.23 |   98.57 |                   
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  ....component.ts |   95.45 |    84.61 |   94.44 |   97.14 | 52                
+ app/cart          |   98.15 |    83.33 |   91.42 |   98.31 |                   
+  ...omponent.html |   98.91 |      100 |      90 |     100 |                   
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  ....component.ts |   96.51 |    79.54 |      92 |   96.05 | 69,133,163        
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+ app/info/orders   |   98.42 |    85.71 |     100 |   97.89 |                   
+  ...omponent.html |     100 |     87.5 |     100 |     100 | 37                
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  ....component.ts |   96.22 |    85.18 |     100 |   95.65 | 31,52             
+ app/info/profile  |   98.75 |    76.19 |     100 |   98.21 |                   
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  ....component.ts |   96.77 |    72.22 |     100 |   96.49 | 80,107            
+ app/info/wishlist |     100 |     90.9 |     100 |     100 |                   
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  ....component.ts |     100 |    88.88 |     100 |     100 | 37-44             
+ app/pay           |     100 |    97.29 |     100 |     100 |                   
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  pay.component.ts |     100 |    96.77 |     100 |     100 | 95                
+ ...red/auth-modal |   82.72 |    84.21 |   56.81 |   93.78 |                   
+  ...omponent.html |    79.2 |    68.75 |   15.78 |    94.3 | ...27-128,174-175 
+  ....component.ts |   93.33 |    95.45 |      88 |   92.85 | 88-89,98-99,144   
+ app/store         |   93.12 |     87.5 |   83.58 |   95.81 |                   
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  ....component.ts |     100 |    94.44 |     100 |     100 | 43                
+  ...omponent.html |   85.95 |     62.5 |   46.15 |   92.85 | 21,82,111-113     
+  ...omponent.scss |       0 |        0 |       0 |       0 |                   
+  ....component.ts |   95.45 |    88.88 |   89.74 |   95.78 | 90,102,106,150    
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 96.21% ( 3407/3541 )
+Branches     : 91.27% ( 806/883 )
+Functions    : 91.27% ( 596/653 )
+Lines        : 97.79% ( 2352/2405 )
+================================================================================

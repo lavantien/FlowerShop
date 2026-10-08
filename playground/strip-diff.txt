@@ -1,0 +1,441 @@
+diff --git a/scripts/badges/generate.mjs b/scripts/badges/generate.mjs
+index 898a18d..f4a3f4c 100644
+--- a/scripts/badges/generate.mjs
++++ b/scripts/badges/generate.mjs
+@@ -1,2 +0,0 @@
+-// Renders the self-hosted README badges as shields-style flat SVGs, dependency
+-// free. Run from CI with the coverage artifacts in place; outputs into --out.
+@@ -20 +17,0 @@ function escapeXml(text) {
+-// Verdana 10px advance widths, close enough that text never clips.
+@@ -74,3 +70,0 @@ function coverageColor(percent) {
+-// A missing artifact means the producing job died before reporting (for example
+-// surefire stopped the build), so the honest badge value is unknown, not a throw:
+-// the badges job must still publish a red ci badge over a stale green one.
+@@ -113,2 +106,0 @@ async function frontendCoveragePercent() {
+-// Floor to 2 decimals so a 89.996 percent reality never displays as 90, then
+-// trim trailing zeros: 100, 99.4, and 99.24 all render naturally.
+@@ -144,0 +137 @@ try {
++
+diff --git a/scripts/screenshots/capture.mjs b/scripts/screenshots/capture.mjs
+index 9559f49..d861c7e 100644
+--- a/scripts/screenshots/capture.mjs
++++ b/scripts/screenshots/capture.mjs
+@@ -1,5 +0,0 @@
+-// Captures the README screenshot set from the live app served by the packaged jar.
+-// Run through `make screenshots`, which provides db-up, JAVA_BIN, and the MySQL env.
+-// The walk mirrors a real v3 session: guest browse with server paging, register,
+-// cart checkout with coupon, payment gateway confirm, order history with a member
+-// cancel, wishlist, then the full admin back office and a 404.
+@@ -20 +14,0 @@ const CONFIG = {
+-	// a fresh member per run proves the register flow and dodges duplicate-email 409s
+@@ -49,4 +42,0 @@ async function fetchJson(url, options) {
+-// Money mirrors of the jar's own math (GeoService, Coupon, ShopProperties),
+-// parameterized from the committed config and seeds so the expected numbers
+-// cannot drift from the source of truth.
+-
+@@ -79 +68,0 @@ function readSeedCoupon(code) {
+-// Mean earth radius, IUGG R1, with GeoService's ceil to the next tenth of a km.
+@@ -93 +81,0 @@ function expectedDeliveryFee(delivery, distance) {
+-	// HALF_UP onto the round-to step, like ShopProperties.Delivery.round.
+@@ -97,2 +84,0 @@ function expectedDeliveryFee(delivery, distance) {
+-// The fee depends only on the distance, so the nearest eligible branch decides
+-// it regardless of GeoService's lowest-id tie-break among equals.
+@@ -105,2 +90,0 @@ function nearestBranchDistance(branches, target) {
+-// Coupon.discountOn (percent kinds ceil, both clamp to the subtotal) followed
+-// by the checkout's round-then-min clamp.
+@@ -153 +136,0 @@ function killTree(child) {
+-		// taskkill /T reaches the whole process tree, child.kill() would not.
+@@ -173,2 +155,0 @@ async function startServer() {
+-	// These throws happen before main's try/finally, so the tree must die here
+-	// or the orphaned jar keeps port 8080 and poisons every later run.
+@@ -195,2 +175,0 @@ async function stopServer(server) {
+-	// 'close' fires exactly once, so a jar that already died would leave a bare
+-	// once() listener hanging forever; the timeout keeps make from hanging too.
+@@ -207,2 +185,0 @@ async function stopServer(server) {
+-// The seeds must already live in MySQL (make db-reset); the walker never
+-// POSTs db/product.json anymore, it boots against the seeded database.
+@@ -233 +209,0 @@ async function launchBrowser() {
+-// Toasts sit fixed in the top right corner for 4 s and would cover the shots.
+@@ -253,2 +228,0 @@ async function waitForImages(page) {
+-		// image.complete is true for broken loads too, so failed CDN URLs are
+-		// indistinguishable from slow ones without the naturalWidth check above.
+@@ -265,4 +238,0 @@ async function waitForImages(page) {
+-// ngx-bootstrap fades opacity over 150 ms and the dialog transform over 300 ms,
+-// so `.modal.show` alone fires mid-fade and the shot captures a half-transparent
+-// modal. Settled means opacity 1 and both opacity and transform unchanged across
+-// two consecutive animation frames.
+@@ -284,2 +253,0 @@ async function closeModal(page) {
+-	// Pin the count before clicking: a locator re-query for detachment could match
+-	// a modal queued behind this one, while the count dropping proves this one died.
+@@ -291 +258,0 @@ async function closeModal(page) {
+-		// the store product modal has no header, ngx-bootstrap closes on Escape
+@@ -295,2 +261,0 @@ async function closeModal(page) {
+-	// ngx-bootstrap queues a new modal behind the previous fade-out, so the next
+-	// open must find a clean stage.
+@@ -300,2 +264,0 @@ async function closeModal(page) {
+-// The auth modal is a plain always-rendered div pair, not an ngx-bootstrap
+-// dialog, so it never carries .show and needs its own waits.
+@@ -313,2 +275,0 @@ async function login(page, {email, password}) {
+-	// The app writes the token before the zoneless navbar re-renders, so gate
+-	// on the DOM, not on localStorage, before any button-index click.
+@@ -320 +281 @@ async function register(page, member) {
+-	await page.locator('app-auth-modal .modal-footer .btn-primary').click(); // switch to the sign up form
++	await page.locator('app-auth-modal .modal-footer .btn-primary').click();
+@@ -333 +293,0 @@ async function register(page, member) {
+-	// register auto-logs in on success, the navbar flips to logout right after
+@@ -366,3 +325,0 @@ async function main() {
+-	// The walk's two carts, priced from the same catalog page the store grid
+-	// renders (sorted name-asc, page 1): card 0 twice plus card 2 once for the
+-	// couponed checkout, card 0 once for the cancel-path checkout.
+@@ -392,6 +348,0 @@ async function main() {
+-		// Money trail: the JSON behind the pay view and the order history. The
+-		// checkout response itself is unreadable here: the cart redirects to
+-		// the gateway with document.location.assign, and Chromium discards the
+-		// previous document's network resources, so the walked order is instead
+-		// predicted from the catalog prices and asserted on the surfaces whose
+-		// bodies survive.
+@@ -412 +362,0 @@ async function main() {
+-				// non-JSON bodies never join the money trail
+@@ -416 +365,0 @@ async function main() {
+-		// Guest: shop grid with server paging, product modal, cart lines.
+@@ -420,2 +368,0 @@ async function main() {
+-		// Viewport framing like the 2019 set; fullPage would stretch the grid
+-		// across three screens for no extra information.
+@@ -448 +394,0 @@ async function main() {
+-		// Member: register a fresh account, wishlist one product from the grid.
+@@ -454 +399,0 @@ async function main() {
+-		// First checkout pays through the gateway and leaves one PAID order.
+@@ -476 +420,0 @@ async function main() {
+-		// Second checkout stays PENDING so the member cancel has a live target.
+@@ -493,2 +436,0 @@ async function main() {
+-		// The history view must carry exactly the predicted money: the couponed
+-		// order is the one that used the coupon, the plain one is not.
+@@ -521 +462,0 @@ async function main() {
+-		// Admin: product table, create, import, edit, batch delete, export.
+@@ -527 +468 @@ async function main() {
+-		await page.mouse.move(800, 450); // drop the navbar tooltip before shooting
++		await page.mouse.move(800, 450);
+@@ -568,2 +508,0 @@ async function main() {
+-		// Admin orders: the list replaces the old transaction summary, then the
+-		// capture member's PAID order ships.
+@@ -582 +520,0 @@ async function main() {
+-		// Coupons: create one, the table shows it next to the three seeds.
+@@ -593 +530,0 @@ async function main() {
+-		// Branch stock editor: set an absolute quantity on the first branch.
+@@ -612 +548,0 @@ async function main() {
+-		// Dashboard: tiles and CSS bars over the report aggregates.
+@@ -618 +553,0 @@ async function main() {
+-		// Users: disable the capture member instead of deleting (they own orders).
+@@ -628 +562,0 @@ async function main() {
+-		// Taxonomy: one new category row proves the create path.
+@@ -636 +569,0 @@ async function main() {
+-		// Wildcard route: the SPA 404 page on a junk deep link.
+@@ -643,2 +575,0 @@ async function main() {
+-		// Fresh clones have no playground/ yet; without the mkdir the failure
+-		// screenshot rejects with ENOENT and the catch swallows its own artifact.
+@@ -654,0 +586 @@ await main();
++
+diff --git a/scripts/tools/fuzz-api.mjs b/scripts/tools/fuzz-api.mjs
+index 7ca2f9d..30ce9dd 100644
+--- a/scripts/tools/fuzz-api.mjs
++++ b/scripts/tools/fuzz-api.mjs
+@@ -2,12 +1,0 @@
+-// API fuzz harness for the packaged jar (plan decision 13: rolled own, no jqwik).
+-// Deterministic: fixed seed from scripts/tools/qa.json (fuzz.seed) drives every
+-// generated variant, the curated corpus is scripts/tools/fuzz-corpus.json.
+-// Assertions per docs/api-v3.md: response status stays in the documented set for
+-// the endpoint, and every error body is problem+json carrying a known code,
+-// application errors and framework errors alike (deserialization 400 VALIDATION,
+-// method-not-allowed 405 METHOD_NOT_ALLOWED, unknown paths 404 NOT_FOUND, per
+-// the committed error advice). No response is ever 5xx or a hang.
+-// The run boots target/flowershop-*.jar (newest first, same glob as make run) on a
+-// scratch port against the compose MySQL, kills it afterwards, and writes
+-// docs/qa/fuzz-report.md. Run via `make fuzz`, which provides JAVA_BIN and the
+-// MySQL env. Exit 0 on a green run, 1 on any assertion failure.
+@@ -27,2 +14,0 @@ const BASE = `http://localhost:${cfg.port}`;
+-// Machine codes from docs/api-v3.md plus the framework advice codes the
+-// committed handler emits; every problem+json error must carry one.
+@@ -33 +18,0 @@ const KNOWN_CODES = new Set(['VALIDATION', 'UNAUTHENTICATED', 'FORBIDDEN', 'NOT_
+-// Deterministic PRNG (mulberry32): same seed, same request sequence, same statuses.
+@@ -46,8 +30,0 @@ const pick = (values) => values[Math.floor(rng() * values.length)];
+-// The seed fixes the request sequence; the run tag namespaces the fresh users
+-// each run registers and every credential the run rotates derives from it, so
+-// a rerun of the same seed under a fresh tag replays identical statuses and a
+-// replay of a completed run (FUZZ_RUN_TAG set to its tag) is green end to end:
+-// statuses may flip where persistent state legitimately differs, for instance
+-// setup login falling back to the already rotated password, but no assertion
+-// may fail. The first run of a tag rotates user 1's password, which is why
+-// setup retries the tag derived rotated form.
+@@ -106 +82,0 @@ async function call(name, template, method, path, {query, token, body, raw, stat
+-	// Read once here and cache: every caller that needs a body reads the cache.
+@@ -120,2 +95,0 @@ async function call(name, template, method, path, {query, token, body, raw, stat
+-	// Every error body is problem+json per the contract and the committed
+-	// error advice; application and framework errors share the shape.
+@@ -141,4 +114,0 @@ function json(response) {
+-// 2xx money contract: every money field is whole-dong VND with no decimal in
+-// the JSON (JS number coercion would hide a ".0"), and the checkout identity
+-// holds: line totals sum to the subtotal, total is subtotal minus discount
+-// plus fee.
+@@ -172,2 +141,0 @@ const sig = (paymentId, orderId, amount) =>
+-// Every fuzz user's password derives from the run tag: a replay of the same
+-// tag computes the same passwords the previous run left in the database.
+@@ -187,2 +154,0 @@ const elapsed = () => Date.now() - runStart;
+-// --- server lifecycle, same jar selection and tree-kill discipline as capture.mjs
+-
+@@ -205,2 +170,0 @@ function startServer() {
+-	// Keep the dev default payment secret so the sig vectors above stay computable.
+-	// The log truncates per run so it cannot grow unboundedly across reruns.
+@@ -219 +182,0 @@ function startServer() {
+-			// the log is best effort, the run must not die on a full disk
+@@ -233 +195,0 @@ function startServer() {
+-				// still booting
+@@ -245 +206,0 @@ function killTree(pid) {
+-		// taskkill /T reaches the whole process tree, child.kill() would not.
+@@ -251 +211,0 @@ function killTree(pid) {
+-			// already gone
+@@ -275,4 +234,0 @@ function stopServer(server) {
+-// A plain fetch cannot probe path traversal: the URL parser collapses
+-// /api/product/../user to /api/user before the socket opens, so the old
+-// check certified nothing. This sends the raw path verbatim on the request
+-// line and lets the server's own handling answer.
+@@ -294,2 +249,0 @@ function rawPathProbe(path) {
+-// --- scenario state, populated by setup()
+-
+@@ -304,3 +257,0 @@ async function login(email, password) {
+-// User 1's password is rotated by the user walk, so logging in as user 1
+-// tries the tag derived base form first and falls back to the rotated one on
+-// a replay of a completed run; both candidates are pure functions of the tag.
+@@ -324 +274,0 @@ async function registerUser(n) {
+-		// A rerun of the same seed re-registers the same addresses: 201 first, 409 after.
+@@ -373,2 +322,0 @@ async function checkout(name, token, body = orderBody()) {
+-// --- curated walks, one per contract section
+-
+@@ -383,2 +330,0 @@ async function authWalk() {
+-	// The corpus email pool against login: every hostile address must stay
+-	// inside the documented envelope, validation 400 or unauthenticated 401.
+@@ -395 +340,0 @@ async function authWalk() {
+-	// Fresh admin session for every later walk: logout burned the old one.
+@@ -415,3 +359,0 @@ async function userWalk() {
+-	// The rotated target derives from the run tag; on a replay of a completed
+-	// run the current password already is the rotated one and the change is a
+-	// same value no-op, still 204 with every session revoked.
+@@ -478,2 +419,0 @@ async function catalogWalk() {
+-	// A nonpositive price never enters the catalog (812e3bd): every template
+-	// answers 400 VALIDATION with a field error naming price.
+@@ -521,2 +460,0 @@ async function taxonomyWalk() {
+-	// A run that died before teardown may have left the base row behind: the
+-	// scan below adopts it either way, exactly like the coupon walk.
+@@ -529,2 +466,0 @@ async function taxonomyWalk() {
+-	// Crash healing: a run that died mid-cascade leaves probe products that
+-	// would block the category delete through NAME_IN_USE, so they die first.
+@@ -537,4 +472,0 @@ async function taxonomyWalk() {
+-	// The rename cascade (9ae754a): a category products reference carries its
+-	// product rows along, so the public catalog must show the new name and the
+-	// old name must stop returning the product. The walk deletes the probe
+-	// product afterwards so teardown can drop the category.
+@@ -544,2 +475,0 @@ async function taxonomyWalk() {
+-	// Run-tagged rename target: teardown wipes the previous run's rows, so a
+-	// same tag replay renames into free space and stays deterministic.
+@@ -581,6 +510,0 @@ async function taxonomyWalk() {
+-	// Root fix for fuzz residue: every taxonomy row this walk owns dies here
+-	// through the admin API, including the phantom rows pre-teardown runs
+-	// inserted, so the database stays clean across reruns and the run-tagged
+-	// renames above always land in free space. A row products still reference
+-	// answers 409 NAME_IN_USE: only fuzz walks ever put products under these
+-	// names, so the referencing probes die first and the delete retries once.
+@@ -611,3 +534,0 @@ async function branchWalk() {
+-	// Coordinates are required and bounded (34ee4c4): a create without them,
+-	// with them null, or off the globe answers 400 VALIDATION with a field
+-	// error on the offender.
+@@ -640,2 +560,0 @@ async function branchWalk() {
+-	// A maintenance PUT that omits coordinates answers 400 naming them, so the
+-	// stored pair on this very real branch can never be wiped (34ee4c4).
+@@ -650,3 +568,0 @@ async function branchWalk() {
+-	// Body validation runs before the existence check: a body without the
+-	// required coordinates scores 400 VALIDATION, a valid body on an unknown
+-	// id scores the 404.
+@@ -671 +586,0 @@ async function branchWalk() {
+-	// The created branch now carries a stock row, so delete must refuse.
+@@ -701 +615,0 @@ async function orderAndPaymentWalk() {
+-	// Payment matrix against the live PENDING session from the couponed checkout.
+@@ -716,2 +629,0 @@ async function orderAndPaymentWalk() {
+-	// The corpus sig pool against a live payment: every hostile signature
+-	// must draw the documented 401, never a 5xx or a body leak.
+@@ -730 +641,0 @@ async function orderAndPaymentWalk() {
+-	// Fulfilment transitions on the PAID order, then the terminal wall.
+@@ -739 +649,0 @@ async function orderAndPaymentWalk() {
+-	// A second PENDING order walks the cancel path: owner cancel, replay, stock restore.
+@@ -750 +659,0 @@ async function orderAndPaymentWalk() {
+-	// Cross-session sig: a valid signature computed over a different payment.
+@@ -804,2 +712,0 @@ async function couponWalk() {
+-		// 409 NAME_IN_USE from an earlier crashed run: resolve the existing
+-		// coupon by its code instead of addressing an undefined id.
+@@ -862,2 +768,0 @@ async function reportWalk() {
+-// Cross-cutting abuse: malformed transports, tampered tokens, wrong methods,
+-// unknown paths. None of these may reach a controller with side effects.
+@@ -879,2 +783,0 @@ async function crossWalk() {
+-	// Wrong methods on paths that exist for another verb: 405 problem+json
+-	// METHOD_NOT_ALLOWED from the error advice.
+@@ -884,2 +786,0 @@ async function crossWalk() {
+-	// DELETE /api/product is real and destructive with an empty body: hit it
+-	// only with a member token, which the interceptor rejects before dispatch.
+@@ -891,3 +791,0 @@ async function crossWalk() {
+-	// Path traversal over a raw socket: the dot segments must reach the server
+-	// un-normalized and be refused as an unknown endpoint, with the problem
+-	// instance echoing the raw path back as the proof it arrived intact.
+@@ -907,2 +804,0 @@ async function crossWalk() {
+-// --- seeded generated variants over mutating JSON templates
+-
+@@ -924 +819,0 @@ function mutated(body) {
+-	// Nested items arrays mutate one inner field so checkout variants stay shaped.
+@@ -955 +849,0 @@ async function variantsWalk() {
+-	// A few raw malformed swaps against the two most sensitive writers.
+@@ -966,2 +859,0 @@ const methodOf = (template) => template.split(' ')[0];
+-// --- report
+-
+@@ -1015,2 +906,0 @@ function writeReport(jarName, durationMs) {
+-// --- main
+-
+@@ -1028,2 +917,0 @@ try {
+-	// Orders before admin user admin: the HAS_ORDERS delete case needs the
+-	// buyer's checkouts on record, and deleting a user kills its session.
+@@ -1049,0 +938 @@ process.exit(failures.length > 0 ? 1 : 0);
++
+diff --git a/scripts/tools/memguard.ps1 b/scripts/tools/memguard.ps1
+index 259d494..af83b81 100644
+--- a/scripts/tools/memguard.ps1
++++ b/scripts/tools/memguard.ps1
+@@ -1,4 +0,0 @@
+-# Single-pass memory guard for FlowerShop project processes.
+-# Cron-driven via `make memguard`. Exits 1 when the aggregated commit demand
+-# of project processes exceeds the cap; the largest offender's process tree
+-# is killed and verified gone before exiting.
+@@ -57,0 +54 @@ exit 0
++
+diff --git a/scripts/tools/mutate-front.mjs b/scripts/tools/mutate-front.mjs
+index 9a32279..37357cc 100644
+--- a/scripts/tools/mutate-front.mjs
++++ b/scripts/tools/mutate-front.mjs
+@@ -2,16 +1,0 @@
+-// Source-level mutation harness for the Angular side, the mutate.mjs
+-// conventions adapted to TypeScript over the core and services classes listed
+-// in scripts/tools/mutation-front-map.json. One mutant at a time, applied to
+-// the working tree, only the mapped spec files run through the Angular
+-// unit-test builder. A compile failure, a test failure, or a hang all count
+-// as killed, a green selective run is a survivor and fails the gate. Every
+-// mutated file is restored with git after each mutant and verified against
+-// git diff before the next. Serialized: one mutant, one build, one run at a
+-// time. A control run over the mapped specs must pass unmutated before the
+-// sweep: missing node_modules, a broken builder, or a genuinely red suite
+-// would otherwise turn every nonzero exit into a phantom kill and hand the
+-// gate a false all-killed report. Writes the committed artifact
+-// docs/qa/mutation-front-report.md. Run
+-// via `make mutate-front`. Exit 0 on zero survivors, 1 otherwise. --list
+-// prints the curated mutant set without running anything, --only <id> runs a
+-// single mutant for triage.
+@@ -42 +25,0 @@ function killTree(pid) {
+-		// taskkill /T reaches the whole process tree, child.kill() would not.
+@@ -55,4 +37,0 @@ function killTree(pid) {
+-// Mask string literals, template literals (interpolation included), char
+-// literals, and comments so token scanners only see code. Masked characters
+-// become \x01, offsets stay identical to the raw line. Code units, not code
+-// points, so indices always align with string slicing.
+@@ -154,2 +132,0 @@ function nearString(masked, index, prevTail) {
+-		// Nothing before the operator on this line: a continuation of the
+-		// previous one, a string there makes this a concat, not arithmetic.
+@@ -172,2 +148,0 @@ function scanLine(rawLine, masked, prevTail) {
+-	// Strict equality only: loose == and != never enter the codebase, the
+-	// eslint config bans them.
+@@ -186,3 +160,0 @@ function scanLine(rawLine, masked, prevTail) {
+-	// Comparison boundaries. Whitespace or an opening paren before and
+-	// whitespace, semicolon, or closing paren after keeps generics,
+-	// arrow functions, and type unions out.
+@@ -313,2 +284,0 @@ function generateMutants() {
+-			// Equivalent-mutant exclusions: an operator provably indistinguishable
+-			// on one line, under a data invariant, never enters the gate.
+@@ -358,2 +327,0 @@ function runTests(specs) {
+-	// Node refuses to spawn a .cmd without a shell since the 2024 security
+-	// patch; the argument list is repo-relative paths only, no quoting risk.
+@@ -385 +352,0 @@ function runTests(specs) {
+-		// The last run's full output stays on disk for triage.
+@@ -481,3 +447,0 @@ async function main() {
+-	// Clean-tree precondition scoped to what the cycle touches: every mapped
+-	// target file at HEAD, nothing staged, so every mutant is exactly one
+-	// line over a known state and git restore is exact.
+@@ -493,2 +456,0 @@ async function main() {
+-	// Control run: the mapped specs must be green with no mutant applied, or
+-	// every later nonzero exit would masquerade as a kill.
+@@ -532,2 +493,0 @@ async function main() {
+-	// Stamped at sweep completion, not run start: the Run line must read the
+-	// moment the last mutant finished, matching the runtime beside it.
+@@ -572,0 +533 @@ main().catch((error) => {
++
+diff --git a/scripts/tools/mutate.mjs b/scripts/tools/mutate.mjs
+index 2c05a24..f461c7e 100644
+--- a/scripts/tools/mutate.mjs
++++ b/scripts/tools/mutate.mjs
+@@ -2,15 +1,0 @@
+-// Source-level mutation harness (plan decision 13: rolled own, no pitest, no
+-// stryker). Applies one mutant at a time to the logic-dense classes listed in
+-// scripts/tools/mutation-map.json, runs only the mapped test classes through
+-// mvnw, and classifies the outcome: compile failure, test failure, or a hang
+-// all count as killed, a green selective run is a survivor and fails the gate.
+-// The tree must be clean before the run starts and is restored with git after
+-// every mutant, verified against git diff between mutants. Serialized: one
+-// mutant, one build, one selective test run at a time. A control run over the
+-// mapped tests must pass unmutated before the sweep: a dead MySQL, offline
+-// maven, or a genuinely red suite would otherwise turn every nonzero exit
+-// into a phantom kill and hand the gate a false all-killed report. Writes the
+-// committed artifact docs/qa/mutation-report.md. Run via `make mutate` (JAVA_HOME from
+-// the Makefile wins; the JDK 27 fallback mirrors it). Exit 0 on zero
+-// survivors, 1 otherwise. --list prints the curated mutant set without
+-// running anything, --only <id> runs a single mutant for triage.
+@@ -51 +35,0 @@ function killTree(pid) {
+-		// taskkill /T reaches the whole process tree, child.kill() would not.
+@@ -64,3 +47,0 @@ function killTree(pid) {
+-// Mask string literals, char literals, and comments so token scanners only see
+-// code. Masked characters become \x01, offsets stay identical to the raw line.
+-// Code units, not code points, so indices always align with string slicing.
+@@ -142,2 +122,0 @@ function nearString(masked, index, prevTail) {
+-		// Nothing before the operator on this line: a continuation of the
+-		// previous one, a string there makes this a concat, not arithmetic.
+@@ -165,2 +143,0 @@ function receiverIdentifier(masked, dotIndex) {
+-// One top-level argument inside the call's parentheses, else an arity flip
+-// would be a cheap compile-failure kill rather than a behavioral mutant.
+@@ -206,2 +182,0 @@ function scanLine(rawLine, masked, prevTail) {
+-	// Comparison boundaries. Whitespace or an opening paren on both sides keeps
+-	// generics (Map<Long, ...>), lambdas (->), and shifts out.
+@@ -353,2 +327,0 @@ function generateMutants() {
+-			// Equivalent-mutant exclusions: an operator provably indistinguishable
+-			// on one line, under a data invariant, never enters the gate.
+@@ -424 +396,0 @@ function runMaven(tests) {
+-		// The last build's full output stays on disk for triage.
+@@ -520,3 +491,0 @@ async function main() {
+-	// Clean-tree precondition scoped to what the cycle touches: every source
+-	// file and the pom at HEAD, nothing untracked under src/, so every mutant
+-	// is exactly one line over a known state and git restore is exact.
+@@ -531,2 +499,0 @@ async function main() {
+-	// Control run: the mapped tests must be green with no mutant applied, or
+-	// every later nonzero exit would masquerade as a kill.
+@@ -569,2 +535,0 @@ async function main() {
+-	// Stamped at sweep completion, not run start: the Run line must read the
+-	// moment the last mutant finished, matching the runtime beside it.
+@@ -612,0 +578 @@ main().catch((error) => {
++
+diff --git a/scripts/tools/regenerate-product-seeds.mjs b/scripts/tools/regenerate-product-seeds.mjs
+index a620d11..1c408c6 100644
+--- a/scripts/tools/regenerate-product-seeds.mjs
++++ b/scripts/tools/regenerate-product-seeds.mjs
+@@ -1,8 +0,0 @@
+-// Regenerates the committed product seeds: converts db/product.json to the v3 shape
+-// (price = round(usd * 23000 / 1000) * 1000 integer VND, imgUrl base64-decoded to the
+-// plain URL, quantity dropped) and emits db/seed.sql with idempotent product upserts
+-// plus stock_level rows (25 per product per branch, branches 1-6 from db/run.sql).
+-// Deterministic: sorted by id, fixed field order, a converted input passes through
+-// unchanged so reruns never churn the committed files.
+-// Invocation: make seeds, or plain node scripts/tools/regenerate-product-seeds.mjs
+-// (the provisioned frontend node works: frontend/node/node.exe).
+@@ -55 +46,0 @@ function convert(product) {
+-	// A plain http URL marks the converted shape; base64 marks the legacy shape.
+@@ -119,0 +111 @@ console.log(`stock rows: ${products.length * BRANCH_COUNT} (${STOCK_PER_BRANCH}
++

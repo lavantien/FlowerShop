@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="83" height="20" role="img" aria-label="ci: failed">
+  <title>ci: failed</title>
+  <linearGradient id="s" x2="0" y2="100%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/>
+  </linearGradient>
+  <clipPath id="r"><rect width="83" height="20" rx="3" fill="#fff"/></clipPath>
+  <g clip-path="url(#r)">
+    <rect width="30" height="20" fill="#555"/>
+    <rect x="30" width="53" height="20" fill="#e05d44"/>
+    <rect width="83" height="20" fill="url(#s)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="10" font-weight="bold">
+    <text x="15" y="14">ci</text>
+    <text x="57" y="14">failed</text>
+  </g>
+</svg>

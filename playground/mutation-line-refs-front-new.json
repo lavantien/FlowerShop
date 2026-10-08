@@ -1,0 +1,62 @@
+[
+  {
+    "file": "frontend/src/app/core/session.service.ts",
+    "line": 7,
+    "from": "'token'",
+    "kind": "explicit",
+    "content": "const TOKEN_KEY = 'token';",
+    "newLine": 7
+  },
+  {
+    "file": "frontend/src/app/core/session.service.ts",
+    "line": 8,
+    "from": "'user'",
+    "kind": "explicit",
+    "content": "const USER_KEY = 'user';",
+    "newLine": 8
+  },
+  {
+    "file": "frontend/src/app/core/session.service.ts",
+    "line": 14,
+    "ops": [
+      "OR_TO_AND"
+    ],
+    "kind": "lineOpExcludes",
+    "content": "\tif (typeof value !== 'object' || value === null) {",
+    "newLine": 11
+  },
+  {
+    "file": "frontend/src/app/core/cart.service.ts",
+    "line": 19,
+    "from": "'cart'",
+    "kind": "explicit",
+    "content": "const STORAGE_KEY = 'cart';",
+    "newLine": 17
+  },
+  {
+    "file": "frontend/src/app/core/toast.service.ts",
+    "line": 15,
+    "ops": [
+      "LIT_0_TO_1"
+    ],
+    "kind": "lineOpExcludes",
+    "content": "\tprivate nextId = 0;",
+    "newLine": 15
+  },
+  {
+    "file": "frontend/src/app/core/auth.guard.ts",
+    "line": 8,
+    "from": "? true :",
+    "kind": "explicit",
+    "content": "\treturn session.isLoggedIn() ? true : router.createUrlTree(['/shop']);",
+    "newLine": 8
+  },
+  {
+    "file": "frontend/src/app/core/admin.guard.ts",
+    "line": 8,
+    "from": "? true :",
+    "kind": "explicit",
+    "content": "\treturn session.isAdmin() ? true : router.createUrlTree(['/shop']);",
+    "newLine": 8
+  }
+]

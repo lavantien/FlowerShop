@@ -1,0 +1,7 @@
+npm notice run frontend@0.0.0 lint
+npm notice run ng lint
+
+Linting "frontend"...
+
+All files pass linting.
+

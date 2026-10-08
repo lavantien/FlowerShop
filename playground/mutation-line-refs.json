@@ -1,0 +1,128 @@
+{
+  "back": [
+    {
+      "file": "src/main/java/com/lavantien/flowershop/service/GeoService.java",
+      "line": 120,
+      "ops": [
+        "LT_TO_LE"
+      ],
+      "kind": "lineOpExcludes",
+      "content": "\t\t\t\t\t|| (distance == nearestDistance && branch.getId() < nearest.getId())) {"
+    },
+    {
+      "file": "src/main/java/com/lavantien/flowershop/api/branch/StockLevelRepository.java",
+      "line": 26,
+      "from": "s.quantity >= :n",
+      "kind": "explicit",
+      "content": "\t@Query(\"update StockLevel s set s.quantity = s.quantity - :n where s.id = :id and s.quantity >= :n\")"
+    },
+    {
+      "file": "src/main/java/com/lavantien/flowershop/api/branch/StockLevelRepository.java",
+      "line": 26,
+      "from": "s.quantity - :n",
+      "kind": "explicit",
+      "content": "\t@Query(\"update StockLevel s set s.quantity = s.quantity - :n where s.id = :id and s.quantity >= :n\")"
+    },
+    {
+      "file": "src/main/java/com/lavantien/flowershop/service/PaymentService.java",
+      "line": 28,
+      "from": "\":\"",
+      "kind": "explicit",
+      "content": "\t\t\tString payload = session.getId() + \":\" + session.getOrderId() + \":\""
+    },
+    {
+      "file": "src/main/java/com/lavantien/flowershop/service/PaymentService.java",
+      "line": 28,
+      "from": "\":\"",
+      "kind": "explicit",
+      "content": "\t\t\tString payload = session.getId() + \":\" + session.getOrderId() + \":\""
+    },
+    {
+      "file": "src/main/java/com/lavantien/flowershop/api/security/Auth.java",
+      "line": 48,
+      "from": "\"+\"",
+      "kind": "explicit",
+      "content": "\t\treturn Base64.getEncoder().encodeToString((id + \"+\" + role.name() + \"+\" + secret).getBytes(StandardCharsets.UTF_8));"
+    },
+    {
+      "file": "src/main/java/com/lavantien/flowershop/api/security/Auth.java",
+      "line": 48,
+      "from": "\"+\"",
+      "kind": "explicit",
+      "content": "\t\treturn Base64.getEncoder().encodeToString((id + \"+\" + role.name() + \"+\" + secret).getBytes(StandardCharsets.UTF_8));"
+    },
+    {
+      "file": "src/main/java/com/lavantien/flowershop/service/ReportService.java",
+      "line": 70,
+      "ops": [
+        "ROUND_MODE"
+      ],
+      "kind": "lineOpExcludes",
+      "content": "\t\t\t: properties.delivery().round(revenue.divide(BigDecimal.valueOf(orderCount), 6, RoundingMode.HALF_UP));"
+    },
+    {
+      "file": "src/main/java/com/lavantien/flowershop/api/branch/BranchController.java",
+      "line": 122,
+      "ops": [
+        "LIT_0_TO_1"
+      ],
+      "kind": "lineOpExcludes",
+      "content": "\t\t\t.orElseGet(() -> new StockLevel(id, request.productId(), 0));"
+    }
+  ],
+  "front": [
+    {
+      "file": "frontend/src/app/core/session.service.ts",
+      "line": 7,
+      "from": "'token'",
+      "kind": "explicit",
+      "content": "const TOKEN_KEY = 'token';"
+    },
+    {
+      "file": "frontend/src/app/core/session.service.ts",
+      "line": 8,
+      "from": "'user'",
+      "kind": "explicit",
+      "content": "const USER_KEY = 'user';"
+    },
+    {
+      "file": "frontend/src/app/core/session.service.ts",
+      "line": 14,
+      "ops": [
+        "OR_TO_AND"
+      ],
+      "kind": "lineOpExcludes",
+      "content": "\tif (typeof value !== 'object' || value === null) {"
+    },
+    {
+      "file": "frontend/src/app/core/cart.service.ts",
+      "line": 19,
+      "from": "'cart'",
+      "kind": "explicit",
+      "content": "const STORAGE_KEY = 'cart';"
+    },
+    {
+      "file": "frontend/src/app/core/toast.service.ts",
+      "line": 15,
+      "ops": [
+        "LIT_0_TO_1"
+      ],
+      "kind": "lineOpExcludes",
+      "content": "\tprivate nextId = 0;"
+    },
+    {
+      "file": "frontend/src/app/core/auth.guard.ts",
+      "line": 8,
+      "from": "? true :",
+      "kind": "explicit",
+      "content": "\treturn session.isLoggedIn() ? true : router.createUrlTree(['/shop']);"
+    },
+    {
+      "file": "frontend/src/app/core/admin.guard.ts",
+      "line": 8,
+      "from": "? true :",
+      "kind": "explicit",
+      "content": "\treturn session.isAdmin() ? true : router.createUrlTree(['/shop']);"
+    }
+  ]
+}
