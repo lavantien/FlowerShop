@@ -10,7 +10,7 @@
 			"tests": ["GeoServiceTest", "GeoServicePropertyTest", "DeliveryFeePropertyTest"],
 			"lineOpExcludes": [
 				{
-					"line": 120,
+					"line": 115,
 					"ops": ["LT_TO_LE"],
 					"reason": "branch ids are unique per row, so < and <= on ids are equivalent for every reachable input"
 				}
@@ -38,14 +38,14 @@
 			"tests": ["OversellIntegrationTest"],
 			"explicit": [
 				{
-					"line": 26,
+					"line": 21,
 					"from": "s.quantity >= :n",
 					"to": "s.quantity > :n",
 					"op": "QUERY_BOUNDARY",
 					"note": "oversell guard boundary off-by-one"
 				},
 				{
-					"line": 26,
+					"line": 21,
 					"from": "s.quantity - :n",
 					"to": "s.quantity + :n",
 					"op": "QUERY_ARITH",
@@ -64,7 +64,7 @@
 			"tests": ["PaymentServiceTest", "PaymentControllerTest"],
 			"explicit": [
 				{
-					"line": 28,
+					"line": 26,
 					"from": "\":\"",
 					"to": "\";\"",
 					"occurrence": 1,
@@ -72,7 +72,7 @@
 					"note": "payload separator paymentId:orderId"
 				},
 				{
-					"line": 28,
+					"line": 26,
 					"from": "\":\"",
 					"to": "\";\"",
 					"occurrence": 2,
@@ -104,7 +104,7 @@
 			"lineExcludes": ["first <= 0 \\|\\| second < 0"],
 			"explicit": [
 				{
-					"line": 48,
+					"line": 43,
 					"from": "\"+\"",
 					"to": "\"-\"",
 					"occurrence": 1,
@@ -112,7 +112,7 @@
 					"note": "mint separator id:role"
 				},
 				{
-					"line": 48,
+					"line": 43,
 					"from": "\"+\"",
 					"to": "\"-\"",
 					"occurrence": 2,
@@ -132,7 +132,7 @@
 			"tests": ["ReportServiceTest"],
 			"lineOpExcludes": [
 				{
-					"line": 70,
+					"line": 68,
 					"ops": ["ROUND_MODE"],
 					"reason": "the average divides at scale 6 then rounds to the fee step; HALF_UP versus DOWN diverge only when the true quotient lands within 5e-7 below a half-step boundary, which by the 1/n divisor granularity needs at least 2,000,000 orders, so both roundings agree on every feasible order count"
 				}
@@ -154,7 +154,7 @@
 			"tests": ["BranchControllerTest"],
 			"lineOpExcludes": [
 				{
-					"line": 122,
+					"line": 115,
 					"ops": ["LIT_0_TO_1"],
 					"reason": "the StockLevel constructor quantity is unconditionally overwritten by setQuantity on the next statement before any read, the 0 seed is never observable"
 				}

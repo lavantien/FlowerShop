@@ -9,7 +9,7 @@
 			"tests": ["src/app/core/session.service.spec.ts", "src/app/core/session.fuzz.spec.ts"],
 			"lineOpExcludes": [
 				{
-					"line": 14,
+					"line": 11,
 					"ops": ["OR_TO_AND"],
 					"reason": "every input class reaches the same logout fallback, null through the catch, non objects through the falling predicate"
 				}
@@ -37,7 +37,7 @@
 			"tests": ["src/app/core/cart.service.spec.ts", "src/app/core/cart.fuzz.spec.ts"],
 			"explicit": [
 				{
-					"line": 19,
+					"line": 17,
 					"from": "'cart'",
 					"to": "'cartX'",
 					"op": "STORAGE_KEY",
