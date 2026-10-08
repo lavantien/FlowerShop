@@ -4,6 +4,7 @@
 [![backend coverage](https://raw.githubusercontent.com/lavantien/FlowerShop/badges/backend-coverage.svg)](https://github.com/lavantien/FlowerShop/actions/workflows/ci.yml)
 [![frontend coverage](https://raw.githubusercontent.com/lavantien/FlowerShop/badges/frontend-coverage.svg)](https://github.com/lavantien/FlowerShop/actions/workflows/ci.yml)
 [![qa](https://raw.githubusercontent.com/lavantien/FlowerShop/badges/qa.svg)](https://github.com/lavantien/FlowerShop#qa-harness)
+[![security](https://raw.githubusercontent.com/lavantien/FlowerShop/badges/security.svg)](https://github.com/lavantien/FlowerShop/releases/tag/v3.0)
 ![aws ready](https://raw.githubusercontent.com/lavantien/FlowerShop/badges/aws-ready.svg)
 
 eCommerce web system with full backoffice: a Spring Boot 4 REST API with JPA, BCrypt password hashing, and token auth, an Angular 22 storefront with an admin console, and MySQL 9.7 LTS storage. v3 adds server-priced orders with an atomic stock guard, HMAC-signed payment sessions, coupons, wishlists, and sales reports. The Maven wrapper and `make` targets wrap every build, test, and run step, and the build provisions its own Node 24 for the Angular bundle, so the host needs a JDK, Docker, make, and Node for the tooling scripts. For a simpler legacy architecture, check the [v2.0 tag](https://github.com/lavantien/FlowerShop/tree/v2.0).

@@ -140,3 +140,9 @@ try {
 } catch {
 	console.log('[badge] docs/badges/qa.svg missing, skipped');
 }
+try {
+	await copyFile('docs/badges/security.svg', path.join(outDir, 'security.svg'));
+	console.log('[badge] security.svg');
+} catch {
+	console.log('[badge] docs/badges/security.svg missing, skipped');
+}
