@@ -2,13 +2,13 @@
 
 Baseline run of `make fuzz` per plan decision 13: the in-repo API fuzz harness over the packaged jar.
 
-- jar: target\flowershop-2.0.jar
+- jar: target\flowershop-3.0.jar
 - seed: 20261007 (scripts/tools/qa.json, fuzz.seed)
-- run tag: muy91xe4 (namespaces this run's users; replay with FUZZ_RUN_TAG)
+- run tag: muyvsarl (namespaces this run's users; replay with FUZZ_RUN_TAG)
 - corpus: scripts/tools/fuzz-corpus.json
-- requests fired: 350
+- requests fired: 344
 - endpoints covered: 54 templates
-- duration: 18.4 s
+- duration: 11.4 s
 - assertion failures: 0
 
 Invariants asserted on every response: status inside the documented set for the endpoint,
@@ -31,12 +31,12 @@ setup login falls back to the rotated password and the taxonomy walk finds clean
 | endpoint | requests | statuses |
 | --- | --- | --- |
 | `DELETE /api/branch/{id}` | 2 | 404x1 409x1 |
-| `DELETE /api/category/{id}` | 5 | 204x4 404x1 |
+| `DELETE /api/category/{id}` | 2 | 204x1 404x1 |
 | `DELETE /api/coupon/{id}` | 2 | 204x1 404x1 |
 | `DELETE /api/payment/x` | 1 | 405x1 |
 | `DELETE /api/product` | 4 | 204x3 403x1 |
 | `DELETE /api/product/{id}` | 3 | 204x2 404x1 |
-| `DELETE /api/type/{id}` | 4 | 204x4 |
+| `DELETE /api/type/{id}` | 1 | 204x1 |
 | `DELETE /api/user/{id}` | 3 | 204x1 404x1 409x1 |
 | `GET /api/auth/login` | 1 | 405x1 |
 | `GET /api/branch` | 2 | 200x2 |
@@ -60,7 +60,7 @@ setup login falls back to the rotated password and the taxonomy walk finds clean
 | `POST /api/auth/logout` | 3 | 204x1 401x2 |
 | `POST /api/branch` | 12 | 200x5 400x7 |
 | `POST /api/category/create` | 2 | 200x1 409x1 |
-| `POST /api/coupon` | 9 | 200x1 400x4 409x4 |
+| `POST /api/coupon` | 9 | 200x4 400x4 409x1 |
 | `POST /api/coupon/validate` | 11 | 200x5 400x2 401x1 404x2 409x1 |
 | `POST /api/nosuch/deep/path` | 1 | 404x1 |
 | `POST /api/order` | 28 | 201x8 400x15 404x3 409x2 |
@@ -71,7 +71,7 @@ setup login falls back to the rotated password and the taxonomy walk finds clean
 | `POST /api/product` | 2 | 200x2 |
 | `POST /api/product/create` | 4 | 200x2 400x2 |
 | `POST /api/type/create` | 1 | 200x1 |
-| `POST /api/user/create` | 24 | 201x4 400x16 409x4 |
+| `POST /api/user/create` | 24 | 201x5 400x16 409x3 |
 | `POST /api/user/me/password` | 2 | 204x1 401x1 |
 | `POST /api/user/resetPassword` | 3 | 200x1 401x2 |
 | `POST /api/wishlist/me/{productId}` | 3 | 200x2 404x1 |
