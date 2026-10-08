@@ -7,15 +7,16 @@
 [![security](https://raw.githubusercontent.com/lavantien/FlowerShop/badges/security.svg)](https://github.com/lavantien/FlowerShop/releases/tag/v3.0)
 ![aws ready](https://raw.githubusercontent.com/lavantien/FlowerShop/badges/aws-ready.svg)
 
-eCommerce web system with full backoffice: a Spring Boot 4 REST API with JPA, BCrypt password hashing, and token auth, an Angular 22 storefront with an admin console, and MySQL 9.7 LTS storage. v3 adds server-priced orders with an atomic stock guard, HMAC-signed payment sessions, coupons, wishlists, and sales reports. The Maven wrapper and `make` targets wrap every build, test, and run step, and the build provisions its own Node 24 for the Angular bundle, so the host needs a JDK, Docker, make, and Node for the tooling scripts. For a simpler legacy architecture, check the [v2.0 tag](https://github.com/lavantien/FlowerShop/tree/v2.0).
+eCommerce web system with full backoffice: a Spring Boot 4 REST API with JPA, BCrypt password hashing, and token auth, an Angular 22 storefront with an admin console, and MySQL 9.7 LTS storage. v3 adds server-priced orders with an atomic stock guard, HMAC-signed payment sessions, coupons, wishlists, and sales reports. For a simpler legacy architecture, check [v2.0](https://github.com/lavantien/FlowerShop/tree/v2.0).
 
 ## Table of contents
 
 1. [Pictures](#pictures)
-2. [v3 quickstart](#v3-quickstart)
-3. [QA harness](#qa-harness)
-4. [Build logs](#build-logs)
-5. [Architecture and flows](#architecture-and-flows)
+2. [Local development](#local-development)
+3. [Production environment setup](#production-environment-setup)
+4. [QA harness](#qa-harness)
+5. [Build logs](#build-logs)
+6. [Architecture and flows](#architecture-and-flows)
 
 ## Pictures
 
@@ -62,9 +63,9 @@ The v3 user journey first, then the admin console. Regenerate the set against th
 
 Shot 17 keeps its legacy filename `05-admin-transaction-summary.png`, the v3 capture regenerated it as the admin orders screen.
 
-## v3 quickstart
+## Local development
 
-Prerequisites: `JDK 27`, `Docker`, `make`, and `Node 24` with npm on PATH. CURL or Postman helps for ad hoc API calls, and any editor works.
+Prerequisites: `JDK 27`, `Docker`, `make`, and `Node 24` with npm on PATH. CURL or Postman helps for ad hoc API calls, and any editor works. The Maven wrapper and `make` targets wrap every build, test, and run step, and the build provisions its own Node 24 for the Angular bundle.
 
 1. Start MySQL and seed it: `make db-up` then `make db-seed`, or `make db-reset` to drop the volume and redo both in one step. The seed writes the schema, 4 demo users, the taxonomy, 79 products, 6 Ho Chi Minh City branches with stock rows, and 3 coupons (`WELCOME10` percent, `SHIP50K` fixed, `EXPIRED5` inactive).
 2. Build and run: `make package` runs the full clean build with tests, then `make run` starts the newest `target/flowershop-*.jar` against the compose MySQL and serves the built SPA. The Makefile exports the `LOCAL_MYSQL_DB_*` variables matching compose, so no `application.yml` edit is needed unless you run your own MySQL.
@@ -85,7 +86,13 @@ Prerequisites: `JDK 27`, `Docker`, `make`, and `Node 24` with npm on PATH. CURL 
 
     The whole contract, including the error code list and the payment signature scheme, is frozen in [docs/api-v3.md](docs/api-v3.md).
 5. For frontend work: `make frontend-install` then `make frontend-serve` serves the dev build at `http://localhost:4200`, proxying `/api` to `:8080`.
-6. To deploy elsewhere, copy the jar from `make package` and run `java -jar target/flowershop-*.jar` against your own MySQL 9.7. On AWS an EC2 instance or a Lightsail VPS runs the jar, RDS serves MySQL, and S3 holds backups and static assets.
+
+## Production environment setup
+
+1. The host needs `JDK 27` and `MySQL Server 9.7 LTS`. Set up the database and `application.yml` as in development.
+2. Run `make package` from the root folder. This creates `target/flowershop-3.0.jar`.
+3. Run the jar with `java -jar target/flowershop-3.0.jar`.
+4. On AWS: an EC2 instance or a Lightsail VPS runs the jar, RDS serves MySQL 9.7, and S3 holds backups and static assets.
 
 ## QA harness
 
