@@ -5,6 +5,7 @@ frontend/node/
 /node_modules/
 scripts/screenshots/node_modules/
 .tools/
+__pycache__/
 
 ### STS ###
 .apt_generated
