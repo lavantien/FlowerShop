@@ -89,7 +89,6 @@ describe('globalHttpInterceptor', () => {
 		vi.useFakeTimers();
 		const http = TestBed.inject(HttpClient);
 		const errors: {name?: string}[] = [];
-		// posts never retry, so the first timeout surfaces directly
 		http.post('/api/order', {}).subscribe({error: e => errors.push(e)});
 		vi.advanceTimersByTime(3000);
 		expect(errors).toHaveLength(0);
@@ -124,7 +123,6 @@ describe('globalHttpInterceptor', () => {
 		const requested = session.loginRequested();
 		const http = TestBed.inject(HttpClient);
 		let errors = 0;
-		// posts never retry, so a single 401 surfaces immediately
 		http.post('/api/order', {}).subscribe({error: () => errors++});
 		httpMock.expectOne('/api/order').flush(
 			{title: 'Unauthorized', status: 401, detail: 'Session is no longer valid.'},
@@ -149,7 +147,6 @@ describe('globalHttpInterceptor', () => {
 		const requested = session.loginRequested();
 		const http = TestBed.inject(HttpClient);
 		let errors = 0;
-		// posts never retry, so a single 401 surfaces immediately
 		http.post(API.payments.confirm('pay-1'), null).subscribe({error: () => errors++});
 		httpMock.expectOne(API.payments.confirm('pay-1')).flush(
 			{title: 'Unauthorized', status: 401, detail: 'Payment signature is wrong.'},

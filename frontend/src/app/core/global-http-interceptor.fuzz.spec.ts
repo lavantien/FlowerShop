@@ -19,9 +19,6 @@ const member: SessionUser = {
 	enable: true
 };
 
-// Garbage bodies a broken backend or a proxy can answer with: html error
-// pages, arrays, null, wrong typed or nested detail fields, truncations.
-// Typed to what HttpTestingController.flush accepts.
 function garbageBodies(gen: SeededGenerator): (string | number | boolean | object | null)[] {
 	return [
 		null, '', 'Internal Server Error', '<html><body><h1>502 Bad Gateway</h1></body></html>',
@@ -35,8 +32,6 @@ function garbageBodies(gen: SeededGenerator): (string | number | boolean | objec
 	];
 }
 
-// The mapping the app defines: a string non empty detail wins, otherwise the
-// 401 session line or the plain status line.
 function expectedMessage(body: unknown, status: number): string {
 	if (typeof body === 'object' && body !== null && 'detail' in body) {
 		const detail = (body as {detail?: unknown}).detail;
@@ -80,7 +75,6 @@ describe('globalHttpInterceptor fuzz', () => {
 				toasts.toasts().forEach(toast => toasts.dismiss(toast.id));
 				const http = TestBed.inject(HttpClient);
 				let errors = 0;
-				// posts never retry, so each flush surfaces exactly one error
 				http.post('/api/order', {}).subscribe({error: () => errors++});
 				const flush = (): void => {
 					httpMock.expectOne('/api/order').flush(body, {status, statusText: 'Err'});
@@ -106,7 +100,6 @@ describe('globalHttpInterceptor fuzz', () => {
 			httpMock.expectOne('/api/order').flush(body, {status, statusText: 'Err'});
 			expect(seen).toHaveLength(1);
 			expect((seen[0] as {status: number}).status).toBe(status);
-			// the test backend carries an empty string body as no body at all
 			expect((seen[0] as {error: unknown}).error).toBe(body === '' ? null : body);
 		}
 	});

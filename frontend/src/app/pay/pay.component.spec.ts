@@ -146,7 +146,6 @@ describe('PayComponent', () => {
 			{status: 409, statusText: 'Conflict'}
 		);
 		expect(toast.danger).toHaveBeenCalledTimes(1);
-		// the arrival navigation is part of the harness, only the return trip matters
 		expect(navigate).not.toHaveBeenCalledWith(['/info']);
 		expect(component.working()).toBe(false);
 	});

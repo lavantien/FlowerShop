@@ -61,7 +61,6 @@ describe('ProfileComponent form fuzz', () => {
 		return result;
 	}
 
-	// gen.string caps at a random length, exact lengths need their own builder
 	function passwordOf(length: number): string {
 		const pool = ['a', 'Z', '9', '_', 'ư', '中'];
 		let result = '';
@@ -87,7 +86,6 @@ describe('ProfileComponent form fuzz', () => {
 			expect(component.profileForm.controls.phone.invalid, phone).toBe(true);
 			expect(component.profileForm.controls.phone.errors?.['pattern']).toBeDefined();
 		}
-		// the empty string fails required only, pattern skips empty values
 		component.profileForm.controls.phone.setValue('');
 		expect(component.profileForm.controls.phone.invalid).toBe(true);
 		expect(component.profileForm.controls.phone.errors?.['required']).toBeDefined();

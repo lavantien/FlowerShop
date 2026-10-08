@@ -92,7 +92,6 @@ describe('AdminCouponsComponent', () => {
 		const value = element.querySelector('[data-test="admin-coupon-value"]') as HTMLInputElement;
 		value.value = '15';
 		value.dispatchEvent(new Event('input', {bubbles: true}));
-		// the disabled binding needs a change detection pass before the click
 		fixture.detectChanges();
 		(element.querySelector('[data-test="admin-coupon-save"]') as HTMLButtonElement).click();
 		const request = httpMock.expectOne('/api/coupon');
@@ -136,7 +135,6 @@ describe('AdminCouponsComponent', () => {
 		(element.querySelector('[data-test="admin-coupon-code"]') as HTMLInputElement).value = 'WELCOME10';
 		element.querySelector('[data-test="admin-coupon-code"]')!
 			.dispatchEvent(new Event('input', {bubbles: true}));
-		// the default value 0 fails min(1), lift it so the button enables
 		const value = (fixture.nativeElement as HTMLElement).querySelector('[data-test="admin-coupon-value"]') as HTMLInputElement;
 		value.value = '10';
 		value.dispatchEvent(new Event('input', {bubbles: true}));

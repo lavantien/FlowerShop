@@ -64,7 +64,6 @@ export class AppComponent {
 		this.auth.logout().subscribe({next: () => this.router.navigate(['/shop'])});
 	}
 
-	// a guest tapping the cart keeps it: the login modal opens instead of a dead end
 	onCartClick(): void {
 		if (!this.session.isLoggedIn()) {
 			this.session.requestLogin();

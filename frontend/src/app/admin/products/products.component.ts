@@ -61,11 +61,8 @@ export class ProductsComponent implements OnInit {
 	readonly saving = signal(false);
 	readonly excelRows = signal<ProductInput[]>([]);
 	readonly lightboxProduct = signal<ProductView | null>(null);
-	// mirror of the form category control so the type options can be computed
 	readonly formCategory = signal('');
 
-	// the control owns its 1 based page state; resetting it through the value
-	// accessor avoids the NgModel echo that raced our page signal
 	readonly pagination = viewChild(PaginationComponent);
 
 	private readonly fb = inject(NonNullableFormBuilder);
@@ -153,8 +150,6 @@ export class ProductsComponent implements OnInit {
 	}
 
 	onPageChanged(event: PageChangedEvent): void {
-		// the pagination control re-emits pageChanged when totalItems settles,
-		// so only a real page move pays for a request
 		const target = event.page - 1;
 		if (target === this.page()) {
 			return;
@@ -176,7 +171,6 @@ export class ProductsComponent implements OnInit {
 
 	openEditModal(template: TemplateRef<void>, product: ProductView): void {
 		this.editId.set(product.id);
-		// patchValue copies, the form never mutates the table row
 		this.form.patchValue({
 			name: product.name,
 			description: product.description,

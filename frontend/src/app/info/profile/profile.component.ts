@@ -83,7 +83,6 @@ export class ProfileComponent implements OnInit {
 		this.account.updateMe(this.profileForm.getRawValue()).subscribe({
 			next: user => {
 				this.savingProfile.set(false);
-				// the session mirrors the new profile so cart and navbar prefills follow
 				const token = this.session.token();
 				if (token !== null) {
 					this.session.login(token, user);

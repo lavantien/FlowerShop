@@ -38,7 +38,6 @@ export class CartComponent implements OnInit {
 	private readonly document = inject(DOCUMENT);
 
 	readonly branches = signal<Branch[]>([]);
-	// 0 means the backend resolves the branch nearest the delivery address
 	readonly branchId = signal(0);
 	readonly couponCode = signal('');
 	readonly coupon = signal<CouponValidation | null>(null);
@@ -54,7 +53,6 @@ export class CartComponent implements OnInit {
 
 	readonly lang = computed(() => this.translate.currentLang() ?? 'en');
 	readonly discount = computed(() => this.coupon()?.discountAmount ?? 0);
-	// delivery fee and rounding stay server side; only the coupon discount is previewable
 	readonly payable = computed(() => Math.max(this.cart.subtotal() - this.discount(), 0));
 
 	ngOnInit(): void {
@@ -161,12 +159,10 @@ export class CartComponent implements OnInit {
 		});
 	}
 
-	// a full browser redirect, the gateway page poses as an external provider
 	redirectToGateway(url: string): void {
 		this.document.location.assign(url);
 	}
 
-	// the preview was computed against the old subtotal, a changed cart needs a fresh validation
 	private resetCoupon(): void {
 		this.coupon.set(null);
 	}

@@ -1,7 +1,5 @@
 import {Injectable, computed, effect, signal} from '@angular/core';
 
-// Structural subset shared by the v2 product and the v3 productView, so the
-// cart keeps working across the contract migration without its own model.
 export interface CartItem {
 	id: number;
 	name: string;
@@ -18,8 +16,6 @@ export interface CartLine {
 
 const STORAGE_KEY = 'cart';
 
-// Number.isFinite over typeof number: corrupt json like 1e999 parses to
-// Infinity, a number by typeof, and would masquerade as a cart line.
 function isCartItem(value: unknown): value is CartItem {
 	if (typeof value !== 'object' || value === null) {
 		return false;
@@ -87,8 +83,6 @@ export class CartService {
 		this.linesSignal.update(lines => lines.filter(line => line.product.id !== productId));
 	}
 
-	// a non positive or non finite quantity drops the line, mirroring the
-	// minus button in the cart table; the isFinite arm also catches NaN
 	changeQuantity(productId: number, quantity: number): void {
 		if (!Number.isFinite(quantity) || quantity < 1) {
 			this.remove(productId);

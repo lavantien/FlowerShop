@@ -5,7 +5,6 @@ import {API} from './api';
 import {definedParams} from './params';
 import {CatalogQuery, Page, ProductInput, ProductView} from '../models';
 
-// the api clamps page size to 48 rows, page walks use the ceiling
 const MAX_PAGE_SIZE = 48;
 
 @Injectable({providedIn: 'root'})
@@ -18,8 +17,6 @@ export class CatalogService {
 		});
 	}
 
-	// walks every page of a filtered query for whole-resultset consumers
-	// like the admin excel export
 	all(query: CatalogQuery): Observable<ProductView[]> {
 		const fetch = (page: number): Observable<Page<ProductView>> =>
 			this.page({...query, page, size: MAX_PAGE_SIZE});

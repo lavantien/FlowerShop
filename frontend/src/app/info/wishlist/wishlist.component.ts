@@ -46,7 +46,6 @@ export class WishlistComponent implements OnInit {
 		}
 	}
 
-	// the heart on this page is always filled: a toggle here means remove
 	onToggle(productId: number): void {
 		this.wishlist.toggle(productId).subscribe({
 			next: result => {

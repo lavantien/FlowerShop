@@ -47,7 +47,6 @@ export class OrdersComponent implements OnInit {
 	}
 
 	onPageChanged(event: PageChangedEvent): void {
-		// the control re-emits its own page when totalItems settles, ignore it
 		const target = event.page - 1;
 		if (target === this.page()) {
 			return;

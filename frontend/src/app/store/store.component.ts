@@ -52,8 +52,6 @@ export class StoreComponent implements OnInit {
 
 	readonly selected = signal<ProductView | null>(null);
 
-	// the control owns its own 1 based page state; resetting it through the
-	// value accessor avoids the NgModel echo that raced our page signal
 	readonly pagination = viewChild(PaginationComponent);
 
 	private readonly typesAll = signal<Type[]>([]);
@@ -85,8 +83,6 @@ export class StoreComponent implements OnInit {
 	readonly translate = inject(TranslateService);
 
 	constructor() {
-		// wishlist is member only: guests never fire the request, and the
-		// heart state follows the session in and out
 		effect(() => {
 			if (this.session.isLoggedIn()) {
 				this.wishlist.mine().subscribe({
@@ -149,8 +145,6 @@ export class StoreComponent implements OnInit {
 	}
 
 	onPageChanged(event: PageChangedEvent): void {
-		// the pagination control re-emits pageChanged when totalItems settles,
-		// so only a real page move pays for a request
 		const target = event.page - 1;
 		if (target === this.page()) {
 			return;

@@ -1,5 +1,3 @@
-// Single hub for every v3 endpoint path. No service or component builds a URL
-// string of its own; parameterized routes go through the functions here.
 const PAYMENTS_BASE = '/api/payment';
 
 export const API = {
@@ -62,8 +60,6 @@ export const API = {
 	}
 } as const;
 
-// Payment endpoints gate on the payment signature instead of the session, so
-// a 401 from them means a bad or truncated sig, never a dead session.
 export function isPaymentPath(url: string): boolean {
 	return url.startsWith(`${PAYMENTS_BASE}/`);
 }

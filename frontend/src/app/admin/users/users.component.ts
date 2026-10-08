@@ -60,7 +60,6 @@ export class AdminUsersComponent implements OnInit {
 			},
 			error: error => {
 				this.busyId.set(null);
-				// a user with orders is refused with 409: disabling is the escape hatch
 				this.toast.danger(this.translate.instant(error.status === 409 ? 'ADMIN.USER_HAS_ORDERS' : 'ADMIN.USER_DELETE_FAILED'));
 			}
 		});

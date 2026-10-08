@@ -62,7 +62,6 @@ export class AuthModalComponent {
 	}, {validators: mustMatch('newPassword', 'reNewPassword')});
 
 	constructor() {
-		// the navbar button and the interceptor 401 path share this one entry point
 		effect(() => {
 			if (this.session.loginRequested() > 0) {
 				this.open();

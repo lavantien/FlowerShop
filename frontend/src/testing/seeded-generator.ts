@@ -1,11 +1,5 @@
-// Deterministic data for the fuzz specs, the SeededGenerator pattern of the
-// backend property suites: a fixed seed makes every run feed the exact same
-// cases, so a failure always reproduces and CI never flakes. No external
-// property library, just an inline mulberry32 generator.
 export const FUZZ_SEED = 20261007;
 
-// Printable ASCII plus diacritics and CJK so generated junk stresses json
-// round trips and string handling the way the backend corpus does.
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_.+{}[]":,\\ăâđêôơư中文🌸';
 
 export class SeededGenerator {

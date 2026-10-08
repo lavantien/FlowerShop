@@ -107,7 +107,6 @@ describe('AdminComponent shell', () => {
 		fixture.detectChanges();
 		const router = TestBed.inject(Router);
 		await router.navigate(['/admin/products']);
-		// zoneless activation instantiates the child on the next change detection
 		fixture.detectChanges();
 		flushChildRequests();
 		fixture.detectChanges();

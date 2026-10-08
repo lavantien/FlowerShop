@@ -33,7 +33,6 @@ export class ProductModalComponent {
 	readonly maxQty = computed(() => Math.min(this.product().stock, MAX_QUANTITY));
 
 	constructor() {
-		// a different product in the same modal restarts from one unit
 		effect(() => {
 			this.product();
 			this.qty.set(1);

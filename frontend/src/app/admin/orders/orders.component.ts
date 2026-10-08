@@ -38,8 +38,6 @@ export class AdminOrdersComponent implements OnInit {
 	readonly expanded = signal<ReadonlySet<number>>(new Set());
 	readonly busy = signal<number | null>(null);
 
-	// the pagination control owns its 1 based page state; resets go through
-	// the value accessor to avoid the NgModel echo
 	readonly pagination = viewChild(PaginationComponent);
 
 	readonly lang = computed(() => this.translate.currentLang() ?? 'en');
@@ -81,7 +79,6 @@ export class AdminOrdersComponent implements OnInit {
 	}
 
 	onPageChanged(event: PageChangedEvent): void {
-		// the control re-emits its own page when totalItems settles, ignore it
 		const target = event.page - 1;
 		if (target === this.page()) {
 			return;
@@ -104,8 +101,6 @@ export class AdminOrdersComponent implements OnInit {
 		this.expanded.set(next);
 	}
 
-	// PENDING to PAID happens only through payment confirm, so the admin
-	// forward arcs start at PAID
 	forwardTargets(order: Order): OrderStatus[] {
 		switch (order.status) {
 			case 'PAID':
@@ -137,7 +132,6 @@ export class AdminOrdersComponent implements OnInit {
 			return;
 		}
 		this.busy.set(order.id);
-		// a paid or shipped cancel restores stock server side in the same call
 		this.orderService.cancel(order.id).subscribe({
 			next: updated => this.applyMutation(updated, 'ADMIN.ORDER_CANCELLED'),
 			error: () => this.mutationFailed()

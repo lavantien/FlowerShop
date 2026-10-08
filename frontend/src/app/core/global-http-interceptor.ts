@@ -11,7 +11,6 @@ const TIMEOUT_MS = 10000;
 const RETRY_COUNT = 2;
 const SESSION_EXPIRED = 'Session expired. Please sign in again.';
 
-// v3 errors are problem+json bodies with a human readable detail line.
 function problemDetail(error: HttpErrorResponse): string | undefined {
 	const body: unknown = error.error;
 	if (typeof body === 'object' && body !== null && 'detail' in body) {
@@ -38,12 +37,8 @@ export const globalHttpInterceptor: HttpInterceptorFn = (req, next) => {
 	spinner.show();
 	return next(req).pipe(
 		timeout(TIMEOUT_MS),
-		// only reads may replay: a retried post could double-bill a checkout
 		req.method === 'GET' ? retry(RETRY_COUNT) : identity,
 		catchError((error: HttpErrorResponse) => {
-			// A payment 401 means a bad or truncated sig on a public link, not a
-			// dead session: the pay page surfaces its own error, so the interceptor
-			// stays silent and keeps the session alive.
 			if (error.status === 401 && isPaymentPath(req.url)) {
 				return throwError(() => error);
 			}

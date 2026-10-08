@@ -1,6 +1,3 @@
-// Every v3 contract shape from docs/api-v3.md. Field names, enums, and money
-// as integer VND numbers are binding; both the services and the components
-// build against this file only.
 
 export type Role = 'USER' | 'ADMIN';
 export type OrderStatus = 'PENDING' | 'PAID' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED';

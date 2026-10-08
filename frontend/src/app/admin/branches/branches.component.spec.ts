@@ -166,7 +166,6 @@ describe('AdminBranchesComponent', () => {
 		const lat = element.querySelector('[data-test="admin-branch-lat"]') as HTMLInputElement;
 		lat.value = '10.85';
 		lat.dispatchEvent(new Event('input', {bubbles: true}));
-		// the disabled binding needs a change detection pass before the click
 		fixture.detectChanges();
 		(element.querySelector('[data-test="admin-branch-save"]') as HTMLButtonElement).click();
 		const request = httpMock.expectOne('/api/branch');
@@ -185,7 +184,6 @@ describe('AdminBranchesComponent', () => {
 		component.form.controls.city.setValue('Đà Nẵng');
 		component.onCityChange();
 		expect(component.formCity()).toBe('Đà Nẵng');
-		// no district matches that city in the fixture, so the control clears
 		expect(component.form.controls.district.value).toBe('');
 	});
 
@@ -286,7 +284,6 @@ describe('AdminBranchesComponent', () => {
 		const quantities = modal.querySelectorAll('[data-test="admin-stock-quantity"]') as NodeListOf<HTMLInputElement>;
 		quantities[1].value = '3';
 		quantities[1].dispatchEvent(new Event('input', {bubbles: true}));
-		// product 2 had no stock row, the local edit appends one
 		expect(component.stockRows().find(row => row.productId === 2)?.quantity).toBe(3);
 		click(modal.querySelector('.btn-close') as Element);
 	});
@@ -295,7 +292,6 @@ describe('AdminBranchesComponent', () => {
 		mount();
 		const modal = openStock(branches[0]);
 		click(modal.querySelector('.btn-close') as Element);
-		// no second catalogue walk: the product list is already loaded
 		const second = openStock(branches[1], [{productId: 1, quantity: 5}], false);
 		expect(httpMock.match(req => req.url === '/api/product').length).toBe(0);
 		expect(component.quantityFor(1)).toBe(5);

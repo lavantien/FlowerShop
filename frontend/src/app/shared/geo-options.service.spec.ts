@@ -31,7 +31,6 @@ describe('GeoOptionsService', () => {
 
 		geo.load();
 		geo.load();
-		// the flushed first load is gone from the pending list, so zero pending proves no refetch
 		expect(httpMock.match(() => true)).toHaveLength(0);
 	});
 

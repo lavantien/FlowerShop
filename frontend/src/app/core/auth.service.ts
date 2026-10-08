@@ -17,7 +17,6 @@ export class AuthService {
 		);
 	}
 
-	// header only by contract, the interceptor attaches the token
 	logout(): Observable<void> {
 		return this.http.post<void>(API.auth.logout, null).pipe(
 			tap(() => this.session.logout())

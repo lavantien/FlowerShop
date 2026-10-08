@@ -30,7 +30,6 @@ export class AdminBranchesComponent implements OnInit {
 	readonly stockRows = signal<StockRow[]>([]);
 	readonly products = signal<ProductView[]>([]);
 	readonly stockSaving = signal<number | null>(null);
-	// mirror of the form city control so district options can be computed
 	readonly formCity = signal('');
 
 	private readonly fb = inject(NonNullableFormBuilder);
@@ -125,7 +124,6 @@ export class AdminBranchesComponent implements OnInit {
 				this.load();
 			},
 			error: error => {
-				// a branch with stock rows is refused with 409
 				this.toast.danger(this.translate.instant(error.status === 409 ? 'ADMIN.BRANCH_HAS_STOCK' : 'ADMIN.BRANCH_DELETE_FAILED'));
 			}
 		});
@@ -169,7 +167,6 @@ export class AdminBranchesComponent implements OnInit {
 			return;
 		}
 		this.stockSaving.set(productId);
-		// the endpoint sets the absolute quantity, floor 0
 		this.branchService.setStock(branch.id, {productId, quantity}).subscribe({
 			next: row => {
 				this.stockSaving.set(null);

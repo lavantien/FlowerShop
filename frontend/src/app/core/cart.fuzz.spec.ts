@@ -24,8 +24,6 @@ function lineJson(line: CartLine): string {
 	return JSON.stringify(line);
 }
 
-// Raw json strings, not serialized objects, so non finite numerics like 1e999
-// reach the parser the way a tampered payload would.
 function corruptCartJson(gen: SeededGenerator): string[] {
 	return [
 		'', '{', '][', 'null', 'true', '0', '"cart"', '{}',

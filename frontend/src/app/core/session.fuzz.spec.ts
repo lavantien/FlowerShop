@@ -16,8 +16,6 @@ const member: SessionUser = {
 
 const admin: SessionUser = {...member, id: 1, role: 'ADMIN'};
 
-// Corrupt payload shapes: broken json, non objects, truncations, and seeded
-// deep nesting that pushes JSON.parse to its recursion ceiling.
 function corruptPayloads(gen: SeededGenerator): string[] {
 	const valid = JSON.stringify(member);
 	const payloads: string[] = [
@@ -32,8 +30,6 @@ function corruptPayloads(gen: SeededGenerator): string[] {
 	return payloads;
 }
 
-// Values that survive JSON serialization, keyed by what the predicate
-// actually validates: a finite id, string name and email, a member role.
 const nonFiniteIdJunk = [null, true, [], [4], {}, {id: 4}, '', '4', 'x'.repeat(64)];
 const nonStringJunk = [null, 0, -1, 1.5, true, [], {}, [4], {id: 4}];
 const nonRoleJunk = [null, 0, true, [], {}, '', 'admin', 'USER ', 'USER\x00', 'ADMINX', 'user'];

@@ -132,7 +132,6 @@ describe('OrdersComponent', () => {
 		const danger = vi.spyOn(toast, 'danger');
 		fixture.detectChanges();
 		flush([order(12, 'PAID')]);
-		// a paid order cannot be cancelled by its owner: the button is hidden, drive the endpoint refusal directly
 		component.onCancel(order(12, 'PAID'));
 		httpMock.expectOne('/api/order/12/cancel').flush(
 			{title: 'Conflict', status: 409, code: 'ILLEGAL_TRANSITION'},

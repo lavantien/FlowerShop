@@ -7,9 +7,6 @@ export type SessionUser = User;
 const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
 
-// localStorage is untrusted: a predicate keeps tampered junk from
-// masquerading as a session after a reload. Number.isFinite over typeof
-// number because 1e999 parses to Infinity, a number by typeof.
 function isSessionUser(value: unknown): value is SessionUser {
 	if (typeof value !== 'object' || value === null) {
 		return false;
