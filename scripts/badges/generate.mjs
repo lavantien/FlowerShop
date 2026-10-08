@@ -8,7 +8,7 @@ function arg(name, fallback) {
 
 const backendCsv = arg('backend-csv', 'target/site/jacoco/jacoco.csv');
 const frontendSummary = arg('frontend-summary', 'frontend/coverage/frontend/coverage-summary.json');
-const ciStatus = arg('ci', 'passing');
+const ciStatus = arg('ci', 'passed');
 const outDir = arg('out', 'badges-out');
 
 function escapeXml(text) {
@@ -122,7 +122,7 @@ const frontendPercent = await readPercentOrNull(frontendCoveragePercent, fronten
 const badges = [
 	['backend-coverage.svg', coverageBadge('backend coverage', backendPercent)],
 	['frontend-coverage.svg', coverageBadge('frontend coverage', frontendPercent)],
-	['ci.svg', badge('ci', ciStatus === 'passing' ? 'passing' : 'failing', ciStatus === 'passing' ? '#4c1' : '#e05d44')]
+	['ci.svg', badge('ci', ciStatus === 'passed' ? 'passed' : 'failed', ciStatus === 'passed' ? '#4c1' : '#e05d44')]
 ];
 for (const [name, svg] of badges) {
 	await writeFile(path.join(outDir, name), svg);
@@ -133,4 +133,10 @@ try {
 	console.log('[badge] aws-ready.svg');
 } catch {
 	console.log('[badge] docs/badges/aws-ready.svg missing, skipped');
+}
+try {
+	await copyFile('docs/badges/qa.svg', path.join(outDir, 'qa.svg'));
+	console.log('[badge] qa.svg');
+} catch {
+	console.log('[badge] docs/badges/qa.svg missing, skipped');
 }

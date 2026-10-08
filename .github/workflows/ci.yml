@@ -130,7 +130,7 @@ jobs:
           node-version: 24
       - run: node scripts/badges/generate.mjs --backend-csv artifacts/backend-coverage/jacoco.csv --frontend-summary artifacts/frontend-coverage/coverage-summary.json --ci "$CI_STATUS" --out badges-out
         env:
-          CI_STATUS: ${{ (needs.backend.result == 'success' && needs.fuzz.result == 'success' && needs.frontend.result == 'success' && needs.audit.result == 'success') && 'passing' || 'failing' }}
+          CI_STATUS: ${{ (needs.backend.result == 'success' && needs.fuzz.result == 'success' && needs.frontend.result == 'success' && needs.audit.result == 'success') && 'passed' || 'failed' }}
       - run: |
           cd badges-out
           git init -b badges
