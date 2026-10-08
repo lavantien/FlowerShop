@@ -1,6 +1,25 @@
+.modal-image-capped {
+	max-height: 45vh;
+	object-fit: contain;
+	width: auto;
+}
+
 .modal-description {
 	max-width: 480px;
 	margin: 0.5rem auto;
+}
+
+.stock-qty-row {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	justify-content: center;
+	margin: 0.5rem 0;
+
+	.modal-stock-margin {
+		margin-right: 0.75rem;
+	}
 }
 
 .qty-picker {

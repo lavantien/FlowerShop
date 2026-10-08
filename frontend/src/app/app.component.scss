@@ -22,5 +22,32 @@
 
 	.wrapper-router {
 		padding: 10px;
+		padding-bottom: 4rem;
+	}
+
+	.app-footer {
+		align-items: center;
+		background-color: var(--bs-light, #f8f9fa);
+		border-top: 1px solid var(--bs-border-color, #dee2e6);
+		bottom: 0;
+		display: flex;
+		font-size: 0.875rem;
+		gap: 0.5rem;
+		justify-content: center;
+		left: 0;
+		padding: 0.5rem 1rem;
+		position: fixed;
+		right: 0;
+		z-index: 1030;
+
+		.footer-source {
+			color: inherit;
+			display: inline-flex;
+
+			.footer-github {
+				height: 1rem;
+				width: 1rem;
+			}
+		}
 	}
 }

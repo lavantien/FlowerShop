@@ -1,23 +1,25 @@
 <div class="modal-body text-center">
-	<img [alt]="product().name" [src]="product().imgUrl" class="img-fluid" data-test="modal-image">
+	<img [alt]="product().name" [src]="product().imgUrl" class="img-fluid modal-image-capped" data-test="modal-image">
 	<h5 class="mt-2"><b>{{product().name}}</b></h5>
 	<div>({{'DATA.' + product().categoryName | translate}} - {{'DATA.' + product().typeName | translate}})</div>
 	<p class="modal-description">{{product().description}}</p>
-	@if (product().stock > 0) {
-		<span class="badge text-bg-success" data-test="modal-stock">{{'SHOP.STOCK' | translate}}: {{product().stock}}</span>
-	} @else {
-		<span class="badge text-bg-danger" data-test="modal-stock">{{'SHOP.OUT_OF_STOCK' | translate}}</span>
-	}
-	<div class="qty-picker my-2">
-		<button (click)="decQty()" [disabled]="qty() <= 1" class="btn btn-outline-dark" data-test="modal-qty-minus"
-		        type="button">
-			<fa-icon [icon]="faMinus"></fa-icon>
-		</button>
-		<span class="qty-value" data-test="modal-qty">{{qty()}}</span>
-		<button (click)="incQty()" [disabled]="qty() >= maxQty()" class="btn btn-outline-dark" data-test="modal-qty-plus"
-		        type="button">
-			<fa-icon [icon]="faPlus"></fa-icon>
-		</button>
+	<div class="stock-qty-row">
+		@if (product().stock > 0) {
+			<span class="badge text-bg-success modal-stock-margin" data-test="modal-stock">{{'SHOP.STOCK' | translate}}: {{product().stock}}</span>
+		} @else {
+			<span class="badge text-bg-danger modal-stock-margin" data-test="modal-stock">{{'SHOP.OUT_OF_STOCK' | translate}}</span>
+		}
+		<div class="qty-picker">
+			<button (click)="decQty()" [disabled]="qty() <= 1" class="btn btn-outline-dark" data-test="modal-qty-minus"
+			        type="button">
+				<fa-icon [icon]="faMinus"></fa-icon>
+			</button>
+			<span class="qty-value" data-test="modal-qty">{{qty()}}</span>
+			<button (click)="incQty()" [disabled]="qty() >= maxQty()" class="btn btn-outline-dark" data-test="modal-qty-plus"
+			        type="button">
+				<fa-icon [icon]="faPlus"></fa-icon>
+			</button>
+		</div>
 	</div>
 	<div class="price h5">{{product().price | currency:'VND':'symbol':'1.0-0':lang()}}</div>
 	<button (click)="onToggleWishlist()"

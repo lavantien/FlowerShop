@@ -146,6 +146,19 @@ describe('AppComponent shell', () => {
 		expect(element().querySelector('app-toasts')).not.toBeNull();
 	});
 
+	it('pins the credit footer with a new-tab source link', () => {
+		createShell();
+		const footer = element().querySelector('footer.app-footer') as HTMLElement;
+		expect(footer).not.toBeNull();
+		expect(footer.textContent).toContain('MAIN.CREDIT');
+		const link = footer.querySelector('a.footer-source') as HTMLAnchorElement;
+		expect(link.getAttribute('href')).toBe('https://github.com/lavantien/FlowerShop');
+		expect(link.getAttribute('target')).toBe('_blank');
+		expect(link.getAttribute('rel')).toBe('noopener');
+		expect(link.getAttribute('aria-label')).toBe('MAIN.SOURCE');
+		expect(link.querySelector('svg path')).not.toBeNull();
+	});
+
 	it('navigates a member to the cart page from the navbar button', () => {
 		session.login('token-1', member);
 		createShell();

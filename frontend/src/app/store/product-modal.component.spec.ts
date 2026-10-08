@@ -123,6 +123,17 @@ describe('ProductModalComponent', () => {
 		expect(heart.classList).toContain('text-secondary');
 	});
 
+	it('caps the image height and spaces the stock badge from the picker', () => {
+		const element = create(productView(5));
+		expect((element.querySelector('[data-test="modal-image"]') as HTMLElement).classList).toContain('modal-image-capped');
+		const badge = element.querySelector('[data-test="modal-stock"]') as HTMLElement;
+		expect(badge.classList).toContain('modal-stock-margin');
+		const row = badge.closest('.stock-qty-row') as HTMLElement;
+		expect(row).not.toBeNull();
+		expect(row.querySelector('[data-test="modal-qty-minus"]')).not.toBeNull();
+		expect(row.querySelector('[data-test="modal-qty"]')).not.toBeNull();
+	});
+
 	it('formats the price in the active locale', () => {
 		const element = create(productView(5));
 		TestBed.inject(TranslateService).use('vi');
