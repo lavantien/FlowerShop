@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@angular/build": "22.2.1",
-    "@angular/cli": "22.2.1",
+    "@angular/cli": "22.2.3",
     "@angular/compiler-cli": "22.2.1",
     "@angular/language-service": "22.2.1",
     "@eslint/js": "^9.0.0",
