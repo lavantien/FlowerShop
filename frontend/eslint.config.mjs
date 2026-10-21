@@ -1,9 +1,12 @@
-// @ts-check
 import eslint from "@eslint/js";
+import {defineConfig} from "eslint/config";
 import tseslint from "typescript-eslint";
 import angular from "angular-eslint";
 
-export default tseslint.config(
+export default defineConfig(
+  {
+    ignores: ["coverage/**", "dist/**", ".angular/cache/**", "node/**"],
+  },
   {
     files: ["**/*.ts"],
     extends: [
