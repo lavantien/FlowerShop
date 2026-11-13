@@ -5,8 +5,8 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.1.1</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<version>4.1.2</version>
+		<relativePath/>
 	</parent>
 	<groupId>com.lavantien</groupId>
 	<artifactId>flowershop</artifactId>
@@ -16,7 +16,7 @@
 
 	<properties>
 		<java.version>27</java.version>
-		<jacoco.version>0.8.15</jacoco.version>
+		<jacoco.version>0.8.16</jacoco.version>
 	</properties>
 
 	<dependencies>
@@ -62,7 +62,7 @@
 				<artifactId>frontend-maven-plugin</artifactId>
 				<version>2.0.2</version>
 				<configuration>
-					<nodeVersion>v24.21.0</nodeVersion>
+					<nodeVersion>v24.22.3</nodeVersion>
 					<installDirectory>frontend</installDirectory>
 					<workingDirectory>frontend</workingDirectory>
 				</configuration>
@@ -107,8 +107,6 @@
 							<goal>prepare-agent</goal>
 						</goals>
 						<configuration>
-							<!-- Overwrite instead of append so the gate measures exactly one
-							run: appended sessions keep deleted tests counted as covered. -->
 							<append>false</append>
 						</configuration>
 					</execution>
