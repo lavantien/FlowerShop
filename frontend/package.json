@@ -11,7 +11,7 @@
     "lint": "ng lint"
   },
   "private": true,
-  "packageManager": "npm@12.2.0",
+  "packageManager": "npm@11.19.1",
   "dependencies": {
     "@angular/animations": "22.2.6",
     "@angular/common": "22.2.6",
